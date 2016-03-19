@@ -49,7 +49,7 @@
 
 #define SAMPLE_EXT ".wav"
 
-struct bank_header
+struct emu3_bank
 {
   char signature[SIGNATURE_SIZE];
   char bank_name[NAME_SIZE];
@@ -58,21 +58,24 @@ struct bank_header
   unsigned int more_parameters[MORE_BANK_PARAMETERS];
 };
 
-struct sample_header
+struct emu3_sample
 {
-  char sample_name[NAME_SIZE];
+  char name[NAME_SIZE];
   unsigned int parameters[SAMPLE_PARAMETERS];
+  short int frames[];
 };
 
 // This returns a valid fs name (no strange chars in filename) from the emu3fs object name
 char *emu3_fs_sample_name (const char *);
 
-int emu3_append_sample (const char *, char *, unsigned int, int);
+//TODO: remove 3rd parameter if not useful
+int emu3_append_sample (const char *, struct emu3_sample *, unsigned int,
+			int);
 
 int emu3_process_bank (const char *, int, const char *, int);
 
-void emu3_print_sample_info (struct sample_header *);
+void emu3_print_sample_info (struct emu3_sample *);
 
-int emu3_get_sample_channels (struct sample_header *);
+int emu3_get_sample_channels (struct emu3_sample *);
 
 void emu3_write_sample_file (const char *, short *, sf_count_t, int, int);

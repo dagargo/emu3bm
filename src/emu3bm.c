@@ -52,11 +52,11 @@ emu3_fs_sample_name (const char *objname)
 }
 
 int
-emu3_get_sample_channels (struct sample_header *sheader)
+emu3_get_sample_channels (struct emu3_sample *sample)
 {
   int channels;
 
-  switch (sheader->parameters[10])
+  switch (sample->parameters[10])
     {
     case STEREO_SAMPLE:
       channels = 2;
@@ -75,27 +75,26 @@ emu3_get_sample_channels (struct sample_header *sheader)
 }
 
 void
-emu3_print_sample_info (struct sample_header *sheader)
+emu3_print_sample_info (struct emu3_sample *sample)
 {
   for (int i = 0; i < SAMPLE_PARAMETERS; i++)
     {
-      printf ("0x%08x ", sheader->parameters[i]);
+      printf ("0x%08x ", sample->parameters[i]);
     }
   printf ("\n");
-  printf ("Channels: %d\n", emu3_get_sample_channels (sheader));
-  printf ("Sampling frequency: %dHz?\n", sheader->parameters[9]);
+  printf ("Channels: %d\n", emu3_get_sample_channels (sample));
+  printf ("Sampling frequency: %dHz?\n", sample->parameters[9]);
 }
 
 //returns the sample size in bytes that the the sample takes in the bank
 int
-emu3_append_sample (const char *filename, char *memory,
+emu3_append_sample (const char *filename, struct emu3_sample *sample,
 		    unsigned int address, int sample_id)
 {
   SF_INFO input_info;
   SNDFILE *input;
   int size = 0;
   unsigned int data_size;
-  struct sample_header *sheader;
   short int frame[2];
   short int *l_channel;
   short int *r_channel;
@@ -116,47 +115,43 @@ emu3_append_sample (const char *filename, char *memory,
       printf ("Appending sample %s... (%lld frames, %d channels)\n", filename,
 	      input_info.frames, input_info.channels);
       //Sample header initialization
-      sheader = (struct sample_header *) memory;
-      snprintf (sheader->sample_name, NAME_SIZE, "Sample %.3d      ",
-		sample_id);
-      sheader->sample_name[NAME_SIZE - 1] = ' ';
+      snprintf (sample->name, NAME_SIZE, "Sample %.3d      ", sample_id);
+      sample->name[NAME_SIZE - 1] = ' ';
       for (int i = 0; i < SAMPLE_PARAMETERS; i++)
 	{
-	  sheader->parameters[i] = 0;
+	  sample->parameters[i] = 0;
 	}
       //TODO: complete
       data_size = sizeof (short int) * input_info.frames;
-      mono_size = sizeof (struct sample_header) + data_size + 4;
+      mono_size = sizeof (struct emu3_sample) + data_size + 4;
       size = mono_size + (input_info.channels == 1 ? 0 : data_size + 8);
-      sheader->parameters[1] = 0x5c;
-      sheader->parameters[2] = input_info.channels == 1 ? 0 : mono_size;
-      sheader->parameters[3] = mono_size - 2;
-      sheader->parameters[4] = size - (input_info.channels == 1 ? 94 : 2);
-      sheader->parameters[5] = 0x68;
-      sheader->parameters[6] = (input_info.channels == 1 ? 0 : size - 20);
-      sheader->parameters[7] = mono_size - 12;
-      sheader->parameters[8] =
-	sheader->parameters[4] - (input_info.channels == 1 ? 0 : 10);
-      sheader->parameters[9] = DEFAULT_SAMPLING_FREQ;
-      sheader->parameters[10] =
+      sample->parameters[1] = 0x5c;
+      sample->parameters[2] = input_info.channels == 1 ? 0 : mono_size;
+      sample->parameters[3] = mono_size - 2;
+      sample->parameters[4] = size - (input_info.channels == 1 ? 94 : 2);
+      sample->parameters[5] = 0x68;
+      sample->parameters[6] = (input_info.channels == 1 ? 0 : size - 20);
+      sample->parameters[7] = mono_size - 12;
+      sample->parameters[8] =
+	sample->parameters[4] - (input_info.channels == 1 ? 0 : 10);
+      sample->parameters[9] = DEFAULT_SAMPLING_FREQ;
+      sample->parameters[10] =
 	input_info.channels == 1 ? MONO_SAMPLE : STEREO_SAMPLE;
-      sheader->parameters[11] =
+      sample->parameters[11] =
 	address + 0x5c - (sample_id ==
 			  1 ? 0 : (sample_id - 1) * 10) +
-	(input_info.channels == 1 ? 0 : sheader->parameters[3]);
-      //sheader->parameters[11] = address + 0x5c - (sample_id == 1 ? 0 : (sample_id - 1) * 10) + (input_info.channels == 1 ? 0 : sheader->parameters[3] * 2);
+	(input_info.channels == 1 ? 0 : sample->parameters[3]);
+      //sample->parameters[11] = address + 0x5c - (sample_id == 1 ? 0 : (sample_id - 1) * 10) + (input_info.channels == 1 ? 0 : sample->parameters[3] * 2);
 
-      sheader->parameters[12] =
-	sheader->parameters[11] + (input_info.channels == 1 ? 0 : mono_size);
+      sample->parameters[12] =
+	sample->parameters[11] + (input_info.channels == 1 ? 0 : mono_size);
 
       //TODO: is the following line true for mono and stereo samples?
-      //total size is sheader + data size + 4 \0 chars at the end
-      memory += sizeof (struct sample_header);
-      l_channel = (short int *) memory;
+      //total size is sample + data size + 4 \0 chars at the end
+      l_channel = sample->frames;
       if (input_info.channels == 2)
 	{
-	  r_channel =
-	    (short int *) &memory[input_info.frames * sizeof (short int) + 4];
+	  r_channel = sample->frames + input_info.frames + 2;
 	  *r_channel = 0;
 	  r_channel++;
 	  *r_channel = 0;
@@ -216,12 +211,13 @@ emu3_process_bank (const char *ifile, int aflg, const char *afile, int xflg)
   FILE *file;
   int size, i;
   size_t fsize;
-  struct bank_header *bheader;
+  struct emu3_bank *bank;
   char *name;
   unsigned int *addresses;
   unsigned int sample_start_addr;
   unsigned int next_sample_addr;
   unsigned int address;
+  struct emu3_sample *sample;
 
   file = fopen (ifile, "r");
 
@@ -237,47 +233,46 @@ emu3_process_bank (const char *ifile, int aflg, const char *afile, int xflg)
 
   printf ("Bank fsize: %dB\n", fsize);
 
-  bheader = (struct bank_header *) memory;
+  bank = (struct emu3_bank *) memory;
 
-  if (!(!strncmp (EMULATOR_3X_DEF, bheader->signature, SIGNATURE_SIZE) ||
-	!strncmp (ESI_32_V3_DEF, bheader->signature, SIGNATURE_SIZE)))
+  if (!(!strncmp (EMULATOR_3X_DEF, bank->signature, SIGNATURE_SIZE) ||
+	!strncmp (ESI_32_V3_DEF, bank->signature, SIGNATURE_SIZE)))
     {
       printf ("Bank format not supported.\n");
       return 1;
     }
 
-  printf ("Bank format: %s\n", bheader->signature);
-  printf ("Bank name: %.*s\n", NAME_SIZE, bheader->bank_name);
+  printf ("Bank format: %s\n", bank->signature);
+  printf ("Bank name: %.*s\n", NAME_SIZE, bank->bank_name);
 
   printf ("Geometry:\n");
 /*	for (i = 0; i < BANK_PARAMETERS; i++) {
-    printf("Parameter %2d: 0x%08x (%d)\n", i, bheader->parameters[i], bheader->parameters[i]);
+    printf("Parameter %2d: 0x%08x (%d)\n", i, bank->parameters[i], bank->parameters[i]);
    }*/
-  printf ("Objects (p 0): %d\n", bheader->parameters[0] + 1);
-  printf ("Unknown (p 3): 0x%08x\n", bheader->parameters[3]);
-  printf ("Unknown (p 4): 0x%08x\n", bheader->parameters[4]);
-  printf ("Next    (p 5): 0x%08x\n", bheader->parameters[5]);
-  printf ("Unknown (p 7): 0x%08x\n", bheader->parameters[7]);
-  printf ("Unknown (p 8): 0x%08x\n", bheader->parameters[8]);
-  printf ("Unknown (p10): 0x%08x\n", bheader->parameters[10]);
+  printf ("Objects (p 0): %d\n", bank->parameters[0] + 1);
+  printf ("Unknown (p 3): 0x%08x\n", bank->parameters[3]);
+  printf ("Unknown (p 4): 0x%08x\n", bank->parameters[4]);
+  printf ("Next    (p 5): 0x%08x\n", bank->parameters[5]);
+  printf ("Unknown (p 7): 0x%08x\n", bank->parameters[7]);
+  printf ("Unknown (p 8): 0x%08x\n", bank->parameters[8]);
+  printf ("Unknown (p10): 0x%08x\n", bank->parameters[10]);
 
-  if (bheader->parameters[7] + bheader->parameters[8] !=
-      bheader->parameters[10])
+  if (bank->parameters[7] + bank->parameters[8] != bank->parameters[10])
     {
       fprintf (stderr, "Kind of checksum error.\n");
     }
 
-  if (strncmp (bheader->bank_name, bheader->bank_name_copy, NAME_SIZE))
+  if (strncmp (bank->bank_name, bank->bank_name_copy, NAME_SIZE))
     {
       printf ("Bank name is different than previously found.\n");
     }
 
   printf ("More geometry:\n");
 //      for (i = 0; i < MORE_BANK_PARAMETERS; i++) {
-//              printf("Parameter %d: 0x%08x (%d)\n", i, bheader->more_parameters[i], bheader->more_parameters[i]);
+//              printf("Parameter %d: 0x%08x (%d)\n", i, bank->more_parameters[i], bank->more_parameters[i]);
 //      }
-  printf ("Current preset: %d\n", bheader->more_parameters[0]);
-  printf ("Current sample: %d\n", bheader->more_parameters[1]);
+  printf ("Current preset: %d\n", bank->more_parameters[0]);
+  printf ("Current sample: %d\n", bank->more_parameters[1]);
 
   addresses = (unsigned int *) &(memory[PRESET_SIZE_ADDR_START_EMU_3X]);
   for (i = 0; i < MAX_PRESETS; i++)
@@ -316,42 +311,37 @@ emu3_process_bank (const char *ifile, int aflg, const char *afile, int xflg)
 	{
 	  size = addresses[i + 1] - addresses[i];
 	}
-      struct sample_header *sheader =
-	(struct sample_header *) &memory[address];
-      name = sheader->sample_name;
+      sample = (struct emu3_sample *) &memory[address];
       //We divide between the bytes per frame (number of channels * 2 bytes)
       sf_count_t frames =
 	(size -
-	 sizeof (struct sample_header)) / (2 *
-					   emu3_get_sample_channels
-					   (sheader));
+	 sizeof (struct emu3_sample)) / (2 *
+					 emu3_get_sample_channels (sample));
       printf ("Sample %3d - %.*s @ 0x%08x (size %dB, frames %lld)\n", i + 1,
-	      NAME_SIZE, name, address, size, frames);
-      emu3_print_sample_info (sheader);
+	      NAME_SIZE, sample->name, address, size, frames);
+      emu3_print_sample_info (sample);
 
       if (xflg)
 	{
-	  short *sample_start = (short *)
-	    &(memory[address + sizeof (struct sample_header)]);
-	  emu3_write_sample_file (name, sample_start, frames,
-				  emu3_get_sample_channels (sheader),
-				  sheader->parameters[9]);
+	  short *sample_start = sample->frames;
+	  emu3_write_sample_file (sample->name, sample_start, frames,
+				  emu3_get_sample_channels (sample),
+				  sample->parameters[9]);
 	}
     }
 
   if (aflg)
     {
+      sample = (struct emu3_sample *) &memory[next_sample_addr];
       size = emu3_append_sample
-	(afile, &(memory[next_sample_addr]),
-	 next_sample_addr - sample_start_addr, i + 1);
+	(afile, sample, next_sample_addr - sample_start_addr, i + 1);
       if (size)
 	{
 	  addresses[i] = addresses[MAX_SAMPLES - 1];
 	  addresses[MAX_SAMPLES - 1] =
 	    next_sample_addr + size - sample_start_addr + SAMPLE_OFFSET;
-	  bheader->parameters[0]++;
-	  bheader->parameters[5] =
-	    next_sample_addr + size - sample_start_addr;
+	  bank->parameters[0]++;
+	  bank->parameters[5] = next_sample_addr + size - sample_start_addr;
 
 	  file = fopen (ifile, "w");
 	  fwrite (memory, 1, next_sample_addr + size, file);
