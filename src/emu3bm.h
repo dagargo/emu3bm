@@ -23,6 +23,8 @@
 #include <string.h>
 #include <sndfile.h>
 
+#include "../config.h"
+
 #define MEM_SIZE 0x08000000
 #define SIGNATURE_SIZE 16
 #define NAME_SIZE 16
@@ -48,6 +50,8 @@
 #define EMULATOR_3X_DEF   "EMULATOR 3X    \0"
 
 #define SAMPLE_EXT ".wav"
+
+#define EMPTY_BANK "res/empty_bank"
 
 struct emu3_bank
 {
@@ -79,3 +83,5 @@ void emu3_print_sample_info (struct emu3_sample *);
 int emu3_get_sample_channels (struct emu3_sample *);
 
 void emu3_write_sample_file (const char *, short *, sf_count_t, int, int);
+
+int emu3_create_bank (const char *);

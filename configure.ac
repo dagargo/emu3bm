@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([emu3bm], [0.1], [dagargo@gmail.com])
+AC_INIT([emu3bm],[0.1],[dagargo@gmail.com])
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE
@@ -24,5 +24,5 @@ AC_CHECK_HEADERS([stdlib.h string.h unistd.h])
 # Checks for library functions.
 AC_FUNC_MALLOC
 
-AC_CONFIG_FILES([Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile res/Makefile])
 AC_OUTPUT

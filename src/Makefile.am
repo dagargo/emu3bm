@@ -6,3 +6,5 @@ emu3bm_SOURCES = main.c emu3bm.c emu3bm.h
 
 SNDFILE_CFLAGS = @SNDFILE_CFLAGS@
 SNDFILE_LIBS = @SNDFILE_LIBS@
+
+AM_CPPFLAGS = -DDATADIR='"$(datadir)"'

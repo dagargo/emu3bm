@@ -355,3 +355,44 @@ emu3_process_bank (const char *ifile, int aflg, const char *afile, int xflg)
 
   return 0;
 }
+
+int
+emu3_create_bank (const char *ifile)
+{
+  char *path =
+    malloc (strlen (DATADIR) + strlen (PACKAGE) + strlen (EMPTY_BANK) + 3);
+  int ret = sprintf (path, "%s/%s/%s", DATADIR, PACKAGE, EMPTY_BANK);
+
+  if (ret < 0)
+    {
+      fprintf (stderr, "Error while creating full path");
+      return ret;
+    }
+  else
+    {
+      char buf[BUFSIZ];
+      size_t size;
+
+      FILE *src = fopen (path, "rb");
+      if (!src)
+	{
+	  fprintf (stderr, "Error while opening %s for input\n", path);
+	  return -1;
+	}
+
+      FILE *dst = fopen (ifile, "wb");
+      if (!dst)
+	{
+	  fprintf (stderr, "Error while opening %s for output\n", path);
+	  return -1;
+	}
+
+      while (size = fread (buf, 1, BUFSIZ, src))
+	{
+	  fwrite (buf, 1, size, dst);
+	}
+
+      fclose (src);
+      fclose (dst);
+    }
+}

@@ -27,13 +27,13 @@ int
 main (int argc, char *argv[])
 {
   int c;
-  int xflg = 0, aflg = 0, errflg = 0;
+  int xflg = 0, aflg = 0, cflg = 0, errflg = 0;
   char *ifile;
   char *afile;
   extern char *optarg;
   extern int optind, optopt;
 
-  while ((c = getopt (argc, argv, "a:x")) != -1)
+  while ((c = getopt (argc, argv, "a:xc")) != -1)
     {
       switch (c)
 	{
@@ -41,7 +41,7 @@ main (int argc, char *argv[])
 	  ifile = optarg;
 	  break;
 	case 'a':
-	  if (xflg)
+	  if (xflg || cflg)
 	    {
 	      errflg++;
 	    }
@@ -52,7 +52,7 @@ main (int argc, char *argv[])
 	    }
 	  break;
 	case 'x':
-	  if (aflg)
+	  if (aflg || cflg)
 	    {
 	      errflg++;
 	    }
@@ -61,11 +61,22 @@ main (int argc, char *argv[])
 	      xflg++;
 	    }
 	  break;
+	case 'c':
+	  if (aflg || xflg)
+	    {
+	      errflg++;
+	    }
+	  else
+	    {
+	      cflg++;
+	    }
+	  break;
 	case '?':
 	  fprintf (stderr, "Unrecognized option: -%c\n", optopt);
 	  errflg++;
 	}
     }
+
   if (optind + 1 == argc)
     {
       ifile = argv[optind];
@@ -75,12 +86,20 @@ main (int argc, char *argv[])
       errflg++;
     }
 
-  if (errflg > 0 || (xflg && aflg))
+  if (errflg > 0)
     {
-      fprintf (stderr, "Usage: %s [-x | -a append_file ] input_file.\n",
+      fprintf (stderr, "%s\n", PACKAGE_STRING);
+      fprintf (stderr, "Usage: %s [-x | -a append_file | -c ] input_file.\n",
 	       basename (argv[0]));
       return -1;
     }
 
-  return emu3_process_bank (ifile, aflg, afile, xflg);
+  if (xflg || aflg)
+    {
+      return emu3_process_bank (ifile, aflg, afile, xflg);
+    }
+  else if (cflg)
+    {
+      return emu3_create_bank (ifile);
+    }
 }
