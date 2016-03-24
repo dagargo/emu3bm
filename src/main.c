@@ -18,9 +18,6 @@
  *   along with emu3bm.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdio.h>
-#include <unistd.h>
-#include <libgen.h>
 #include "emu3bm.h"
 
 int
@@ -94,12 +91,12 @@ main (int argc, char *argv[])
       return -1;
     }
 
-  if (xflg || aflg)
-    {
-      return emu3_process_bank (ifile, aflg, afile, xflg);
-    }
-  else if (cflg)
+  if (cflg)
     {
       return emu3_create_bank (ifile);
+    }
+  else
+    {
+      return emu3_process_bank (ifile, aflg, afile, xflg);
     }
 }

@@ -20,9 +20,30 @@
 
 #include "emu3bm.h"
 
-// This returns a valid fs name (no strange chars in filename) from the emu3fs object name
+const char *RT_CONTROLS_SRC[] = {
+  "Pitch Control",
+  "Mod Control",
+  "Pressure Control",
+  "Pedal Control",
+  "MIDI A Control",
+  "MIDI B Control"
+};
+
+const char *RT_CONTROLS_DST[] = {
+  "Pitch",
+  "VCF Cutoff",
+  "VCA Level",
+  "LFO -> Pitch",
+  "LFO -> Cutoff",
+  "LFO -> VCA",
+  "Pan",
+  "Attack",
+  "Crossfade",
+  "VCF NoteOn Q"
+};
+
 char *
-emu3_fs_sample_name (const char *objname)
+emu3_e3name_to_filename (const char *objname)
 {
   int i, size;
   const char *index = &objname[NAME_SIZE - 1];
@@ -36,7 +57,7 @@ emu3_fs_sample_name (const char *objname)
 	}
       index--;
     }
-  fname = (char *) malloc (sizeof (char) * (size + 8));
+  fname = (char *) malloc (size + 1);
   strncpy (fname, objname, size);
   fname[size] = '\0';
   for (i = 0; i < size; i++)
@@ -46,10 +67,63 @@ emu3_fs_sample_name (const char *objname)
 	  fname[i] = '?';
 	}
     }
-  strcat (fname, SAMPLE_EXT);
 
   return fname;
 }
+
+char *
+emu3_e3name_to_wav_filename (const char *e3name)
+{
+  char *fname = emu3_e3name_to_filename (e3name);
+  char *wname = malloc (strlen (fname) + 5);
+  strcpy (wname, fname);
+  strcat (wname, SAMPLE_EXT);
+  return wname;
+}
+
+//TODO: complete add non case sensitive
+char *
+emu3_wav_filename_to_filename (const char *wav_file)
+{
+  char *filename = malloc (strlen (wav_file) + 1);
+  strcpy (filename, wav_file);
+  char *ext = strrchr (wav_file, '.');
+  if (strcmp (ext, SAMPLE_EXT) == 0)
+    {
+      free (filename);
+      int len_wo_ext = strlen (wav_file) - strlen (SAMPLE_EXT);
+      filename = malloc (len_wo_ext + 1);
+      strncpy (filename, wav_file, len_wo_ext);
+      filename[len_wo_ext] = '\0';
+    }
+  return filename;
+}
+
+char *
+emu3_str_to_e3name (const char *src)
+{
+  int len = strlen (src);
+  char *e3name = malloc (len + 1);
+  strcpy (e3name, src);
+  char *c = e3name;
+  for (int i = 0; i < len; i++, c++)
+    {
+      if (!isalnum (*c) && *c != ' ' && *c != '#')
+	{
+	  *c = '?';
+	}
+    }
+  return e3name;
+}
+
+void
+emu3_cpystr (char *dst, const char *src)
+{
+  int len = strlen (src);
+  memcpy (dst, src, NAME_SIZE);
+  memset (&dst[len], ' ', NAME_SIZE - len);
+}
+
 
 int
 emu3_get_sample_channels (struct emu3_sample *sample)
@@ -75,20 +149,35 @@ emu3_get_sample_channels (struct emu3_sample *sample)
 }
 
 void
-emu3_print_sample_info (struct emu3_sample *sample)
+emu3_print_sample_info (struct emu3_sample *sample, sf_count_t nframes)
 {
   for (int i = 0; i < SAMPLE_PARAMETERS; i++)
     {
       printf ("0x%08x ", sample->parameters[i]);
     }
   printf ("\n");
-  printf ("Channels: %d\n", emu3_get_sample_channels (sample));
-  printf ("Sampling frequency: %dHz?\n", sample->parameters[9]);
+  printf ("Frames: %d\n", emu3_get_sample_channels (sample));
+  printf ("Channels: %lld\n", nframes);
+  printf ("Sampling frequency: %dHz\n", sample->parameters[9]);
+}
+
+void
+emu3_print_preset_info (struct emu3_preset *preset)
+{
+  for (int i = 0; i < RT_CONTROLS_SIZE; i++)
+    {
+      if (preset->rt_controls[i])
+	{
+	  printf ("Mapping: %s - %s\n",
+		  RT_CONTROLS_SRC[preset->rt_controls[i] - 1],
+		  RT_CONTROLS_DST[i]);
+	}
+    }
 }
 
 //returns the sample size in bytes that the the sample takes in the bank
 int
-emu3_append_sample (const char *filename, struct emu3_sample *sample,
+emu3_append_sample (char *path, struct emu3_sample *sample,
 		    unsigned int address, int sample_id)
 {
   SF_INFO input_info;
@@ -99,9 +188,11 @@ emu3_append_sample (const char *filename, struct emu3_sample *sample,
   short int *l_channel;
   short int *r_channel;
   int mono_size;
+  const char *filename;
 
   input_info.format = 0;
-  input = sf_open (filename, SFM_READ, &input_info);
+  input = sf_open (path, SFM_READ, &input_info);
+  //TODO: add more formats
   if ((input_info.format & SF_FORMAT_TYPEMASK) != SF_FORMAT_WAV)
     {
       printf ("Sample not in a valid format. Skipping...\n");
@@ -112,19 +203,24 @@ emu3_append_sample (const char *filename, struct emu3_sample *sample,
     }
   else
     {
+      filename = basename (path);
       printf ("Appending sample %s... (%lld frames, %d channels)\n", filename,
 	      input_info.frames, input_info.channels);
       //Sample header initialization
-      snprintf (sample->name, NAME_SIZE, "Sample %.3d      ", sample_id);
-      sample->name[NAME_SIZE - 1] = ' ';
+      char *name = emu3_wav_filename_to_filename (filename);
+      char *e3name = emu3_str_to_e3name (name);
+      emu3_cpystr (sample->name, e3name);
+      free (name);
+      free (e3name);
       for (int i = 0; i < SAMPLE_PARAMETERS; i++)
 	{
 	  sample->parameters[i] = 0;
 	}
+
       //TODO: complete
-      data_size = sizeof (short int) * input_info.frames;
-      mono_size = sizeof (struct emu3_sample) + data_size + 4;
-      size = mono_size + (input_info.channels == 1 ? 0 : data_size + 8);
+      data_size = sizeof (short int) * (input_info.frames + 4);
+      mono_size = sizeof (struct emu3_sample) + data_size;
+      size = mono_size + (input_info.channels == 1 ? 0 : data_size);
       sample->parameters[1] = 0x5c;
       sample->parameters[2] = input_info.channels == 1 ? 0 : mono_size;
       sample->parameters[3] = mono_size - 2;
@@ -141,21 +237,19 @@ emu3_append_sample (const char *filename, struct emu3_sample *sample,
 	address + 0x5c - (sample_id ==
 			  1 ? 0 : (sample_id - 1) * 10) +
 	(input_info.channels == 1 ? 0 : sample->parameters[3]);
-      //sample->parameters[11] = address + 0x5c - (sample_id == 1 ? 0 : (sample_id - 1) * 10) + (input_info.channels == 1 ? 0 : sample->parameters[3] * 2);
-
       sample->parameters[12] =
 	sample->parameters[11] + (input_info.channels == 1 ? 0 : mono_size);
 
-      //TODO: is the following line true for mono and stereo samples?
-      //total size is sample + data size + 4 \0 chars at the end
       l_channel = sample->frames;
+      //2 first frames set to 0
+      *((unsigned int *) l_channel) = 0;
+      l_channel += 2;
       if (input_info.channels == 2)
 	{
-	  r_channel = sample->frames + input_info.frames + 2;
-	  *r_channel = 0;
-	  r_channel++;
-	  *r_channel = 0;
-	  r_channel++;
+	  //We consider the 4 shorts padding that the left channel has
+	  r_channel = sample->frames + input_info.frames + 4;
+	  *((unsigned int *) r_channel) = 0;
+	  r_channel += 2;
 	}
       for (int i = 0; i < input_info.frames; i++)
 	{
@@ -168,12 +262,13 @@ emu3_append_sample (const char *filename, struct emu3_sample *sample,
 	      r_channel++;
 	    }
 	}
+      //2 end frames set to 0
       *((unsigned int *) l_channel) = 0;
       if (input_info.channels == 2)
 	{
 	  *((unsigned int *) r_channel) = 0;
 	}
-      printf ("Appended %dB (0x%08x).\n", data_size, data_size);
+      printf ("Appended %dB (0x%08x).\n", size, size);
     }
   sf_close (input);
 
@@ -181,35 +276,56 @@ emu3_append_sample (const char *filename, struct emu3_sample *sample,
 }
 
 void
-emu3_write_sample_file (const char *sample_name, short *data,
-			sf_count_t frames, int channels, int samplerate)
+emu3_write_sample_file (struct emu3_sample *sample, sf_count_t nframes)
 {
-  SF_INFO input_info;
-  SNDFILE *input;
-  char *filename;
+  SF_INFO output_info;
+  SNDFILE *output;
+  char *wav_file;
+  short *l_channel, *r_channel;
+  short frame[2];
+  char *schannels;
+  int channels = emu3_get_sample_channels (sample);
+  int samplerate = sample->parameters[9];
 
-  input_info.frames = frames;
-  input_info.samplerate = samplerate;
-  input_info.channels = channels;
-  input_info.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+  output_info.frames = nframes;
+  output_info.samplerate = samplerate;
+  output_info.channels = channels;
+  output_info.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
 
-  filename = emu3_fs_sample_name (sample_name);
-  printf ("Extracting sample %s...\n", filename);
+  wav_file = emu3_e3name_to_wav_filename (sample->name);
+  schannels = channels == 1 ? "mono" : "stereo";
+  printf ("Extracting %s sample %s...\n", schannels, wav_file);
 
-  input = sf_open (filename, SFM_WRITE, &input_info);
-  if (sf_writef_short (input, data, frames) != frames)
+  output = sf_open (wav_file, SFM_WRITE, &output_info);
+  l_channel = sample->frames + 2;
+  if (channels == 2)
     {
-      fprintf (stderr, "Error: %s\n", sf_strerror (input));
+      r_channel = sample->frames + nframes + 6;
     }
-  sf_close (input);
+  for (int i = 0; i < nframes; i++)
+    {
+      frame[0] = *l_channel;
+      l_channel++;
+      if (channels == 2)
+	{
+	  frame[1] = *r_channel;
+	  r_channel++;
+	}
+      if (!sf_writef_short (output, frame, 1))
+	{
+	  fprintf (stderr, "Error: %s\n", sf_strerror (output));
+	  break;
+	}
+    }
+  sf_close (output);
 }
 
 int
-emu3_process_bank (const char *ifile, int aflg, const char *afile, int xflg)
+emu3_process_bank (const char *ifile, int aflg, char *afile, int xflg)
 {
   char *memory;
   FILE *file;
-  int size, i;
+  int size, i, channels;
   size_t fsize;
   struct emu3_bank *bank;
   char *name;
@@ -235,15 +351,15 @@ emu3_process_bank (const char *ifile, int aflg, const char *afile, int xflg)
 
   bank = (struct emu3_bank *) memory;
 
-  if (!(!strncmp (EMULATOR_3X_DEF, bank->signature, SIGNATURE_SIZE) ||
-	!strncmp (ESI_32_V3_DEF, bank->signature, SIGNATURE_SIZE)))
+  if (strncmp (EMULATOR_3X_DEF, bank->signature, SIGNATURE_SIZE) &&
+      strncmp (ESI_32_V3_DEF, bank->signature, SIGNATURE_SIZE))
     {
       printf ("Bank format not supported.\n");
       return 1;
     }
 
   printf ("Bank format: %s\n", bank->signature);
-  printf ("Bank name: %.*s\n", NAME_SIZE, bank->bank_name);
+  printf ("Bank name: %.*s\n", NAME_SIZE, bank->name);
 
   printf ("Geometry:\n");
 /*	for (i = 0; i < BANK_PARAMETERS; i++) {
@@ -262,7 +378,7 @@ emu3_process_bank (const char *ifile, int aflg, const char *afile, int xflg)
       fprintf (stderr, "Kind of checksum error.\n");
     }
 
-  if (strncmp (bank->bank_name, bank->bank_name_copy, NAME_SIZE))
+  if (strncmp (bank->name, bank->name_copy, NAME_SIZE))
     {
       printf ("Bank name is different than previously found.\n");
     }
@@ -280,8 +396,11 @@ emu3_process_bank (const char *ifile, int aflg, const char *afile, int xflg)
       if (addresses[0] != addresses[1])
 	{
 	  address = PRESET_START_EMU_3X + addresses[0];
-	  name = &(memory[address]);
-	  printf ("Preset %3d, %.*s: 0x%08x\n", i, NAME_SIZE, name, address);
+	  struct emu3_preset *preset =
+	    (struct emu3_preset *) &memory[address];
+	  printf ("Preset %3d, %.*s: 0x%08x\n", i, NAME_SIZE, preset->name,
+		  address);
+	  emu3_print_preset_info (preset);
 	}
       addresses++;
     }
@@ -312,29 +431,28 @@ emu3_process_bank (const char *ifile, int aflg, const char *afile, int xflg)
 	  size = addresses[i + 1] - addresses[i];
 	}
       sample = (struct emu3_sample *) &memory[address];
+      channels = emu3_get_sample_channels (sample);
       //We divide between the bytes per frame (number of channels * 2 bytes)
-      sf_count_t frames =
-	(size -
-	 sizeof (struct emu3_sample)) / (2 *
-					 emu3_get_sample_channels (sample));
+      //The 16 or 8 bytes are the 4 or 8 short int used for padding.
+      sf_count_t nframes =
+	(size - sizeof (struct emu3_sample) -
+	 (8 * channels)) / (2 * channels);
       printf ("Sample %3d - %.*s @ 0x%08x (size %dB, frames %lld)\n", i + 1,
-	      NAME_SIZE, sample->name, address, size, frames);
-      emu3_print_sample_info (sample);
+	      NAME_SIZE, sample->name, address, size, nframes);
+      emu3_print_sample_info (sample, nframes);
 
       if (xflg)
 	{
-	  short *sample_start = sample->frames;
-	  emu3_write_sample_file (sample->name, sample_start, frames,
-				  emu3_get_sample_channels (sample),
-				  sample->parameters[9]);
+	  emu3_write_sample_file (sample, nframes);
 	}
     }
 
   if (aflg)
     {
       sample = (struct emu3_sample *) &memory[next_sample_addr];
-      size = emu3_append_sample
-	(afile, sample, next_sample_addr - sample_start_addr, i + 1);
+      size =
+	emu3_append_sample (afile, sample,
+			    next_sample_addr - sample_start_addr, i + 1);
       if (size)
 	{
 	  addresses[i] = addresses[MAX_SAMPLES - 1];
@@ -359,6 +477,9 @@ emu3_process_bank (const char *ifile, int aflg, const char *afile, int xflg)
 int
 emu3_create_bank (const char *ifile)
 {
+  struct emu3_bank bank;
+  char *name = emu3_str_to_e3name (ifile);
+  char *fname = emu3_e3name_to_filename (name);
   char *path =
     malloc (strlen (DATADIR) + strlen (PACKAGE) + strlen (EMPTY_BANK) + 3);
   int ret = sprintf (path, "%s/%s/%s", DATADIR, PACKAGE, EMPTY_BANK);
@@ -368,31 +489,44 @@ emu3_create_bank (const char *ifile)
       fprintf (stderr, "Error while creating full path");
       return ret;
     }
-  else
+
+  char buf[BUFSIZ];
+  size_t size;
+
+  FILE *src = fopen (path, "rb");
+  if (!src)
     {
-      char buf[BUFSIZ];
-      size_t size;
-
-      FILE *src = fopen (path, "rb");
-      if (!src)
-	{
-	  fprintf (stderr, "Error while opening %s for input\n", path);
-	  return -1;
-	}
-
-      FILE *dst = fopen (ifile, "wb");
-      if (!dst)
-	{
-	  fprintf (stderr, "Error while opening %s for output\n", path);
-	  return -1;
-	}
-
-      while (size = fread (buf, 1, BUFSIZ, src))
-	{
-	  fwrite (buf, 1, size, dst);
-	}
-
-      fclose (src);
-      fclose (dst);
+      fprintf (stderr, "Error while opening %s for input\n", path);
+      return -1;
     }
+
+  FILE *dst = fopen (fname, "w+b");
+  if (!dst)
+    {
+      fprintf (stderr, "Error while opening %s for output\n", fname);
+      return -1;
+    }
+
+  while (size = fread (buf, 1, BUFSIZ, src))
+    {
+      fwrite (buf, 1, size, dst);
+    }
+
+  fclose (src);
+
+  rewind (dst);
+
+  if (fread (&bank, sizeof (struct emu3_bank), 1, dst))
+    {
+      emu3_cpystr (bank.name, name);
+      emu3_cpystr (bank.name_copy, name);
+      rewind (dst);
+      fwrite (&bank, sizeof (struct emu3_bank), 1, dst);
+    }
+
+  fclose (dst);
+
+  free (name);
+  free (fname);
+  free (path);
 }

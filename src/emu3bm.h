@@ -22,6 +22,9 @@
 #include <unistd.h>
 #include <string.h>
 #include <sndfile.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <libgen.h>
 
 #include "../config.h"
 
@@ -36,7 +39,7 @@
 #define MAX_SAMPLES 1000
 #define PRESET_SIZE_ADDR_START_EMU_3X 0x17ca
 #define MAX_PRESETS 0x100
-#define SAMPLE_PARAMETERS 20
+#define SAMPLE_PARAMETERS 19
 #define DEFAULT_SAMPLING_FREQ 44100
 #define MONO_SAMPLE 0x00380001
 #define STEREO_SAMPLE 0x00780001
@@ -45,6 +48,7 @@
 #define MONO_SAMPLE_EMULATOR_3X_3 0xff30fe02
 #define MONO_SAMPLE_EMULATOR_3X_4 0xff39fe02
 #define MONO_SAMPLE_EMULATOR_3X_5 0x0030ffc3
+#define RT_CONTROLS_SIZE 10
 
 #define ESI_32_V3_DEF     "EMU SI-32 v3   \0"
 #define EMULATOR_3X_DEF   "EMULATOR 3X    \0"
@@ -56,9 +60,9 @@
 struct emu3_bank
 {
   char signature[SIGNATURE_SIZE];
-  char bank_name[NAME_SIZE];
+  char name[NAME_SIZE];
   unsigned int parameters[BANK_PARAMETERS];
-  char bank_name_copy[NAME_SIZE];
+  char name_copy[NAME_SIZE];
   unsigned int more_parameters[MORE_BANK_PARAMETERS];
 };
 
@@ -69,19 +73,32 @@ struct emu3_sample
   short int frames[];
 };
 
-// This returns a valid fs name (no strange chars in filename) from the emu3fs object name
-char *emu3_fs_sample_name (const char *);
+struct emu3_preset
+{
+  char name[NAME_SIZE];
+  char rt_controls[RT_CONTROLS_SIZE];
+};
 
-//TODO: remove 3rd parameter if not useful
-int emu3_append_sample (const char *, struct emu3_sample *, unsigned int,
-			int);
+char *emu3_e3name_to_filename (const char *);
 
-int emu3_process_bank (const char *, int, const char *, int);
+char *emu3_e3name_to_wav_filename (const char *);
 
-void emu3_print_sample_info (struct emu3_sample *);
+char *emu3_wav_filename_to_e3name (const char *);
+
+char *emu3_str_to_e3name (const char *);
+
+void emu3_cpystr (char *, const char *);
+
+int emu3_append_sample (char *, struct emu3_sample *, unsigned int, int);
+
+int emu3_process_bank (const char *, int, char *, int);
+
+void emu3_print_sample_info (struct emu3_sample *, sf_count_t);
+
+void emu3_print_preset_info (struct emu3_preset *);
 
 int emu3_get_sample_channels (struct emu3_sample *);
 
-void emu3_write_sample_file (const char *, short *, sf_count_t, int, int);
+void emu3_write_sample_file (struct emu3_sample *, sf_count_t);
 
 int emu3_create_bank (const char *);
