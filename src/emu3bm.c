@@ -42,9 +42,26 @@ const char *RT_CONTROLS_DST[] = {
   "VCF NoteOn Q"
 };
 
+const char *RT_CONTROLS_FS_SRC[] = {
+  "Footswitch 1",
+  "Footswitch 2",
+};
+
+const char *RT_CONTROLS_FS_DST[] = {
+  "Off",
+  "Sustain",
+  "Cross-Switch",
+  "Unused 1",
+  "Unused 2",
+  "Unused 3",
+  "Unused A",
+  "Unused B",
+  "Preset Increment",
+  "Preset Decrement"
+};
+
 char *
-emu3_e3name_to_filename (const char *objname)
-{
+  emu3_e3name_to_filename (const char *objname) {
   int i, size;
   const char *index = &objname[NAME_SIZE - 1];
   char *fname;
@@ -156,8 +173,8 @@ emu3_print_sample_info (struct emu3_sample *sample, sf_count_t nframes)
       printf ("0x%08x ", sample->parameters[i]);
     }
   printf ("\n");
-  printf ("Frames: %d\n", emu3_get_sample_channels (sample));
-  printf ("Channels: %lld\n", nframes);
+  printf ("Channels: %d\n", emu3_get_sample_channels (sample));
+  printf ("Frames: %lld\n", nframes);
   printf ("Sampling frequency: %dHz\n", sample->parameters[9]);
 }
 
@@ -172,6 +189,11 @@ emu3_print_preset_info (struct emu3_preset *preset)
 		  RT_CONTROLS_SRC[preset->rt_controls[i] - 1],
 		  RT_CONTROLS_DST[i]);
 	}
+    }
+  for (int i = 0; i < RT_CONTROLS_FS_SIZE; i++)
+    {
+      printf ("Mapping: %s - %s\n",
+	      RT_CONTROLS_FS_SRC[i], RT_CONTROLS_FS_DST[preset->rt_controls[RT_CONTROLS_SIZE + i]]);
     }
 }
 

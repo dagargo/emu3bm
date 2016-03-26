@@ -49,6 +49,7 @@
 #define MONO_SAMPLE_EMULATOR_3X_4 0xff39fe02
 #define MONO_SAMPLE_EMULATOR_3X_5 0x0030ffc3
 #define RT_CONTROLS_SIZE 10
+#define RT_CONTROLS_FS_SIZE 2
 
 #define ESI_32_V3_DEF     "EMU SI-32 v3   \0"
 #define EMULATOR_3X_DEF   "EMULATOR 3X    \0"
@@ -76,7 +77,7 @@ struct emu3_sample
 struct emu3_preset
 {
   char name[NAME_SIZE];
-  char rt_controls[RT_CONTROLS_SIZE];
+  char rt_controls[RT_CONTROLS_SIZE + RT_CONTROLS_FS_SIZE];
 };
 
 char *emu3_e3name_to_filename (const char *);
