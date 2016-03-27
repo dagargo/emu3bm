@@ -43,9 +43,9 @@
 #define MORE_SAMPLE_PARAMETERS 8
 #define DEFAULT_SAMPLING_FREQ 44100
 #define MONO_SAMPLE_1 0x00380001
-#define MONO_SAMPLE_2 0x00390001
+#define MONO_SAMPLE_2 0x00390001	//Looped?
 #define STEREO_SAMPLE_1 0x00780001
-#define STEREO_SAMPLE_2 0x00700001
+#define STEREO_SAMPLE_2 0x00700001	//Looped?
 #define MONO_SAMPLE_EMULATOR_3X_1 0x0030fe02
 #define MONO_SAMPLE_EMULATOR_3X_2 0x0039fe02
 #define MONO_SAMPLE_EMULATOR_3X_3 0xff30fe02
@@ -80,10 +80,31 @@ struct emu3_sample
   short int frames[];
 };
 
+struct emu3_preset_zone
+{
+  char parameters[48];
+  char vca_pan;
+  char lfo_shape;
+  char foo;
+  char bar;
+};
+
 struct emu3_preset
 {
   char name[NAME_SIZE];
   char rt_controls[RT_CONTROLS_SIZE + RT_CONTROLS_FS_SIZE];
+  char empty[16];
+  char data[9];
+  char nzones;
+  char padding[0x58];
+  struct emu3_preset_zone zones[];
+};
+
+struct emu3_sample_descriptor
+{
+  short int *l_channel;
+  short int *r_channel;
+  struct emu3_sample *sample;
 };
 
 char *emu3_e3name_to_filename (const char *);
@@ -109,3 +130,8 @@ int emu3_get_sample_channels (struct emu3_sample *);
 void emu3_write_sample_file (struct emu3_sample *, sf_count_t);
 
 int emu3_create_bank (const char *);
+
+void emu3_init_sample_descriptor (struct emu3_sample_descriptor *,
+				  struct emu3_sample *, int);
+
+void emu3_write_frame (struct emu3_sample_descriptor *, short int[]);

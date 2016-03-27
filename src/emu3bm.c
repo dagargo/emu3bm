@@ -60,6 +60,13 @@ const char *RT_CONTROLS_FS_DST[] = {
   "Preset Decrement"
 };
 
+const char *LFO_SHAPE[] = {
+  "triangle",
+  "sine",
+  "sawtooth",
+  "square"
+};
+
 char *
 emu3_e3name_to_filename (const char *objname)
 {
@@ -182,6 +189,14 @@ emu3_print_sample_info (struct emu3_sample *sample, sf_count_t nframes)
 }
 
 void
+emu3_print_zone_info (struct emu3_preset_zone *zone)
+{
+  //Pan: [0, 0x80] -> [-100, + 100]
+  printf ("VCA pan: %d\n", (int) ((zone->vca_pan - 0x40) * 1.5625));
+  printf ("LFO shape: %s\n", LFO_SHAPE[zone->lfo_shape % 4]);
+}
+
+void
 emu3_print_preset_info (struct emu3_preset *preset)
 {
   for (int i = 0; i < RT_CONTROLS_SIZE; i++)
@@ -199,6 +214,38 @@ emu3_print_preset_info (struct emu3_preset *preset)
 	      RT_CONTROLS_FS_SRC[i],
 	      RT_CONTROLS_FS_DST[preset->rt_controls[RT_CONTROLS_SIZE + i]]);
     }
+  printf ("Zones: %d\n", preset->nzones);
+  for (int i = 0; i < preset->nzones; i++)
+    {
+      printf ("Zone %d\n", i);
+      emu3_print_zone_info (&preset->zones[i]);
+    }
+}
+
+void
+emu3_init_sample_descriptor (struct emu3_sample_descriptor *sd,
+			     struct emu3_sample *sample, int frames)
+{
+  sd->sample = sample;
+
+  sd->l_channel = sample->frames;
+  if (sample->format == STEREO_SAMPLE_1)
+    {
+      //We consider the 4 shorts padding that the left channel has
+      sd->r_channel = sample->frames + frames + 4;
+    }
+}
+
+void
+emu3_write_frame (struct emu3_sample_descriptor *sd, short int frame[])
+{
+  *sd->l_channel = frame[0];
+  sd->l_channel++;
+  if (sd->sample->format == STEREO_SAMPLE_1)
+    {
+      *sd->r_channel = frame[1];
+      sd->r_channel++;
+    }
 }
 
 //returns the sample size in bytes that the the sample takes in the bank
@@ -211,10 +258,10 @@ emu3_append_sample (char *path, struct emu3_sample *sample,
   int size = 0;
   unsigned int data_size;
   short int frame[2];
-  short int *l_channel;
-  short int *r_channel;
+  short int zero[] = { 0, 0 };
   int mono_size;
   const char *filename;
+  struct emu3_sample_descriptor sd;
 
   input_info.format = 0;
   input = sf_open (path, SFM_READ, &input_info);
@@ -284,34 +331,22 @@ emu3_append_sample (char *path, struct emu3_sample *sample,
 	  sample->more_parameters[i] = 0;
 	}
 
-      l_channel = sample->frames;
+      emu3_init_sample_descriptor (&sd, sample, input_info.frames);
+
       //2 first frames set to 0
-      *((unsigned int *) l_channel) = 0;
-      l_channel += 2;
-      if (input_info.channels == 2)
-	{
-	  //We consider the 4 shorts padding that the left channel has
-	  r_channel = sample->frames + input_info.frames + 4;
-	  *((unsigned int *) r_channel) = 0;
-	  r_channel += 2;
-	}
+      emu3_write_frame (&sd, zero);
+      emu3_write_frame (&sd, zero);
+
       for (int i = 0; i < input_info.frames; i++)
 	{
 	  sf_readf_short (input, frame, 1);
-	  *l_channel = frame[0];
-	  l_channel++;
-	  if (input_info.channels == 2)
-	    {
-	      *r_channel = frame[1];
-	      r_channel++;
-	    }
+	  emu3_write_frame (&sd, frame);
 	}
+
       //2 end frames set to 0
-      *((unsigned int *) l_channel) = 0;
-      if (input_info.channels == 2)
-	{
-	  *((unsigned int *) r_channel) = 0;
-	}
+      emu3_write_frame (&sd, zero);
+      emu3_write_frame (&sd, zero);
+
       printf ("Appended %dB (0x%08x).\n", size, size);
     }
   sf_close (input);
