@@ -149,10 +149,12 @@ emu3_get_sample_channels (struct emu3_sample *sample)
 
   switch (sample->parameters[10])
     {
-    case STEREO_SAMPLE:
+    case STEREO_SAMPLE_1:
+    case STEREO_SAMPLE_2:
       channels = 2;
       break;
-    case MONO_SAMPLE:
+    case MONO_SAMPLE_1:
+    case MONO_SAMPLE_2:
     case MONO_SAMPLE_EMULATOR_3X_1:
     case MONO_SAMPLE_EMULATOR_3X_2:
     case MONO_SAMPLE_EMULATOR_3X_3:
@@ -246,15 +248,29 @@ emu3_append_sample (char *path, struct emu3_sample *sample,
       sample->parameters[1] = 0x5c;
       sample->parameters[2] = input_info.channels == 1 ? 0 : mono_size;
       sample->parameters[3] = mono_size - 2;
-      sample->parameters[4] = size - (input_info.channels == 1 ? 94 : 2);
-      sample->parameters[5] = 0x68;
-      sample->parameters[6] = (input_info.channels == 1 ? 0 : size - 20);
-      sample->parameters[7] = mono_size - 12;
-      sample->parameters[8] =
-	sample->parameters[4] - (input_info.channels == 1 ? 0 : 10);
+      sample->parameters[4] = size - ((input_info.channels == 1 ? sizeof (struct emu3_sample) : 0) + 2);
+
+      int loop_start = 4; //This is an arbitrary value
+      //Example (mono and stereo): Loop start @ 9290 sample is stored as ((9290 + 2) * 2) + sizeof (struct emu3_sample)
+      sample->parameters[5] = ((loop_start + 2) * 2) + sizeof (struct emu3_sample);
+      //Example
+      //Mono: Loop start @ 9290 sample is stored as (9290 + 2) * 2
+      //Stereo: Frames * 2 + parameters[5] + 8
+      sample->parameters[6] = input_info.channels == 1 ? (loop_start + 2) * 2 : input_info.frames * 2 + sample->parameters[5] + 8;
+
+      int loop_end = input_info.frames - 10; //This is an arbitrary value
+      //Example (mono and stereo): Loop end @ 94008 sample is stored as ((94008 + 1) * 2) + sizeof (struct emu3_sample)
+      sample->parameters[7] = ((loop_end + 1) * 2) + sizeof (struct emu3_sample);
+      //Example
+      //Mono: Loop end @ 94008 sample is stored as ((94008 + 1) * 2)
+      //Stereo: Frames * 2 + parameters[7] + 8
+      sample->parameters[8] = input_info.channels == 1 ? (loop_end + 1) * 2: input_info.frames * 2 + sample->parameters[7] + 8;
+
       sample->parameters[9] = DEFAULT_SAMPLING_FREQ;
+
       sample->parameters[10] =
-	input_info.channels == 1 ? MONO_SAMPLE : STEREO_SAMPLE;
+	input_info.channels == 1 ? MONO_SAMPLE_1 : STEREO_SAMPLE_1;
+
       sample->parameters[11] =
 	address + 0x5c - (sample_id ==
 			  1 ? 0 : (sample_id - 1) * 10) +
