@@ -61,7 +61,8 @@ const char *RT_CONTROLS_FS_DST[] = {
 };
 
 char *
-  emu3_e3name_to_filename (const char *objname) {
+emu3_e3name_to_filename (const char *objname)
+{
   int i, size;
   const char *index = &objname[NAME_SIZE - 1];
   char *fname;
@@ -147,7 +148,7 @@ emu3_get_sample_channels (struct emu3_sample *sample)
 {
   int channels;
 
-  switch (sample->parameters[10])
+  switch (sample->format)
     {
     case STEREO_SAMPLE_1:
     case STEREO_SAMPLE_2:
@@ -177,7 +178,7 @@ emu3_print_sample_info (struct emu3_sample *sample, sf_count_t nframes)
   printf ("\n");
   printf ("Channels: %d\n", emu3_get_sample_channels (sample));
   printf ("Frames: %lld\n", nframes);
-  printf ("Sampling frequency: %dHz\n", sample->parameters[9]);
+  printf ("Sample rate: %dHz\n", sample->sample_rate);
 }
 
 void
@@ -195,7 +196,8 @@ emu3_print_preset_info (struct emu3_preset *preset)
   for (int i = 0; i < RT_CONTROLS_FS_SIZE; i++)
     {
       printf ("Mapping: %s - %s\n",
-	      RT_CONTROLS_FS_SRC[i], RT_CONTROLS_FS_DST[preset->rt_controls[RT_CONTROLS_SIZE + i]]);
+	      RT_CONTROLS_FS_SRC[i],
+	      RT_CONTROLS_FS_DST[preset->rt_controls[RT_CONTROLS_SIZE + i]]);
     }
 }
 
@@ -236,47 +238,51 @@ emu3_append_sample (char *path, struct emu3_sample *sample,
       emu3_cpystr (sample->name, e3name);
       free (name);
       free (e3name);
-      for (int i = 0; i < SAMPLE_PARAMETERS; i++)
-	{
-	  sample->parameters[i] = 0;
-	}
 
-      //TODO: complete
       data_size = sizeof (short int) * (input_info.frames + 4);
       mono_size = sizeof (struct emu3_sample) + data_size;
       size = mono_size + (input_info.channels == 1 ? 0 : data_size);
+      sample->parameters[0] = 0;
       sample->parameters[1] = 0x5c;
       sample->parameters[2] = input_info.channels == 1 ? 0 : mono_size;
       sample->parameters[3] = mono_size - 2;
-      sample->parameters[4] = size - ((input_info.channels == 1 ? sizeof (struct emu3_sample) : 0) + 2);
+      sample->parameters[4] =
+	size - ((input_info.channels == 1 ? sizeof (struct emu3_sample) : 0) +
+		2);
 
-      int loop_start = 4; //This is an arbitrary value
+      int loop_start = 4;	//This is an arbitrary value
       //Example (mono and stereo): Loop start @ 9290 sample is stored as ((9290 + 2) * 2) + sizeof (struct emu3_sample)
-      sample->parameters[5] = ((loop_start + 2) * 2) + sizeof (struct emu3_sample);
+      sample->parameters[5] =
+	((loop_start + 2) * 2) + sizeof (struct emu3_sample);
       //Example
       //Mono: Loop start @ 9290 sample is stored as (9290 + 2) * 2
       //Stereo: Frames * 2 + parameters[5] + 8
-      sample->parameters[6] = input_info.channels == 1 ? (loop_start + 2) * 2 : input_info.frames * 2 + sample->parameters[5] + 8;
+      sample->parameters[6] =
+	input_info.channels ==
+	1 ? (loop_start + 2) * 2 : input_info.frames * 2 +
+	sample->parameters[5] + 8;
 
-      int loop_end = input_info.frames - 10; //This is an arbitrary value
+      int loop_end = input_info.frames - 10;	//This is an arbitrary value
       //Example (mono and stereo): Loop end @ 94008 sample is stored as ((94008 + 1) * 2) + sizeof (struct emu3_sample)
-      sample->parameters[7] = ((loop_end + 1) * 2) + sizeof (struct emu3_sample);
+      sample->parameters[7] =
+	((loop_end + 1) * 2) + sizeof (struct emu3_sample);
       //Example
       //Mono: Loop end @ 94008 sample is stored as ((94008 + 1) * 2)
       //Stereo: Frames * 2 + parameters[7] + 8
-      sample->parameters[8] = input_info.channels == 1 ? (loop_end + 1) * 2: input_info.frames * 2 + sample->parameters[7] + 8;
+      sample->parameters[8] =
+	input_info.channels ==
+	1 ? (loop_end + 1) * 2 : input_info.frames * 2 +
+	sample->parameters[7] + 8;
 
-      sample->parameters[9] = DEFAULT_SAMPLING_FREQ;
+      sample->sample_rate = DEFAULT_SAMPLING_FREQ;
 
-      sample->parameters[10] =
+      sample->format =
 	input_info.channels == 1 ? MONO_SAMPLE_1 : STEREO_SAMPLE_1;
 
-      sample->parameters[11] =
-	address + 0x5c - (sample_id ==
-			  1 ? 0 : (sample_id - 1) * 10) +
-	(input_info.channels == 1 ? 0 : sample->parameters[3]);
-      sample->parameters[12] =
-	sample->parameters[11] + (input_info.channels == 1 ? 0 : mono_size);
+        for (int i = 0; i < MORE_SAMPLE_PARAMETERS; i++)
+  	{
+  	  sample->more_parameters[i] = 0;
+  	}
 
       l_channel = sample->frames;
       //2 first frames set to 0
@@ -323,7 +329,7 @@ emu3_write_sample_file (struct emu3_sample *sample, sf_count_t nframes)
   short frame[2];
   char *schannels;
   int channels = emu3_get_sample_channels (sample);
-  int samplerate = sample->parameters[9];
+  int samplerate = sample->sample_rate;
 
   output_info.frames = nframes;
   output_info.samplerate = samplerate;

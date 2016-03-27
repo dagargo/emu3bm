@@ -39,7 +39,8 @@
 #define MAX_SAMPLES 1000
 #define PRESET_SIZE_ADDR_START_EMU_3X 0x17ca
 #define MAX_PRESETS 0x100
-#define SAMPLE_PARAMETERS 19
+#define SAMPLE_PARAMETERS 9
+#define MORE_SAMPLE_PARAMETERS 8
 #define DEFAULT_SAMPLING_FREQ 44100
 #define MONO_SAMPLE_1 0x00380001
 #define MONO_SAMPLE_2 0x00390001
@@ -73,6 +74,9 @@ struct emu3_sample
 {
   char name[NAME_SIZE];
   unsigned int parameters[SAMPLE_PARAMETERS];
+  unsigned int sample_rate;
+  unsigned int format;
+  unsigned int more_parameters[MORE_SAMPLE_PARAMETERS];
   short int frames[];
 };
 
