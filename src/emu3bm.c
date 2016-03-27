@@ -279,10 +279,10 @@ emu3_append_sample (char *path, struct emu3_sample *sample,
       sample->format =
 	input_info.channels == 1 ? MONO_SAMPLE_1 : STEREO_SAMPLE_1;
 
-        for (int i = 0; i < MORE_SAMPLE_PARAMETERS; i++)
-  	{
-  	  sample->more_parameters[i] = 0;
-  	}
+      for (int i = 0; i < MORE_SAMPLE_PARAMETERS; i++)
+	{
+	  sample->more_parameters[i] = 0;
+	}
 
       l_channel = sample->frames;
       //2 first frames set to 0
