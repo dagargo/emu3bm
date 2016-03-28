@@ -29,7 +29,10 @@ const char *RT_CONTROLS_SRC[] = {
   "MIDI B Control"
 };
 
+const int RT_CONTROLS_SRC_SIZE = sizeof (RT_CONTROLS_SRC) / sizeof (char *);
+
 const char *RT_CONTROLS_DST[] = {
+  "Off",
   "Pitch",
   "VCF Cutoff",
   "VCA Level",
@@ -42,10 +45,15 @@ const char *RT_CONTROLS_DST[] = {
   "VCF NoteOn Q"
 };
 
+const int RT_CONTROLS_DST_SIZE = sizeof (RT_CONTROLS_DST) / sizeof (char *);
+
 const char *RT_CONTROLS_FS_SRC[] = {
   "Footswitch 1",
   "Footswitch 2",
 };
+
+const int RT_CONTROLS_FS_SRC_SIZE =
+  sizeof (RT_CONTROLS_FS_SRC) / sizeof (char *);
 
 const char *RT_CONTROLS_FS_DST[] = {
   "Off",
@@ -59,6 +67,9 @@ const char *RT_CONTROLS_FS_DST[] = {
   "Preset Increment",
   "Preset Decrement"
 };
+
+const int RT_CONTROLS_FS_DST_SIZE =
+  sizeof (RT_CONTROLS_FS_DST) / sizeof (char *);
 
 const char *LFO_SHAPE[] = {
   "triangle",
@@ -199,14 +210,18 @@ emu3_print_zone_info (struct emu3_preset_zone *zone)
 void
 emu3_print_preset_info (struct emu3_preset *preset)
 {
-  for (int i = 0; i < RT_CONTROLS_SIZE; i++)
+  for (int i = 0; i < RT_CONTROLS_SRC_SIZE; i++)
     {
-      if (preset->rt_controls[i])
+      int dst = 0;
+      for (int j = 0; j < RT_CONTROLS_SIZE; j++)
 	{
-	  printf ("Mapping: %s - %s\n",
-		  RT_CONTROLS_SRC[preset->rt_controls[i] - 1],
-		  RT_CONTROLS_DST[i]);
+	  if (preset->rt_controls[j] == i + 1)
+	    {
+	      dst = j + 1;
+	      break;
+	    }
 	}
+      printf ("Mapping: %s - %s\n", RT_CONTROLS_SRC[i], RT_CONTROLS_DST[dst]);
     }
   for (int i = 0; i < RT_CONTROLS_FS_SIZE; i++)
     {
@@ -219,6 +234,96 @@ emu3_print_preset_info (struct emu3_preset *preset)
     {
       printf ("Zone %d\n", i);
       emu3_print_zone_info (&preset->zones[i]);
+    }
+}
+
+void
+emu3_set_preset_rt_control (struct emu3_preset *preset, int src, int dst)
+{
+  if (dst >= 0 && dst < RT_CONTROLS_DST_SIZE)
+    {
+      printf ("Setting controller %s to %s...\n",
+	      RT_CONTROLS_SRC[src], RT_CONTROLS_DST[dst]);
+      if (dst >= 0)
+	{
+	  for (int i = 0; i < RT_CONTROLS_SIZE; i++)
+	    {
+	      if (preset->rt_controls[i] == src + 1)
+		{
+		  preset->rt_controls[i] = 0;
+		}
+	    }
+	  if (dst > 0)
+	    {
+	      preset->rt_controls[dst - 1] = src + 1;
+	    }
+	}
+    }
+  else
+    {
+      fprintf (stderr, "Invalid destination %d for %s\n", dst,
+	       RT_CONTROLS_SRC[src]);
+    }
+}
+
+void
+emu3_set_preset_rt_control_fs (struct emu3_preset *preset, int src, int dst)
+{
+  if (dst >= 0 && dst < RT_CONTROLS_FS_DST_SIZE)
+    {
+      printf ("Setting controller %s to %s...\n",
+	      RT_CONTROLS_FS_SRC[src], RT_CONTROLS_FS_DST[dst]);
+      preset->rt_controls[src + RT_CONTROLS_FS_DST_SIZE] = dst;
+    }
+  else
+    {
+      fprintf (stderr, "Invalid destination %d for %s\n", dst,
+	       RT_CONTROLS_FS_SRC[src]);
+    }
+}
+
+void
+emu3_set_preset_rt_controls (struct emu3_preset *preset, char *rt_controls)
+{
+  char *token;
+  char *endtoken;
+  int i;
+  int controller;
+
+  printf ("Setting realtime controls...\n");
+  i = 0;
+  while (i < RT_CONTROLS_SIZE && (token = strsep (&rt_controls, ",")) != NULL)
+    {
+      if (*token == '\0')
+	{
+	  fprintf (stderr, "Empty value\n");
+	}
+      else
+	{
+	  controller = strtol (token, &endtoken, 10);
+	  if (*endtoken == '\0')
+	    {
+	      if (i < RT_CONTROLS_SRC_SIZE)
+		{
+		  emu3_set_preset_rt_control (preset, i, controller);
+		}
+	      else if (i < RT_CONTROLS_SRC_SIZE + RT_CONTROLS_FS_SRC_SIZE)
+		{
+		  emu3_set_preset_rt_control_fs (preset,
+						 i - RT_CONTROLS_SRC_SIZE,
+						 controller);
+		}
+	      else
+		{
+		  fprintf (stderr, "Too many controls\n");
+		}
+	    }
+	  else
+	    {
+	      fprintf (stderr, "'%s' not a number\n", token);
+	    }
+	}
+      i++;
     }
 }
 
@@ -277,8 +382,8 @@ emu3_append_sample (char *path, struct emu3_sample *sample,
   else
     {
       filename = basename (path);
-      printf ("Appending sample %s... (%lld frames, %d channels)\n", filename,
-	      input_info.frames, input_info.channels);
+      printf ("Appending sample %s... (%lld frames, %d channels)\n",
+	      filename, input_info.frames, input_info.channels);
       //Sample header initialization
       char *name = emu3_wav_filename_to_filename (filename);
       char *e3name = emu3_str_to_e3name (name);
@@ -290,12 +395,14 @@ emu3_append_sample (char *path, struct emu3_sample *sample,
       mono_size = sizeof (struct emu3_sample) + data_size;
       size = mono_size + (input_info.channels == 1 ? 0 : data_size);
       sample->parameters[0] = 0;
-      sample->parameters[1] = 0x5c;
+      //Start of left channel
+      sample->parameters[1] = sizeof (struct emu3_sample);
+      //Start of right channel
       sample->parameters[2] = input_info.channels == 1 ? 0 : mono_size;
+      //Last sample of left channel
       sample->parameters[3] = mono_size - 2;
-      sample->parameters[4] =
-	size - ((input_info.channels == 1 ? sizeof (struct emu3_sample) : 0) +
-		2);
+      //Last sample of right channel
+      sample->parameters[4] = input_info.channels == 1 ? 0 : size - 2;
 
       int loop_start = 4;	//This is an arbitrary value
       //Example (mono and stereo): Loop start @ 9290 sample is stored as ((9290 + 2) * 2) + sizeof (struct emu3_sample)
@@ -400,7 +507,8 @@ emu3_write_sample_file (struct emu3_sample *sample, sf_count_t nframes)
 }
 
 int
-emu3_process_bank (const char *ifile, int aflg, char *afile, int xflg)
+emu3_process_bank (const char *ifile, int aflg, char *afile, int xflg,
+		   char *rt_controls)
 {
   char *memory;
   FILE *file;
@@ -479,6 +587,10 @@ emu3_process_bank (const char *ifile, int aflg, char *afile, int xflg)
 	    (struct emu3_preset *) &memory[address];
 	  printf ("Preset %3d, %.*s: 0x%08x\n", i, NAME_SIZE, preset->name,
 		  address);
+	  if (rt_controls)
+	    {
+	      emu3_set_preset_rt_controls (preset, rt_controls);
+	    }
 	  emu3_print_preset_info (preset);
 	}
       addresses++;
@@ -539,10 +651,6 @@ emu3_process_bank (const char *ifile, int aflg, char *afile, int xflg)
 	    next_sample_addr + size - sample_start_addr + SAMPLE_OFFSET;
 	  bank->parameters[0]++;
 	  bank->parameters[5] = next_sample_addr + size - sample_start_addr;
-
-	  file = fopen (ifile, "w");
-	  fwrite (memory, 1, next_sample_addr + size, file);
-	  fclose (file);
 	}
       else
 	{
@@ -550,7 +658,14 @@ emu3_process_bank (const char *ifile, int aflg, char *afile, int xflg)
 	}
     }
 
-  return 0;
+  if ((aflg && size) || rt_controls)
+    {
+      file = fopen (ifile, "w");
+      fwrite (memory, 1, next_sample_addr + size, file);
+      fclose (file);
+    }
+
+  return EXIT_SUCCESS;
 }
 
 int
@@ -566,7 +681,7 @@ emu3_create_bank (const char *ifile)
   if (ret < 0)
     {
       fprintf (stderr, "Error while creating full path");
-      return ret;
+      return EXIT_FAILURE;
     }
 
   char buf[BUFSIZ];
@@ -576,14 +691,14 @@ emu3_create_bank (const char *ifile)
   if (!src)
     {
       fprintf (stderr, "Error while opening %s for input\n", path);
-      return -1;
+      return EXIT_FAILURE;
     }
 
   FILE *dst = fopen (fname, "w+b");
   if (!dst)
     {
       fprintf (stderr, "Error while opening %s for output\n", fname);
-      return -1;
+      return EXIT_FAILURE;
     }
 
   while (size = fread (buf, 1, BUFSIZ, src))
@@ -608,4 +723,6 @@ emu3_create_bank (const char *ifile)
   free (name);
   free (fname);
   free (path);
+
+  return EXIT_SUCCESS;
 }

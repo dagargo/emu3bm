@@ -27,46 +27,26 @@ main (int argc, char *argv[])
   int xflg = 0, aflg = 0, cflg = 0, errflg = 0;
   char *ifile;
   char *afile;
+  char *rt_controls = NULL;
   extern char *optarg;
   extern int optind, optopt;
 
-  while ((c = getopt (argc, argv, "a:xc")) != -1)
+  while ((c = getopt (argc, argv, "a:xcr:")) != -1)
     {
       switch (c)
 	{
-	case ':':
-	  ifile = optarg;
-	  break;
 	case 'a':
-	  if (xflg || cflg)
-	    {
-	      errflg++;
-	    }
-	  else
-	    {
-	      aflg++;
-	      afile = optarg;
-	    }
+	  aflg++;
+	  afile = optarg;
 	  break;
 	case 'x':
-	  if (aflg || cflg)
-	    {
-	      errflg++;
-	    }
-	  else
-	    {
-	      xflg++;
-	    }
+	  xflg++;
 	  break;
 	case 'c':
-	  if (aflg || xflg)
-	    {
-	      errflg++;
-	    }
-	  else
-	    {
-	      cflg++;
-	    }
+	  cflg++;
+	  break;
+	case 'r':
+	  rt_controls = optarg;
 	  break;
 	case '?':
 	  fprintf (stderr, "Unrecognized option: -%c\n", optopt);
@@ -83,20 +63,26 @@ main (int argc, char *argv[])
       errflg++;
     }
 
+  if (cflg && (xflg || aflg || rt_controls))
+    {
+      errflg++;
+    }
+
   if (errflg > 0)
     {
       fprintf (stderr, "%s\n", PACKAGE_STRING);
-      fprintf (stderr, "Usage: %s [-x | -a append_file | -c ] input_file.\n",
+      fprintf (stderr, "Usage: %s [OPTIONS] input_file.\n",
 	       basename (argv[0]));
-      return -1;
+      exit (EXIT_FAILURE);
     }
 
   if (cflg)
     {
-      return emu3_create_bank (ifile);
+      exit (emu3_create_bank (ifile));
+
     }
   else
     {
-      return emu3_process_bank (ifile, aflg, afile, xflg);
+      exit (emu3_process_bank (ifile, aflg, afile, xflg, rt_controls));
     }
 }

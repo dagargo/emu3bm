@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <libgen.h>
+#include <errno.h>
 
 #include "../config.h"
 
@@ -119,7 +120,7 @@ void emu3_cpystr (char *, const char *);
 
 int emu3_append_sample (char *, struct emu3_sample *, unsigned int, int);
 
-int emu3_process_bank (const char *, int, char *, int);
+int emu3_process_bank (const char *, int, char *, int, char *);
 
 void emu3_print_sample_info (struct emu3_sample *, sf_count_t);
 
@@ -135,3 +136,5 @@ void emu3_init_sample_descriptor (struct emu3_sample_descriptor *,
 				  struct emu3_sample *, int);
 
 void emu3_write_frame (struct emu3_sample_descriptor *, short int[]);
+
+void emu3_set_preset_rt_controllers (struct emu3_preset *, char *);
