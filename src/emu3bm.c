@@ -78,6 +78,31 @@ const char *LFO_SHAPE[] = {
   "square"
 };
 
+const char *VCF_TYPE[] = {
+  "2 Pole Lowpass",
+  "4 Pole Lowpass",
+  "6 Pole Lowpass",
+  "2nd Ord Hipass",
+  "4th Ord Hipass",
+  "2nd O Bandpass",
+  "4th O Bandpass",
+  "Contrary BandP",
+  "Swept EQ 1 oct",
+  "Swept EQ 2->1",
+  "Swept EQ 3->1",
+  "Phaser 1",
+  "Phaser 2",
+  "Bat-Phaser",
+  "Flanger Lite",
+  "Vocal Ah-Ay-Ee",
+  "Vocal Oo-Ah",
+  "Bottom Feeder",
+  "ESi/E3x Lopass",
+  "Unknown"
+};
+
+const int VCF_TYPE_SIZE = sizeof (VCF_TYPE) / sizeof (char *);
+
 char *
 emu3_e3name_to_filename (const char *objname)
 {
@@ -204,7 +229,16 @@ emu3_print_zone_info (struct emu3_preset_zone *zone)
 {
   //Pan: [0, 0x80] -> [-100, + 100]
   printf ("VCA pan: %d\n", (int) ((zone->vca_pan - 0x40) * 1.5625));
-  printf ("LFO shape: %s\n", LFO_SHAPE[zone->lfo_shape % 4]);
+  int vcf_type = (unsigned char) zone->vcf_type_lfo_shape >> 3;
+  if (vcf_type > VCF_TYPE_SIZE - 1)
+    {
+      vcf_type = VCF_TYPE_SIZE - 1;
+    }
+  printf ("VCF type (%d): %s\n", vcf_type, VCF_TYPE[vcf_type]);
+  //Cutoff: [0, 255] -> [26, 74040]
+  int cutoff = (unsigned char) zone->vcf_cutoff;
+  printf ("VCF cutoff: %d\n", cutoff);
+  printf ("LFO shape: %s\n", LFO_SHAPE[zone->vcf_type_lfo_shape & 0x3]);
 }
 
 void
@@ -228,12 +262,6 @@ emu3_print_preset_info (struct emu3_preset *preset)
       printf ("Mapping: %s - %s\n",
 	      RT_CONTROLS_FS_SRC[i],
 	      RT_CONTROLS_FS_DST[preset->rt_controls[RT_CONTROLS_SIZE + i]]);
-    }
-  printf ("Zones: %d\n", preset->nzones);
-  for (int i = 0; i < preset->nzones; i++)
-    {
-      printf ("Zone %d\n", i);
-      emu3_print_zone_info (&preset->zones[i]);
     }
 }
 
@@ -279,6 +307,36 @@ emu3_set_preset_rt_control_fs (struct emu3_preset *preset, int src, int dst)
     {
       fprintf (stderr, "Invalid destination %d for %s\n", dst,
 	       RT_CONTROLS_FS_SRC[src]);
+    }
+}
+
+void
+emu3_set_preset_cutoff (struct emu3_preset_zone *zone, int cutoff)
+{
+  if (cutoff < 0 || cutoff > 255)
+    {
+      fprintf (stderr, "Value %d not in range [0, 255]\n", cutoff);
+    }
+  else
+    {
+      printf ("Setting cutoff to %d...\n", cutoff);
+      zone->vcf_cutoff = (unsigned char) cutoff;
+    }
+}
+
+void
+emu3_set_preset_filter (struct emu3_preset_zone *zone, int filter)
+{
+  if (filter < 0 || filter > VCF_TYPE_SIZE - 2)
+    {
+      fprintf (stderr, "Value %d not in range [0, %d]\n", filter,
+	       VCF_TYPE_SIZE - 2);
+    }
+  else
+    {
+      printf ("Setting filter to %s...\n", VCF_TYPE[filter]);
+      zone->vcf_type_lfo_shape =
+	((unsigned char) filter) << 3 | zone->vcf_type_lfo_shape & 0x3;
     }
 }
 
@@ -508,7 +566,7 @@ emu3_write_sample_file (struct emu3_sample *sample, sf_count_t nframes)
 
 int
 emu3_process_bank (const char *ifile, int aflg, char *afile, int xflg,
-		   char *rt_controls)
+		   char *rt_controls, int cutoff, int filter)
 {
   char *memory;
   FILE *file;
@@ -590,6 +648,23 @@ emu3_process_bank (const char *ifile, int aflg, char *afile, int xflg,
 	  if (rt_controls)
 	    {
 	      emu3_set_preset_rt_controls (preset, rt_controls);
+	    }
+	  struct emu3_preset_zone *zones = (struct emu3_preset_zone *)
+	    &memory[address + sizeof (struct emu3_preset) +
+		    preset->nzones * 4];
+	  printf ("Zones: %d\n", preset->nzones);
+	  for (int j = 0; j < preset->nzones; j++)
+	    {
+	      printf ("Zone %d\n", j);
+	      if (cutoff != -1)
+		{
+		  emu3_set_preset_cutoff (&zones[j], cutoff);
+		}
+	      if (filter != -1)
+		{
+		  emu3_set_preset_filter (&zones[j], filter);
+		}
+	      emu3_print_zone_info (&zones[j]);
 	    }
 	  emu3_print_preset_info (preset);
 	}

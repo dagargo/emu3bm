@@ -21,17 +21,33 @@
 #include "emu3bm.h"
 
 int
+get_positive_int (char *str)
+{
+  char *endstr;
+
+  int value = (int) strtol (str, &endstr, 10);
+  if (errno || endstr == str || *endstr != '\0')
+    {
+      fprintf (stderr, "Value %s not valid\n", str);
+      value = -1;
+    }
+  return value;
+}
+
+int
 main (int argc, char *argv[])
 {
   int c;
-  int xflg = 0, aflg = 0, cflg = 0, errflg = 0;
+  int xflg = 0, aflg = 0, nflg = 0, errflg = 0;
   char *ifile;
   char *afile;
   char *rt_controls = NULL;
+  int cutoff = -1;
+  int filter = -1;
   extern char *optarg;
   extern int optind, optopt;
 
-  while ((c = getopt (argc, argv, "a:xcr:")) != -1)
+  while ((c = getopt (argc, argv, "a:xnr:c:f:")) != -1)
     {
       switch (c)
 	{
@@ -42,11 +58,17 @@ main (int argc, char *argv[])
 	case 'x':
 	  xflg++;
 	  break;
-	case 'c':
-	  cflg++;
+	case 'n':
+	  nflg++;
 	  break;
 	case 'r':
 	  rt_controls = optarg;
+	  break;
+	case 'c':
+	  cutoff = get_positive_int (optarg);
+	  break;
+	case 'f':
+	  filter = get_positive_int (optarg);
 	  break;
 	case '?':
 	  fprintf (stderr, "Unrecognized option: -%c\n", optopt);
@@ -63,7 +85,7 @@ main (int argc, char *argv[])
       errflg++;
     }
 
-  if (cflg && (xflg || aflg || rt_controls))
+  if (nflg && (xflg || aflg || rt_controls || cutoff >= 0 || filter >= 0))
     {
       errflg++;
     }
@@ -76,13 +98,13 @@ main (int argc, char *argv[])
       exit (EXIT_FAILURE);
     }
 
-  if (cflg)
+  if (nflg)
     {
       exit (emu3_create_bank (ifile));
-
     }
   else
     {
-      exit (emu3_process_bank (ifile, aflg, afile, xflg, rt_controls));
+      exit (emu3_process_bank
+	    (ifile, aflg, afile, xflg, rt_controls, cutoff, filter));
     }
 }

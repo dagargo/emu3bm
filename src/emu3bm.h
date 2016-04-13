@@ -83,9 +83,11 @@ struct emu3_sample
 
 struct emu3_preset_zone
 {
-  char parameters[48];
+  char parameters_a[12];
+  unsigned char vcf_cutoff;
+  char parameters_b[31];
   char vca_pan;
-  char lfo_shape;
+  char vcf_type_lfo_shape;
   char foo;
   char bar;
 };
@@ -98,7 +100,6 @@ struct emu3_preset
   char data[9];
   char nzones;
   char padding[0x58];
-  struct emu3_preset_zone zones[];
 };
 
 struct emu3_sample_descriptor
@@ -120,7 +121,7 @@ void emu3_cpystr (char *, const char *);
 
 int emu3_append_sample (char *, struct emu3_sample *, unsigned int, int);
 
-int emu3_process_bank (const char *, int, char *, int, char *);
+int emu3_process_bank (const char *, int, char *, int, char *, int, int);
 
 void emu3_print_sample_info (struct emu3_sample *, sf_count_t);
 
@@ -137,4 +138,8 @@ void emu3_init_sample_descriptor (struct emu3_sample_descriptor *,
 
 void emu3_write_frame (struct emu3_sample_descriptor *, short int[]);
 
-void emu3_set_preset_rt_controllers (struct emu3_preset *, char *);
+void emu3_set_preset_rt_controls (struct emu3_preset *, char *);
+
+void emu3_set_preset_cutoff (struct emu3_preset_zone *, int);
+
+void emu3_set_preset_filter (struct emu3_preset_zone *, int);
