@@ -413,7 +413,7 @@ emu3_write_frame (struct emu3_sample_descriptor *sd, short int frame[])
 
 //returns the sample size in bytes that the the sample takes in the bank
 int
-emu3_append_sample (char *path, struct emu3_sample *sample,
+emu3_add_sample (char *path, struct emu3_sample *sample,
 		    unsigned int address, int sample_id)
 {
   SF_INFO input_info;
@@ -717,7 +717,7 @@ emu3_process_bank (const char *ifile, int aflg, char *afile, int xflg,
     {
       sample = (struct emu3_sample *) &memory[next_sample_addr];
       size =
-	emu3_append_sample (afile, sample,
+	emu3_add_sample (afile, sample,
 			    next_sample_addr - sample_start_addr, i + 1);
       if (size)
 	{
@@ -729,7 +729,7 @@ emu3_process_bank (const char *ifile, int aflg, char *afile, int xflg,
 	}
       else
 	{
-	  fprintf (stderr, "Error appending file.\n");
+	  fprintf (stderr, "Error while adding sample.\n");
 	}
     }
 

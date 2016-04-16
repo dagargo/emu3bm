@@ -119,7 +119,7 @@ char *emu3_str_to_e3name (const char *);
 
 void emu3_cpystr (char *, const char *);
 
-int emu3_append_sample (char *, struct emu3_sample *, unsigned int, int);
+int emu3_add_sample (char *, struct emu3_sample *, unsigned int, int);
 
 int emu3_process_bank (const char *, int, char *, int, char *, int, int);
 

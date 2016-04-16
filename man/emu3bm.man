@@ -1,0 +1,42 @@
+.TH emu3bm 1 "April 2016"
+
+.SH NAME
+emu3bm \- manage EMU3 banks
+
+.SH SYNOPSIS
+\fBemu3bm\fP [OPTIONS] \fIbank\fP
+
+.SH DESCRIPTION
+Manage EMU3 banks, add and extract samples and set some preset and zone parameters.
+
+.SH OPTIONS
+.IP -n
+create a new bank
+
+.IP "-a sample"
+add the sample in WAV format to the bank
+
+.IP -x
+extract all the samples in the bank in the current directory
+
+.IP "-r realtime_controls"
+set the realtime controls for all presets using the format 1,2,3,4,5,6,7,8
+
+.IP "-c cutoff_frequency"
+set the cutoff frequency of the VCF for all preset zones
+
+.IP "-f filter_type"
+set the filter type of the VCF for all preset zones
+
+.SH COPYRIGHT
+Copyright © 2016 David García Goñi.  License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+.br
+This is free software: you are free to change and redistribute it.  There is NO WARRANTY, to the extent permitted by law.
+
+.SH AUTHOR
+Written by David García Goñi.
+
+.SH SEE ALSO
+Source code at: <https://github.com/dagargo/emu3bm>
+.br
+There is a Linux kernel filesystem module at: <https://github.com/dagargo/emu3fs>

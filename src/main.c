@@ -47,7 +47,7 @@ main (int argc, char *argv[])
   extern char *optarg;
   extern int optind, optopt;
 
-  while ((c = getopt (argc, argv, "a:xnr:c:f:")) != -1)
+  while ((c = getopt (argc, argv, "na:xr:c:f:")) != -1)
     {
       switch (c)
 	{

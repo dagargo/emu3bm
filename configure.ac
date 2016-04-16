@@ -24,5 +24,5 @@ AC_CHECK_HEADERS([stdlib.h string.h unistd.h])
 # Checks for library functions.
 AC_FUNC_MALLOC
 
-AC_CONFIG_FILES([Makefile src/Makefile res/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile res/Makefile man/Makefile])
 AC_OUTPUT
