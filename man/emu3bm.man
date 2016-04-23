@@ -11,7 +11,7 @@ Manage EMU3 banks, add and extract samples and set some preset and zone paramete
 
 .SH OPTIONS
 .IP -n
-create a new bank
+create a new EMU SI-32 v3 bank
 
 .IP "-a sample"
 add the sample in WAV format to the bank
@@ -27,6 +27,9 @@ set the cutoff frequency of the VCF for all preset zones
 
 .IP "-f filter_type"
 set the filter type of the VCF for all preset zones
+
+.IP -v
+increment the verbosity level
 
 .SH COPYRIGHT
 Copyright © 2016 David García Goñi.  License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.

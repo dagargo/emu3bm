@@ -69,6 +69,8 @@
 
 #define EMPTY_BANK "res/empty_bank"
 
+#define log(level, ...) if (level <= verbosity) printf(__VA_ARGS__);
+
 struct emu3_bank
 {
   char signature[SIGNATURE_SIZE];

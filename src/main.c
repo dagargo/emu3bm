@@ -20,6 +20,8 @@
 
 #include "emu3bm.h"
 
+int verbosity = 0;
+
 int
 get_positive_int (char *str)
 {
@@ -47,10 +49,13 @@ main (int argc, char *argv[])
   extern char *optarg;
   extern int optind, optopt;
 
-  while ((c = getopt (argc, argv, "na:xr:c:f:")) != -1)
+  while ((c = getopt (argc, argv, "vna:xr:c:f:")) != -1)
     {
       switch (c)
 	{
+	case 'v':
+	  verbosity++;
+	  break;
 	case 'a':
 	  aflg++;
 	  afile = optarg;
