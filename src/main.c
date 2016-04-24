@@ -44,12 +44,14 @@ main (int argc, char *argv[])
   char *ifile;
   char *afile;
   char *rt_controls = NULL;
+  int level = -1;
   int cutoff = -1;
+  int q = -1;
   int filter = -1;
   extern char *optarg;
   extern int optind, optopt;
 
-  while ((c = getopt (argc, argv, "vna:xr:c:f:")) != -1)
+  while ((c = getopt (argc, argv, "vna:xr:l:c:q:f:")) != -1)
     {
       switch (c)
 	{
@@ -69,8 +71,14 @@ main (int argc, char *argv[])
 	case 'r':
 	  rt_controls = optarg;
 	  break;
+	case 'l':
+	  level = get_positive_int (optarg);
+	  break;
 	case 'c':
 	  cutoff = get_positive_int (optarg);
+	  break;
+	case 'q':
+	  q = get_positive_int (optarg);
 	  break;
 	case 'f':
 	  filter = get_positive_int (optarg);
@@ -110,6 +118,7 @@ main (int argc, char *argv[])
   else
     {
       exit (emu3_process_bank
-	    (ifile, aflg, afile, xflg, rt_controls, cutoff, filter));
+	    (ifile, aflg, afile, xflg, rt_controls, level, cutoff, q,
+	     filter));
     }
 }

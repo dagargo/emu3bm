@@ -22,11 +22,17 @@ extract all the samples in the bank in the current directory
 .IP "-r realtime_controls"
 set the realtime controls for all presets using the format 1,2,3,4,5,6,7,8
 
+.IP -l
+set the level of the VCA for all the preset zones
+
 .IP "-c cutoff_frequency"
-set the cutoff frequency of the VCF for all preset zones
+set the cutoff frequency of the VCF for all the preset zones
+
+.IP "-q Q"
+set the Q of the VCF for all the preset zones
 
 .IP "-f filter_type"
-set the filter type of the VCF for all preset zones
+set the filter type of the VCF for all the preset zones
 
 .IP -v
 increment the verbosity level
