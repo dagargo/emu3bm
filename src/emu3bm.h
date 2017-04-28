@@ -16,7 +16,7 @@
  *
  *   You should have received a copy of the GNU General Public License
  *   along with emu3bm.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 
 #include <stdio.h>
 #include <unistd.h>
@@ -26,6 +26,7 @@
 #include <ctype.h>
 #include <libgen.h>
 #include <errno.h>
+#include <inttypes.h>
 
 #include "../config.h"
 
@@ -39,7 +40,7 @@
 #define PRESET_OFFSET_EMU_THREE 0x1a6fe
 #define PRESET_START_EMU_3X 0x2b72
 #define PRESET_START_EMU_THREE 0x74a
-#define SAMPLE_OFFSET 0x400000	//This is also the max sample length in bytes
+#define SAMPLE_OFFSET 0x400000  //This is also the max sample length in bytes
 #define MAX_SAMPLES_EMU_3X 1000
 #define MAX_SAMPLES_EMU_THREE 100
 #define PRESET_SIZE_ADDR_START_EMU_3X 0x17ca
@@ -50,9 +51,9 @@
 #define MORE_SAMPLE_PARAMETERS 8
 #define DEFAULT_SAMPLING_FREQ 44100
 #define MONO_SAMPLE_1 0x00380001
-#define MONO_SAMPLE_2 0x00390001	//Looped?
+#define MONO_SAMPLE_2 0x00390001  //Looped?
 #define STEREO_SAMPLE_1 0x00780001
-#define STEREO_SAMPLE_2 0x00700001	//Looped?
+#define STEREO_SAMPLE_2 0x00700001  //Looped?
 #define MONO_SAMPLE_EMULATOR_3X_1 0x0030fe02
 #define MONO_SAMPLE_EMULATOR_3X_2 0x0039fe02
 #define MONO_SAMPLE_EMULATOR_3X_3 0xff30fe02
@@ -73,54 +74,54 @@
 
 struct emu3_bank
 {
-  char signature[SIGNATURE_SIZE];
-  char name[NAME_SIZE];
-  unsigned int parameters[BANK_PARAMETERS];
-  char name_copy[NAME_SIZE];
-  unsigned int more_parameters[MORE_BANK_PARAMETERS];
+        char signature[SIGNATURE_SIZE];
+        char name[NAME_SIZE];
+        unsigned int parameters[BANK_PARAMETERS];
+        char name_copy[NAME_SIZE];
+        unsigned int more_parameters[MORE_BANK_PARAMETERS];
 };
 
 struct emu3_sample
 {
-  char name[NAME_SIZE];
-  unsigned int parameters[SAMPLE_PARAMETERS];
-  unsigned int sample_rate;
-  unsigned int format;
-  unsigned int more_parameters[MORE_SAMPLE_PARAMETERS];
-  short int frames[];
+        char name[NAME_SIZE];
+        unsigned int parameters[SAMPLE_PARAMETERS];
+        unsigned int sample_rate;
+        unsigned int format;
+        unsigned int more_parameters[MORE_SAMPLE_PARAMETERS];
+        short int frames[];
 };
 
 struct emu3_preset_zone
 {
-  char parameters_a[12];
-  unsigned char vcf_cutoff;
-  unsigned char vcf_q;
-  char parameters_b[26];
-  char vca_level;
-  char unknown_1;
-  char unknown_2;
-  char unknown_3;
-  char vca_pan;
-  char vcf_type_lfo_shape;
-  char foo;
-  char bar;
+        char parameters_a[12];
+        unsigned char vcf_cutoff;
+        unsigned char vcf_q;
+        char parameters_b[26];
+        char vca_level;
+        char unknown_1;
+        char unknown_2;
+        char unknown_3;
+        char vca_pan;
+        char vcf_type_lfo_shape;
+        char foo;
+        char bar;
 };
 
 struct emu3_preset
 {
-  char name[NAME_SIZE];
-  char rt_controls[RT_CONTROLS_SIZE + RT_CONTROLS_FS_SIZE];
-  char empty[16];
-  char data[9];
-  char nzones;
-  char padding[0x58];
+        char name[NAME_SIZE];
+        char rt_controls[RT_CONTROLS_SIZE + RT_CONTROLS_FS_SIZE];
+        char empty[16];
+        char data[9];
+        char nzones;
+        char padding[0x58];
 };
 
 struct emu3_sample_descriptor
 {
-  short int *l_channel;
-  short int *r_channel;
-  struct emu3_sample *sample;
+        short int *l_channel;
+        short int *r_channel;
+        struct emu3_sample *sample;
 };
 
 char *emu3_e3name_to_filename (const char *);
@@ -136,7 +137,7 @@ void emu3_cpystr (char *, const char *);
 int emu3_add_sample (char *, struct emu3_sample *, unsigned int, int);
 
 int emu3_process_bank (const char *, int, char *, int, char *, int, int, int,
-		       int);
+                       int);
 
 void emu3_print_sample_info (struct emu3_sample *, sf_count_t);
 
@@ -149,7 +150,7 @@ void emu3_write_sample_file (struct emu3_sample *, sf_count_t);
 int emu3_create_bank (const char *);
 
 void emu3_init_sample_descriptor (struct emu3_sample_descriptor *,
-				  struct emu3_sample *, int);
+                                  struct emu3_sample *, int);
 
 void emu3_write_frame (struct emu3_sample_descriptor *, short int[]);
 
