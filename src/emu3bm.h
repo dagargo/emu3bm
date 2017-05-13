@@ -31,9 +31,9 @@
 #include "../config.h"
 
 #define MEM_SIZE 0x08000000
-#define SIGNATURE_SIZE 16
+#define FORMAT_SIZE 16
 #define NAME_SIZE 16
-#define BANK_PARAMETERS 11
+#define BANK_PARAMETERS 5
 #define MORE_BANK_PARAMETERS 4
 #define SAMPLE_ADDR_START_EMU_3X 0x1bd2
 #define SAMPLE_ADDR_START_EMU_THREE 0x204
@@ -73,10 +73,23 @@
 
 #define log(level, ...) if (level <= verbosity) printf(__VA_ARGS__);
 
+struct emu3_file
+{
+        const char *filename;
+        union {
+                char *raw;
+                struct emu3_bank * bank;
+        };
+        size_t fsize;
+};
+
 struct emu3_bank
 {
-        char signature[SIGNATURE_SIZE];
+        char format[FORMAT_SIZE];
         char name[NAME_SIZE];
+        unsigned int objects;
+        unsigned int padding[4];
+        unsigned int next;
         unsigned int parameters[BANK_PARAMETERS];
         char name_copy[NAME_SIZE];
         unsigned int more_parameters[MORE_BANK_PARAMETERS];
@@ -125,6 +138,12 @@ struct emu3_sample_descriptor
         short int *r_channel;
         struct emu3_sample *sample;
 };
+
+struct emu3_file * emu3_open_file(const char*);
+
+void emu3_close_file(struct emu3_file *);
+
+void emu3_write_file(struct emu3_file *);
 
 char *emu3_e3name_to_filename (const char *);
 

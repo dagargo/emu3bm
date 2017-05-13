@@ -535,103 +535,163 @@ emu3_write_sample_file(struct emu3_sample *sample, sf_count_t nframes)
 }
 
 unsigned int
-emu3_get_preset_address(const char *format, unsigned int offset)
+emu3_get_preset_address(struct emu3_bank *bank, unsigned int offset)
 {
-	unsigned int address = 0;
+	char * raw = (char*)bank;
 
-	if (format == EMULATOR_3X_DEF || format == ESI_32_V3_DEF)
-		address = PRESET_START_EMU_3X + offset;
-	else if (format == EMULATOR_THREE_DEF)
-		address = PRESET_START_EMU_THREE + offset - PRESET_OFFSET_EMU_THREE;
-	return address;
+	if (strncmp(EMULATOR_3X_DEF, bank->format, FORMAT_SIZE) == 0 ||
+	    strncmp(ESI_32_V3_DEF, bank->format, FORMAT_SIZE) == 0)
+		return PRESET_START_EMU_3X + offset;
+	else if (strncmp(EMULATOR_THREE_DEF, bank->format, FORMAT_SIZE) == 0)
+		return PRESET_START_EMU_THREE + offset - PRESET_OFFSET_EMU_THREE;
+	else
+		return 0;
 }
 
 unsigned int
-emu3_get_sample_start_address(const char *format, unsigned int offset)
+emu3_get_sample_start_address(struct emu3_bank *bank, unsigned int offset)
 {
-	unsigned int address = 0;
+	char * raw = (char*)bank;
 
-	if (format == EMULATOR_3X_DEF || format == ESI_32_V3_DEF)
+	if (strncmp(EMULATOR_3X_DEF, bank->format, FORMAT_SIZE) == 0 ||
+	    strncmp(ESI_32_V3_DEF, bank->format, FORMAT_SIZE) == 0)
 		//There is always a 0xee byte before the samples
-		address = PRESET_START_EMU_3X + offset + 1;
-	else if (format == EMULATOR_THREE_DEF)
+		return PRESET_START_EMU_3X + offset + 1;
+	else if (strncmp(EMULATOR_THREE_DEF, bank->format, FORMAT_SIZE) == 0)
 		//There is always a 0x00 byte before the samples
-		address = PRESET_START_EMU_THREE + offset + 1 - PRESET_OFFSET_EMU_THREE;
-	return address;
+		return PRESET_START_EMU_THREE + offset + 1 - PRESET_OFFSET_EMU_THREE;
+	else
+		return 0;
 }
 
 unsigned int *
-emu3_get_sample_addresses(const char *format, char *memory)
+emu3_get_sample_addresses(struct emu3_bank *bank)
 {
-	unsigned int *addresses = NULL;
+	char * raw = (char*)bank;
 
-	if (format == EMULATOR_3X_DEF || format == ESI_32_V3_DEF)
-		addresses = (unsigned int*)&(memory[SAMPLE_ADDR_START_EMU_3X]);
-	if (format == EMULATOR_THREE_DEF)
-		addresses = (unsigned int*)&(memory[SAMPLE_ADDR_START_EMU_THREE]);
-	return addresses;
+	if (strncmp(EMULATOR_3X_DEF, bank->format, FORMAT_SIZE) == 0 ||
+	    strncmp(ESI_32_V3_DEF, bank->format, FORMAT_SIZE) == 0)
+		return (unsigned int*)&(raw[SAMPLE_ADDR_START_EMU_3X]);
+	else if (strncmp(EMULATOR_THREE_DEF, bank->format, FORMAT_SIZE) == 0)
+		return (unsigned int*)&(raw[SAMPLE_ADDR_START_EMU_THREE]);
+	else
+		return NULL;
 }
 
 unsigned int *
-emu3_get_preset_addresses(const char *format, char *memory)
+emu3_get_preset_addresses(struct emu3_bank *bank)
 {
-	unsigned int *addresses = NULL;
+	char * raw = (char*)bank;
 
-	if (format == EMULATOR_3X_DEF || format == ESI_32_V3_DEF)
-		addresses = (unsigned int*)&(memory[PRESET_SIZE_ADDR_START_EMU_3X]);
-	if (format == EMULATOR_THREE_DEF)
-		addresses =
-			(unsigned int*)&(memory[PRESET_SIZE_ADDR_START_EMU_THREE]);
-	return addresses;
-}
-
-char *
-emu3_get_bank_format(struct emu3_bank *bank)
-{
-	char *format = NULL;
-
-	if (strncmp(EMULATOR_3X_DEF, bank->signature, SIGNATURE_SIZE) == 0)
-		format = EMULATOR_3X_DEF;
-	else if (strncmp(ESI_32_V3_DEF, bank->signature, SIGNATURE_SIZE) == 0)
-		format = ESI_32_V3_DEF;
-	else if (strncmp(EMULATOR_THREE_DEF, bank->signature, SIGNATURE_SIZE) == 0)
-		format = EMULATOR_THREE_DEF;
-	return format;
+	if (strncmp(EMULATOR_3X_DEF, bank->format, FORMAT_SIZE) == 0 ||
+	    strncmp(ESI_32_V3_DEF, bank->format, FORMAT_SIZE) == 0)
+		return (unsigned int*)&raw[PRESET_SIZE_ADDR_START_EMU_3X];
+	else if (strncmp(EMULATOR_THREE_DEF, bank->format, FORMAT_SIZE) == 0)
+		return (unsigned int*)&raw[PRESET_SIZE_ADDR_START_EMU_THREE];
+	else
+		return NULL;
 }
 
 int
-emu3_get_max_samples(const char *format)
+emu3_check_bank_format(struct emu3_bank *bank)
 {
-	int max_samples = 0;
-
-	if (format == EMULATOR_3X_DEF || format == ESI_32_V3_DEF)
-		max_samples = MAX_SAMPLES_EMU_3X;
-	if (format == EMULATOR_THREE_DEF)
-		max_samples = MAX_SAMPLES_EMU_THREE;
-	return max_samples;
+	if (strncmp(EMULATOR_3X_DEF, bank->format, FORMAT_SIZE) == 0 ||
+	    strncmp(ESI_32_V3_DEF, bank->format, FORMAT_SIZE) == 0 ||
+	    strncmp(EMULATOR_THREE_DEF, bank->format, FORMAT_SIZE) == 0)
+		return 1;
+	else
+		return 0;
 }
 
 int
-emu3_get_max_presets(const char *format)
+emu3_get_max_samples(struct emu3_bank *bank)
 {
-	int max_presets = 0;
-
-	if (format == EMULATOR_3X_DEF || format == ESI_32_V3_DEF)
-		max_presets = MAX_PRESETS_EMU_3X;
-	if (format == EMULATOR_THREE_DEF)
-		max_presets = MAX_PRESETS_EMU_THREE;
-	return max_presets;
+	if (strncmp(EMULATOR_3X_DEF, bank->format, FORMAT_SIZE) == 0 ||
+	    strncmp(ESI_32_V3_DEF, bank->format, FORMAT_SIZE) == 0)
+		return MAX_SAMPLES_EMU_3X;
+	else if (strncmp(EMULATOR_THREE_DEF, bank->format, FORMAT_SIZE) == 0)
+		return MAX_SAMPLES_EMU_THREE;
+	else
+		return 0;
 }
 
 int
-emu3_process_bank(const char *ifile, int aflg, char *afile, int xflg,
-		  char *rt_controls, int level, int cutoff, int q,
-		  int filter, int pbr)
+emu3_get_max_presets(struct emu3_bank *bank)
 {
-	char *memory;
-	FILE *file;
+	if (strncmp(EMULATOR_3X_DEF, bank->format, FORMAT_SIZE) == 0 ||
+	    strncmp(ESI_32_V3_DEF, bank->format, FORMAT_SIZE) == 0)
+		return MAX_PRESETS_EMU_3X;
+	else if (strncmp(EMULATOR_THREE_DEF, bank->format, FORMAT_SIZE) == 0) {
+		return MAX_PRESETS_EMU_THREE;
+
+	}
+	else
+		return 0;
+}
+
+void emu3_close_file(struct emu3_file * file)
+{
+	free(file->raw);
+	free(file);
+}
+
+struct emu3_file * emu3_open_file(const char* filename)
+{
+	struct emu3_file * file;
+	FILE *fd = fopen(filename, "r");
+
+	if (fd) {
+		file = (struct emu3_file*)malloc(sizeof(struct emu3_file));
+
+		file->filename = filename;
+		file->raw = (char*)malloc(MEM_SIZE);
+		file->fsize = fread(file->raw, 1, MEM_SIZE, fd);
+		fclose(fd);
+
+		if (emu3_check_bank_format(file->bank)) {
+			log(0, "Bank name: %.*s\n", NAME_SIZE, file->bank->name);
+			log(1, "Bank fsize: %zuB\n", file->fsize);
+			log(1, "Bank format: %s\n", file->bank->format);
+
+			log(2, "Geometry:\n");
+			log(2, "Objects: %d\n", file->bank->objects + 1);
+			log(2, "Next: 0x%08x\n", file->bank->next);
+
+			for (int i = 0; i < BANK_PARAMETERS; i++)
+				log(2, "Parameter %2d: 0x%08x (%d)\n", i, file->bank->parameters[i],
+				    file->bank->parameters[i]);
+
+			if (file->bank->parameters[1] + file->bank->parameters[2] != file->bank->parameters[4])
+				log(2, "Kind of checksum error.\n");
+
+			if (strncmp(file->bank->name, file->bank->name_copy, NAME_SIZE))
+				log(2, "Bank name is different than previously found.\n");
+
+			log(2, "More geometry:\n");
+			for (int i = 0; i < MORE_BANK_PARAMETERS; i++)
+				log(2, "Parameter %d: 0x%08x (%d)\n", i, file->bank->more_parameters[i],
+				    file->bank->more_parameters[i]);
+
+			log(2, "Current preset: %d\n", file->bank->more_parameters[0]);
+			log(2, "Current sample: %d\n", file->bank->more_parameters[1]);
+
+			return file;
+		}else {
+			fprintf(stderr, "Bank format not supported.\n");
+			emu3_close_file(file);
+			return NULL;
+		}
+	} else {
+		fprintf(stderr, "Error: file %s could not be opened.\n", filename);
+		return NULL;
+	}
+}
+
+int
+emu3_process_bank(const char *bank_filename, int aflg, char *sample_filename,
+		  int xflg, char *rt_controls, int level, int cutoff, int q, int filter, int pbr)
+{
 	int size, i, channels;
-	size_t fsize;
 	struct emu3_bank *bank;
 	char *name;
 	unsigned int *addresses;
@@ -639,68 +699,20 @@ emu3_process_bank(const char *ifile, int aflg, char *afile, int xflg,
 	unsigned int next_sample_addr;
 	unsigned int address;
 	struct emu3_sample *sample;
-	char *format = NULL;
 	struct emu3_preset *preset;
 	struct emu3_preset_zone *zones;
 	int max_samples;
 
-	file = fopen(ifile, "r");
+	struct emu3_file * file = emu3_open_file(bank_filename);
 
-	if (file == NULL) {
-		fprintf(stderr, "Error: file %s could not be opened.\n", ifile);
+	if (!file)
 		return -1;
-	}
-	memory = (char*)malloc(MEM_SIZE);
 
-	fsize = fread(memory, 1, MEM_SIZE, file);
-	fclose(file);
-
-	log(1, "Bank fsize: %zuB\n", fsize);
-
-	bank = (struct emu3_bank *)memory;
-
-	format = emu3_get_bank_format(bank);
-
-	if (!format) {
-		fprintf(stderr, "Bank format not supported.\n");
-		return 1;
-	}
-
-	log(0, "Bank name: %.*s\n", NAME_SIZE, bank->name);
-	log(1, "Bank format: %s\n", bank->signature);
-
-	log(2, "Geometry:\n");
-	for (i = 0; i < BANK_PARAMETERS; i++)
-		log(2, "Parameter %2d: 0x%08x (%d)\n", i, bank->parameters[i],
-		    bank->parameters[i]);
-	log(2, "Objects (p 0): %d\n", bank->parameters[0] + 1);
-	log(2, "Unknown (p 3): 0x%08x\n", bank->parameters[3]);
-	log(2, "Unknown (p 4): 0x%08x\n", bank->parameters[4]);
-	log(2, "Next    (p 5): 0x%08x\n", bank->parameters[5]);
-	log(2, "Unknown (p 7): 0x%08x\n", bank->parameters[7]);
-	log(2, "Unknown (p 8): 0x%08x\n", bank->parameters[8]);
-	log(2, "Unknown (p10): 0x%08x\n", bank->parameters[10]);
-
-	if (bank->parameters[7] + bank->parameters[8] != bank->parameters[10])
-		log(2, "Kind of checksum error.\n");
-
-	if (strncmp(bank->name, bank->name_copy, NAME_SIZE))
-		log(2, "Bank name is different than previously found.\n");
-
-	log(2, "More geometry:\n");
-	for (i = 0; i < MORE_BANK_PARAMETERS; i++)
-		log(2, "Parameter %d: 0x%08x (%d)\n", i, bank->more_parameters[i],
-		    bank->more_parameters[i]);
-
-	log(2, "Current preset: %d\n", bank->more_parameters[0]);
-	log(2, "Current sample: %d\n", bank->more_parameters[1]);
-
-	addresses = emu3_get_preset_addresses(format, memory);
-
-	for (i = 0; i < emu3_get_max_presets(format); i++) {
+	addresses = emu3_get_preset_addresses(file->bank);
+	for (i = 0; i < emu3_get_max_presets(file->bank); i++) {
 		if (addresses[0] != addresses[1]) {
-			address = emu3_get_preset_address(format, addresses[0]);
-			preset = (struct emu3_preset *)&memory[address];
+			address = emu3_get_preset_address(file->bank, addresses[0]);
+			preset = (struct emu3_preset *)&file->raw[address];
 			log(0, "Preset %3d, %.*s", i, NAME_SIZE, preset->name);
 			log(1, " @ 0x%08x", address);
 			log(0, "\n");
@@ -713,8 +725,7 @@ emu3_process_bank(const char *ifile, int aflg, char *afile, int xflg,
 			emu3_print_preset_info(preset);
 
 			zones = (struct emu3_preset_zone *)
-				&memory[address + sizeof(struct emu3_preset) +
-					preset->nzones * 4];
+				&file->raw[address + sizeof(struct emu3_preset) + preset->nzones * 4];
 			log(1, "Zones: %d\n", preset->nzones);
 			for (int j = 0; j < preset->nzones; j++) {
 				log(1, "Zone %d\n", j);
@@ -732,11 +743,11 @@ emu3_process_bank(const char *ifile, int aflg, char *afile, int xflg,
 		addresses++;
 	}
 
-	sample_start_addr = emu3_get_sample_start_address(format, addresses[0]);
+	sample_start_addr = emu3_get_sample_start_address(file->bank, addresses[0]);
 	log(1, "Sample start: 0x%08x\n", sample_start_addr);
 
-	max_samples = emu3_get_max_samples(format);
-	addresses = emu3_get_sample_addresses(format, memory);
+	max_samples = emu3_get_max_samples(file->bank);
+	addresses = emu3_get_sample_addresses(file->bank);
 	log(1, "Start with offset: 0x%08x\n", addresses[0]);
 	log(1, "Next with offset: 0x%08x\n", addresses[max_samples - 1]);
 	next_sample_addr =
@@ -751,7 +762,7 @@ emu3_process_bank(const char *ifile, int aflg, char *afile, int xflg,
 			size = next_sample_addr - address;
 		else
 			size = addresses[i + 1] - addresses[i];
-		sample = (struct emu3_sample *)&memory[address];
+		sample = (struct emu3_sample *)&file->raw[address];
 		channels = emu3_get_sample_channels(sample);
 		//We divide between the bytes per frame (number of channels * 2 bytes)
 		//The 16 or 8 bytes are the 4 or 8 short int used for padding.
@@ -768,32 +779,39 @@ emu3_process_bank(const char *ifile, int aflg, char *afile, int xflg,
 	}
 
 	if (aflg) {
-		sample = (struct emu3_sample *)&memory[next_sample_addr];
+		sample = (struct emu3_sample *)&file->raw[next_sample_addr];
 		size =
-			emu3_add_sample(afile, sample,
+			emu3_add_sample(sample_filename, sample,
 					next_sample_addr - sample_start_addr, i + 1);
 		if (size) {
 			addresses[i] = addresses[max_samples - 1];
 			addresses[max_samples - 1] =
 				next_sample_addr + size - sample_start_addr + SAMPLE_OFFSET;
-			bank->parameters[0]++;
-			bank->parameters[5] = next_sample_addr + size - sample_start_addr;
+			file->bank->objects++;
+			file->bank->next = next_sample_addr + size - sample_start_addr;
 		}else
 			fprintf(stderr, "Error while adding sample.\n");
 	}
 
 	if ((aflg && size) || rt_controls || level != -1 || cutoff != -1 || q != -1
-	    || filter != -1 || pbr != -1) {
-		file = fopen(ifile, "w");
-		if (file) {
-			fwrite(memory, 1, next_sample_addr + size, file);
-			fclose(file);
-		} else {
-			fprintf(stderr, "Error while opening file for writing\n");
-		}
-	}
+	    || filter != -1 || pbr != -1)
+		emu3_write_file(file);
 
 	return EXIT_SUCCESS;
+}
+
+void emu3_write_file(struct emu3_file * file)
+{
+	FILE *fd = fopen(file->filename, "w");
+	unsigned int * addresses = emu3_get_preset_addresses(file->bank);
+	unsigned int sample_start_addr = emu3_get_sample_start_address(file->bank, addresses[0]);
+	size_t filesize = file->bank->next + sample_start_addr;
+
+	if (fd) {
+		fwrite(file->raw, 1, filesize, fd);
+		fclose(fd);
+	} else
+		fprintf(stderr, "Error while opening file for writing\n");
 }
 
 int
