@@ -48,10 +48,11 @@ main(int argc, char *argv[])
 	int cutoff = -1;
 	int q = -1;
 	int filter = -1;
+	int pbr = -1;
 	extern char *optarg;
 	extern int optind, optopt;
 
-	while ((c = getopt(argc, argv, "vna:xr:l:c:q:f:")) != -1) {
+	while ((c = getopt(argc, argv, "vna:xr:l:c:q:f:p:")) != -1) {
 		switch (c) {
 		case 'v':
 			verbosity++;
@@ -81,6 +82,9 @@ main(int argc, char *argv[])
 		case 'f':
 			filter = get_positive_int(optarg);
 			break;
+		case 'p':
+			pbr = get_positive_int(optarg);
+			break;
 		case '?':
 			fprintf(stderr, "Unrecognized option: -%c\n", optopt);
 			errflg++;
@@ -92,7 +96,7 @@ main(int argc, char *argv[])
 	else
 		errflg++;
 
-	if (nflg && (xflg || aflg || rt_controls || cutoff >= 0 || filter >= 0))
+	if (nflg && (xflg || aflg || rt_controls || cutoff >= 0 || filter >= 0 || pbr >= 0))
 		errflg++;
 
 	if (errflg > 0) {
@@ -107,6 +111,6 @@ main(int argc, char *argv[])
 	else{
 		exit(emu3_process_bank
 			     (ifile, aflg, afile, xflg, rt_controls, level, cutoff, q,
-			     filter));
+			     filter, pbr));
 	}
 }

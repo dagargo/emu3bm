@@ -22,6 +22,9 @@ extract all the samples in the bank in the current directory
 .IP "-r realtime_controls"
 set the realtime controls for all presets using the format 1,2,3,4,5,6,7,8
 
+.IP "-p pitch_bend_range"
+set the pitch bend range for all presets
+
 .IP -l
 set the level of the VCA for all the preset zones
 

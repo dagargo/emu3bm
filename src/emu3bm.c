@@ -253,6 +253,9 @@ emu3_print_preset_info(struct emu3_preset *preset)
 		    RT_CONTROLS_FS_SRC[i],
 		    RT_CONTROLS_FS_DST[preset->rt_controls[RT_CONTROLS_SIZE + i]]);
 	}
+	for (int i = 0; i < UNKNOWN_PARAMETERS_SIZE; i++)
+		log(2, "Unknown parameter %d: %d\n", i, preset->unknown_parameters[i]);
+	log(1, "Pitch Bend Range: %x\n", preset->pitch_bend_range)
 }
 
 void
@@ -286,7 +289,7 @@ emu3_set_preset_rt_control_fs(struct emu3_preset *preset, int src, int dst)
 }
 
 void
-emu3_set_preset_level(struct emu3_preset_zone *zone, int level)
+emu3_set_preset_zone_level(struct emu3_preset_zone *zone, int level)
 {
 	if (level < 0 || level > 100)
 		fprintf(stderr, "Value %d for level not in range [0, 100]\n", level);
@@ -297,7 +300,7 @@ emu3_set_preset_level(struct emu3_preset_zone *zone, int level)
 }
 
 void
-emu3_set_preset_cutoff(struct emu3_preset_zone *zone, int cutoff)
+emu3_set_preset_zone_cutoff(struct emu3_preset_zone *zone, int cutoff)
 {
 	if (cutoff < 0 || cutoff > 255)
 		fprintf(stderr, "Value for cutoff %d not in range [0, 255]\n", cutoff);
@@ -308,7 +311,7 @@ emu3_set_preset_cutoff(struct emu3_preset_zone *zone, int cutoff)
 }
 
 void
-emu3_set_preset_q(struct emu3_preset_zone *zone, int q)
+emu3_set_preset_zone_q(struct emu3_preset_zone *zone, int q)
 {
 	if (q < 0 || q > 100)
 		fprintf(stderr, "Value %d for Q not in range [0, 100]\n", q);
@@ -319,7 +322,7 @@ emu3_set_preset_q(struct emu3_preset_zone *zone, int q)
 }
 
 void
-emu3_set_preset_filter(struct emu3_preset_zone *zone, int filter)
+emu3_set_preset_zone_filter(struct emu3_preset_zone *zone, int filter)
 {
 	if (filter < 0 || filter > VCF_TYPE_SIZE - 2)
 		fprintf(stderr, "Value %d for filter not in range [0, %d]\n", filter,
@@ -360,6 +363,12 @@ emu3_set_preset_rt_controls(struct emu3_preset *preset, char *rt_controls)
 		}
 		i++;
 	}
+}
+
+void
+emu3_set_preset_pbr(struct emu3_preset * preset, int pbr)
+{
+	preset->pitch_bend_range = pbr;
 }
 
 void
@@ -617,7 +626,7 @@ emu3_get_max_presets(const char *format)
 int
 emu3_process_bank(const char *ifile, int aflg, char *afile, int xflg,
 		  char *rt_controls, int level, int cutoff, int q,
-		  int filter)
+		  int filter, int pbr)
 {
 	char *memory;
 	FILE *file;
@@ -697,21 +706,26 @@ emu3_process_bank(const char *ifile, int aflg, char *afile, int xflg,
 			log(0, "\n");
 			if (rt_controls)
 				emu3_set_preset_rt_controls(preset, rt_controls);
+
+			if (pbr != -1)
+				emu3_set_preset_pbr(preset, pbr);
+
+			emu3_print_preset_info(preset);
+
 			zones = (struct emu3_preset_zone *)
 				&memory[address + sizeof(struct emu3_preset) +
 					preset->nzones * 4];
-			emu3_print_preset_info(preset);
 			log(1, "Zones: %d\n", preset->nzones);
 			for (int j = 0; j < preset->nzones; j++) {
 				log(1, "Zone %d\n", j);
 				if (level != -1)
-					emu3_set_preset_level(&zones[j], level);
+					emu3_set_preset_zone_level(&zones[j], level);
 				if (cutoff != -1)
-					emu3_set_preset_cutoff(&zones[j], cutoff);
+					emu3_set_preset_zone_cutoff(&zones[j], cutoff);
 				if (q != -1)
-					emu3_set_preset_q(&zones[j], q);
+					emu3_set_preset_zone_q(&zones[j], q);
 				if (filter != -1)
-					emu3_set_preset_filter(&zones[j], filter);
+					emu3_set_preset_zone_filter(&zones[j], filter);
 				emu3_print_zone_info(&zones[j]);
 			}
 		}
@@ -769,7 +783,7 @@ emu3_process_bank(const char *ifile, int aflg, char *afile, int xflg,
 	}
 
 	if ((aflg && size) || rt_controls || level != -1 || cutoff != -1 || q != -1
-	    || filter != -1) {
+	    || filter != -1 || pbr != -1) {
 		file = fopen(ifile, "w");
 		if (file) {
 			fwrite(memory, 1, next_sample_addr + size, file);

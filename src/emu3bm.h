@@ -61,6 +61,7 @@
 #define MONO_SAMPLE_EMULATOR_3X_5 0x0030ffc3
 #define RT_CONTROLS_SIZE 10
 #define RT_CONTROLS_FS_SIZE 2
+#define UNKNOWN_PARAMETERS_SIZE 15
 
 #define ESI_32_V3_DEF      "EMU SI-32 v3   \0"
 #define EMULATOR_3X_DEF    "EMULATOR 3X    \0"
@@ -111,7 +112,8 @@ struct emu3_preset
 {
         char name[NAME_SIZE];
         char rt_controls[RT_CONTROLS_SIZE + RT_CONTROLS_FS_SIZE];
-        char empty[16];
+        char unknown_parameters[UNKNOWN_PARAMETERS_SIZE];
+        char pitch_bend_range;
         char data[9];
         char nzones;
         char padding[0x58];
@@ -137,7 +139,7 @@ void emu3_cpystr (char *, const char *);
 int emu3_add_sample (char *, struct emu3_sample *, unsigned int, int);
 
 int emu3_process_bank (const char *, int, char *, int, char *, int, int, int,
-                       int);
+                       int, int);
 
 void emu3_print_sample_info (struct emu3_sample *, sf_count_t);
 
@@ -156,10 +158,12 @@ void emu3_write_frame (struct emu3_sample_descriptor *, short int[]);
 
 void emu3_set_preset_rt_controls (struct emu3_preset *, char *);
 
-void emu3_set_preset_level (struct emu3_preset_zone *, int);
+void emu3_set_preset_pbr (struct emu3_preset *, int);
 
-void emu3_set_preset_cutoff (struct emu3_preset_zone *, int);
+void emu3_set_preset_zone_level (struct emu3_preset_zone *, int);
 
-void emu3_set_preset_q (struct emu3_preset_zone *, int);
+void emu3_set_preset_zone_cutoff (struct emu3_preset_zone *, int);
 
-void emu3_set_preset_filter (struct emu3_preset_zone *, int);
+void emu3_set_preset_zone_q (struct emu3_preset_zone *, int);
+
+void emu3_set_preset_zone_filter (struct emu3_preset_zone *, int);
