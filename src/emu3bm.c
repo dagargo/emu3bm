@@ -771,8 +771,12 @@ emu3_process_bank(const char *ifile, int aflg, char *afile, int xflg,
 	if ((aflg && size) || rt_controls || level != -1 || cutoff != -1 || q != -1
 	    || filter != -1) {
 		file = fopen(ifile, "w");
-		fwrite(memory, 1, next_sample_addr + size, file);
-		fclose(file);
+		if (file) {
+			fwrite(memory, 1, next_sample_addr + size, file);
+			fclose(file);
+		} else {
+			fprintf(stderr, "Error while opening file for writing\n");
+		}
 	}
 
 	return EXIT_SUCCESS;
