@@ -749,9 +749,9 @@ emu3_process_bank(const char *bank_filename, int aflg, char *sample_filename,
 	max_samples = emu3_get_max_samples(file->bank);
 	addresses = emu3_get_sample_addresses(file->bank);
 	log(1, "Start with offset: 0x%08x\n", addresses[0]);
-	log(1, "Next with offset: 0x%08x\n", addresses[max_samples - 1]);
+	log(1, "Next with offset: 0x%08x\n", addresses[max_samples]);
 	next_sample_addr =
-		sample_start_addr + addresses[max_samples - 1] - SAMPLE_OFFSET;
+		sample_start_addr + addresses[max_samples] - SAMPLE_OFFSET;
 	log(1, "Next sample: 0x%08x\n", next_sample_addr);
 
 	for (i = 0; i < max_samples; i++) {
@@ -784,8 +784,8 @@ emu3_process_bank(const char *bank_filename, int aflg, char *sample_filename,
 			emu3_add_sample(sample_filename, sample,
 					next_sample_addr - sample_start_addr, i + 1);
 		if (size) {
-			addresses[i] = addresses[max_samples - 1];
-			addresses[max_samples - 1] =
+			addresses[i] = addresses[max_samples];
+			addresses[max_samples] =
 				next_sample_addr + size - sample_start_addr + SAMPLE_OFFSET;
 			file->bank->objects++;
 			file->bank->next = next_sample_addr + size - sample_start_addr;
