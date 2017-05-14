@@ -40,9 +40,9 @@ int
 main(int argc, char *argv[])
 {
 	int c;
-	int xflg = 0, aflg = 0, nflg = 0, errflg = 0;
-	char *ifile;
-	char *afile;
+	int xflg = 0, aflg = 0, nflg = 0, errflg = 0, modflg = 0;
+	char *bank_filename;
+	char *sample_filename;
 	char *rt_controls = NULL;
 	int level = -1;
 	int cutoff = -1;
@@ -51,6 +51,7 @@ main(int argc, char *argv[])
 	int pbr = -1;
 	extern char *optarg;
 	extern int optind, optopt;
+	int result = 0;
 
 	while ((c = getopt(argc, argv, "vna:xr:l:c:q:f:p:")) != -1) {
 		switch (c) {
@@ -59,31 +60,38 @@ main(int argc, char *argv[])
 			break;
 		case 'a':
 			aflg++;
-			afile = optarg;
+			sample_filename = optarg;
 			break;
 		case 'x':
 			xflg++;
+			modflg++;
 			break;
 		case 'n':
 			nflg++;
 			break;
 		case 'r':
 			rt_controls = optarg;
+			modflg++;
 			break;
 		case 'l':
 			level = get_positive_int(optarg);
+			modflg++;
 			break;
 		case 'c':
 			cutoff = get_positive_int(optarg);
+			modflg++;
 			break;
 		case 'q':
 			q = get_positive_int(optarg);
+			modflg++;
 			break;
 		case 'f':
 			filter = get_positive_int(optarg);
+			modflg++;
 			break;
 		case 'p':
 			pbr = get_positive_int(optarg);
+			modflg++;
 			break;
 		case '?':
 			fprintf(stderr, "Unrecognized option: -%c\n", optopt);
@@ -92,11 +100,11 @@ main(int argc, char *argv[])
 	}
 
 	if (optind + 1 == argc)
-		ifile = argv[optind];
+		bank_filename = argv[optind];
 	else
 		errflg++;
 
-	if (nflg && (xflg || aflg || rt_controls || cutoff >= 0 || filter >= 0 || pbr >= 0))
+	if (nflg + aflg > 1 && modflg > 1)
 		errflg++;
 
 	if (errflg > 0) {
@@ -107,10 +115,35 @@ main(int argc, char *argv[])
 	}
 
 	if (nflg)
-		exit(emu3_create_bank(ifile));
-	else{
-		exit(emu3_process_bank
-			     (ifile, aflg, afile, xflg, rt_controls, level, cutoff, q,
-			     filter, pbr));
+		result = emu3_create_bank(bank_filename);
+
+	if (result)
+		exit(result);
+
+	struct emu3_file * file = emu3_open_file(bank_filename);
+
+	if (!file)
+		exit(result);
+
+	if (aflg)
+		result = emu3_add_sample(file, sample_filename);
+
+	if (result) {
+		emu3_close_file(file);
+		exit(result);
 	}
+
+	result = emu3_process_bank(file, xflg, rt_controls, level, cutoff, q, filter, pbr);
+
+	if (result) {
+		emu3_close_file(file);
+		exit(result);
+	}
+
+	if (aflg || modflg)
+		emu3_write_file(file);
+
+	emu3_close_file(file);
+
+	exit(result);
 }
