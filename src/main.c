@@ -104,7 +104,7 @@ main(int argc, char *argv[])
 	else
 		errflg++;
 
-	if (nflg + aflg > 1 && modflg > 1)
+	if ((nflg || aflg) && modflg)
 		errflg++;
 
 	if (errflg > 0) {
@@ -125,19 +125,22 @@ main(int argc, char *argv[])
 	if (!file)
 		exit(result);
 
-	if (aflg)
+	if (aflg) {
 		result = emu3_add_sample(file, sample_filename);
 
-	if (result) {
-		emu3_close_file(file);
-		exit(result);
+		if (result) {
+			emu3_close_file(file);
+			exit(result);
+		}
 	}
 
-	result = emu3_process_bank(file, xflg, rt_controls, level, cutoff, q, filter, pbr);
+	if (!nflg && !aflg) {
+		result = emu3_process_bank(file, xflg, rt_controls, level, cutoff, q, filter, pbr);
 
-	if (result) {
-		emu3_close_file(file);
-		exit(result);
+		if (result) {
+			emu3_close_file(file);
+			exit(result);
+		}
 	}
 
 	if (aflg || modflg)
