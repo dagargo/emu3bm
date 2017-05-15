@@ -1,4 +1,4 @@
-.TH emu3bm 1 "April 2016"
+.TH emu3bm 1 "May 2017"
 
 .SH NAME
 emu3bm \- manage EMU3 banks
@@ -10,38 +10,51 @@ emu3bm \- manage EMU3 banks
 Manage EMU3 banks, add and extract samples and set some preset and zone parameters.
 
 .SH OPTIONS
-.IP -n
-create a new EMU SI-32 v3 bank
-
-.IP "-a sample"
+.TP
+.BR \-a " sample"
 add the sample in WAV format to the bank
 
-.IP -x
-extract all the samples in the bank in the current directory
-
-.IP "-r realtime_controls"
-set the realtime controls for all presets using the format 1,2,3,4,5,6,7,8
-
-.IP "-p pitch_bend_range"
-set the pitch bend range for all presets
-
-.IP -l
-set the level of the VCA for all the preset zones
-
-.IP "-c cutoff_frequency"
+.TP
+.BR \-c " filter_cutoff_frequency"
 set the cutoff frequency of the VCF for all the preset zones
 
-.IP "-q Q"
-set the Q of the VCF for all the preset zones
-
-.IP "-f filter_type"
+.TP
+.BR \-f " filter_type"
 set the filter type of the VCF for all the preset zones
 
-.IP -v
+.TP
+.BR \-l " level"
+set the level of the VCA for all the preset zones
+
+.TP
+.BR \-n
+create a new EMU SI-32 v3 bank
+
+.TP
+.BR \-p " pitch_bend_range"
+set the pitch bend range for all presets
+
+.TP
+.BR \-q " filter_q"
+set the Q of the VCF for all the preset zones
+
+.TP
+.BR \-r " realtime_controls"
+set the realtime controls for all presets using the format 1,2,3,4,5,6,7,8
+
+.TP
+.BR \-v
 increment the verbosity level
 
+.TP
+.BR \-x
+extract all the bank samples in the current directory
+
+.RE
+Options \fB\-a\fR and \fB\-n\fR can not be used in conjuction with options \fB\-c\fR, \fB\-f\fR, \fB\-l\fR, \fB\-p\fR, \fB\-q\fR, \fB\-r\fR and \fB\-x\fR.
+
 .SH COPYRIGHT
-Copyright © 2016 David García Goñi.  License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+Copyright © 2017 David García Goñi.  License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
 .br
 This is free software: you are free to change and redistribute it.  There is NO WARRANTY, to the extent permitted by law.
 
