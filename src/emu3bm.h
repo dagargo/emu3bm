@@ -110,15 +110,28 @@ struct emu3_preset_zone
         char parameters_a[12];
         unsigned char vcf_cutoff;
         unsigned char vcf_q;
-        char parameters_b[26];
+        char parameters_b[13];
+        char vel_to_vca_level;
+        char vel_to_vca_attack;
+        char vel_to_vcf_cutoff;
+        char vel_to_pitch;
+        char vel_to_aux_env;
+        char vel_to_vcf_q;
+        char vel_to_vcf_attack;
+        char vel_to_sample_start;
+        char vel_to_vca_pan;
+        char lfo_to_pitch;
+        char lfo_to_vca;
+        char lfo_to_cutoff;
+        char lfo_to_pan;
         char vca_level;
-        char unknown_1;
-        char unknown_2;
-        char unknown_3;
+        char unknown_5;
+        char unknown_6;
+        char unknown_7;
         char vca_pan;
         char vcf_type_lfo_shape;
-        char foo;
-        char bar;
+        char foo; //0xff
+        char bar; ///0x01
 };
 
 struct emu3_preset

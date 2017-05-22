@@ -214,13 +214,21 @@ emu3_print_sample_info(struct emu3_sample *sample, sf_count_t nframes)
 	log(1, "Sample rate: %dHz\n", sample->sample_rate);
 }
 
+//Level: [0, 0x7f] -> [0, 100]
+int emu3_get_percent_level(char vca_level) {
+	return (int)(vca_level * 100 / 127.0);
+}
+
+//Pan: [0, 0x80] -> [-100, +100]
+int emu3_get_vca_pan(char vca_pan) {
+	return (int)((vca_pan - 0x40) * 1.5625);
+}
+
 void
 emu3_print_zone_info(struct emu3_preset_zone *zone)
 {
-	//Level: [0, 0x7f] -> [0, 100]
-	log(1, "VCA level: %d\n", (int)(zone->vca_level * 100 / 127));
-	//Pan: [0, 0x80] -> [-100, +100]
-	log(1, "VCA pan: %d\n", (int)((zone->vca_pan - 0x40) * 1.5625));
+	log(1, "VCA level: %d\n", emu3_get_percent_level(zone->vca_level));
+	log(1, "VCA pan: %d\n", emu3_get_vca_pan(zone->vca_pan));
 	int vcf_type = (unsigned char)zone->vcf_type_lfo_shape >> 3;
 	if (vcf_type > VCF_TYPE_SIZE - 1)
 		vcf_type = VCF_TYPE_SIZE - 1;
@@ -231,7 +239,22 @@ emu3_print_zone_info(struct emu3_preset_zone *zone)
 	//Q: [0x80, 0xff] -> [0, 100]
 	int q = (zone->vcf_q - 0x80) * 100 / 127;
 	log(1, "VCF Q: %d\n", q);
+
+	log(1, "Velocity to Pitch: %d\n", zone->vel_to_pitch);
+	log(1, "Velocity to VCA Level: %d\n", emu3_get_percent_level(zone->vel_to_vca_level));
+	log(1, "Velocity to VCA Attack: %d\n", zone->vel_to_vca_attack);
+	log(1, "Velocity to VCF Cutoff: %d\n", zone->vel_to_vcf_cutoff);
+	log(1, "Velocity to VCF Q: %d\n", zone->vel_to_vcf_q);
+	log(1, "Velocity to VCF Attack: %d\n", zone->vel_to_vcf_attack);
+	log(1, "Velocity to Pan: %d\n", emu3_get_vca_pan(zone->vel_to_vca_pan));
+	log(1, "Velocity to Sample Start: %d\n", zone->vel_to_sample_start);
+	log(1, "Velocity to Auxiliary Env: %d\n", zone->vel_to_aux_env);
+
 	log(1, "LFO shape: %s\n", LFO_SHAPE[zone->vcf_type_lfo_shape & 0x3]);
+	log(1, "LFO->Pitch: %d\n", emu3_get_percent_level(zone->lfo_to_pitch));
+	log(1, "LFO->Cutoff: %d\n", emu3_get_percent_level(zone->lfo_to_cutoff));
+	log(1, "LFO->VCA: %d\n", emu3_get_percent_level(zone->lfo_to_vca));
+	log(1, "LFO->Pan: %d\n", emu3_get_percent_level(zone->lfo_to_pan));
 }
 
 void
@@ -683,7 +706,7 @@ struct emu3_file * emu3_open_file(const char* filename)
 int
 emu3_process_bank(struct emu3_file * file, int xflg, char *rt_controls, int level, int cutoff, int q, int filter, int pbr)
 {
-	int size, i, channels;
+	int size, channels;
 	struct emu3_bank *bank;
 	unsigned int *addresses;
 	unsigned int address;
@@ -698,7 +721,7 @@ emu3_process_bank(struct emu3_file * file, int xflg, char *rt_controls, int leve
 		return EXIT_FAILURE;
 
 	addresses = emu3_get_preset_addresses(file->bank);
-	for (i = 0; i < emu3_get_max_presets(file->bank); i++) {
+	for (int i = 0; i < emu3_get_max_presets(file->bank); i++) {
 		if (addresses[0] != addresses[1]) {
 			address = emu3_get_preset_address(file->bank, addresses[0]);
 			preset = (struct emu3_preset *)&file->raw[address];
@@ -726,6 +749,7 @@ emu3_process_bank(struct emu3_file * file, int xflg, char *rt_controls, int leve
 					emu3_set_preset_zone_q(&zones[j], q);
 				if (filter != -1)
 					emu3_set_preset_zone_filter(&zones[j], filter);
+
 				emu3_print_zone_info(&zones[j]);
 			}
 		}
@@ -743,7 +767,7 @@ emu3_process_bank(struct emu3_file * file, int xflg, char *rt_controls, int leve
 		sample_start_addr + addresses[max_samples] - SAMPLE_OFFSET;
 	log(1, "Next sample: 0x%08x\n", next_sample_addr);
 
-	for (i = 0; i < max_samples; i++) {
+	for (int i = 0; i < max_samples; i++) {
 		if (addresses[i] == 0)
 			break;
 		address = sample_start_addr + addresses[i] - SAMPLE_OFFSET;
