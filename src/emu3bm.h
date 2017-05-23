@@ -105,12 +105,27 @@ struct emu3_sample
         short int frames[];
 };
 
+struct emu3_envelope {
+  unsigned char attack;
+  unsigned char hold;
+  unsigned char decay;
+  unsigned char sustain;
+  unsigned char release;
+};
+
 struct emu3_preset_zone
 {
-        char parameters_a[12];
+        char parameters_a[4];
+        struct emu3_envelope vca_envelope;
+        char parameters_a2[2];
+        unsigned char lfo_variation;
         unsigned char vcf_cutoff;
         unsigned char vcf_q;
-        char parameters_b[13];
+        unsigned char vcf_envelope_amount;
+        struct emu3_envelope vcf_envelope;
+        struct emu3_envelope aux_envelope;
+        char aux_envelope_amount;
+        unsigned char aux_envelope_dest;
         char vel_to_vca_level;
         char vel_to_vca_attack;
         char vel_to_vcf_cutoff;
@@ -125,11 +140,11 @@ struct emu3_preset_zone
         char lfo_to_cutoff;
         char lfo_to_pan;
         char vca_level;
-        char unknown_5;
-        char unknown_6;
-        char unknown_7;
+        char unknown_1;
+        char unknown_2;
+        char unknown_3;
         char vca_pan;
-        char vcf_type_lfo_shape;
+        unsigned char vcf_type_lfo_shape;
         char foo; //0xff
         char bar; ///0x01
 };

@@ -215,33 +215,61 @@ emu3_print_sample_info(struct emu3_sample *sample, sf_count_t nframes)
 }
 
 //Level: [0, 0x7f] -> [0, 100]
-int emu3_get_percent_level(char vca_level) {
-	return (int)(vca_level * 100 / 127.0);
+int emu3_get_percent_value(char value)
+{
+	return (int)(value * 100 / 127.0);
 }
 
 //Pan: [0, 0x80] -> [-100, +100]
-int emu3_get_vca_pan(char vca_pan) {
+int emu3_get_vca_pan(char vca_pan)
+{
 	return (int)((vca_pan - 0x40) * 1.5625);
 }
 
 void
 emu3_print_zone_info(struct emu3_preset_zone *zone)
 {
-	log(1, "VCA level: %d\n", emu3_get_percent_level(zone->vca_level));
+	log(1, "VCA level: %d\n", emu3_get_percent_value(zone->vca_level));
 	log(1, "VCA pan: %d\n", emu3_get_vca_pan(zone->vca_pan));
-	int vcf_type = (unsigned char)zone->vcf_type_lfo_shape >> 3;
+
+	log(1, "VCA envelope: attack: %d, hold: %d, decay: %d, sustain: %d\%, release: %d.\n",
+	    zone->vca_envelope.attack, zone->vca_envelope.hold,
+	    zone->vca_envelope.decay, emu3_get_percent_value(zone->vca_envelope.sustain),
+	    zone->vca_envelope.release);
+
+	//Filter type might only work with ESI banks
+	int vcf_type = zone->vcf_type_lfo_shape >> 3;
 	if (vcf_type > VCF_TYPE_SIZE - 1)
 		vcf_type = VCF_TYPE_SIZE - 1;
-	log(1, "VCF type (%d): %s\n", vcf_type, VCF_TYPE[vcf_type]);
+	log(1, "VCF type %s\n", vcf_type, VCF_TYPE[vcf_type]);
+
 	//Cutoff: [0, 255] -> [26, 74040]
 	int cutoff = zone->vcf_cutoff;
 	log(1, "VCF cutoff: %d\n", cutoff);
-	//Q: [0x80, 0xff] -> [0, 100]
+
+	//Filter Q might only work with ESI banks
+	//ESI Q: [0x80, 0xff] -> [0, 100]
+	//Other formats: [0, 0x7f]
 	int q = (zone->vcf_q - 0x80) * 100 / 127;
+
 	log(1, "VCF Q: %d\n", q);
 
+	log(1, "VCF envelope amount: %d\n", emu3_get_percent_value(zone->vcf_envelope_amount));
+
+	log(1, "VCF envelope: attack: %d, hold: %d, decay: %d, sustain: %d\%, release: %d.\n",
+	    zone->vcf_envelope.attack, zone->vcf_envelope.hold,
+	    zone->vcf_envelope.decay, emu3_get_percent_value(zone->vcf_envelope.sustain),
+	    zone->vcf_envelope.release);
+
+	log(1, "Auxiliary envelope amount: %d\n", emu3_get_percent_value(zone->aux_envelope_amount));
+
+	log(1, "Auxiliary envelope: attack: %d, hold: %d, decay: %d, sustain: %d\%, release: %d.\n",
+	    zone->aux_envelope.attack, zone->aux_envelope.hold,
+	    zone->aux_envelope.decay, emu3_get_percent_value(zone->aux_envelope.sustain),
+	    zone->aux_envelope.release);
+
 	log(1, "Velocity to Pitch: %d\n", zone->vel_to_pitch);
-	log(1, "Velocity to VCA Level: %d\n", emu3_get_percent_level(zone->vel_to_vca_level));
+	log(1, "Velocity to VCA Level: %d\n", emu3_get_percent_value(zone->vel_to_vca_level));
 	log(1, "Velocity to VCA Attack: %d\n", zone->vel_to_vca_attack);
 	log(1, "Velocity to VCF Cutoff: %d\n", zone->vel_to_vcf_cutoff);
 	log(1, "Velocity to VCF Q: %d\n", zone->vel_to_vcf_q);
@@ -251,10 +279,10 @@ emu3_print_zone_info(struct emu3_preset_zone *zone)
 	log(1, "Velocity to Auxiliary Env: %d\n", zone->vel_to_aux_env);
 
 	log(1, "LFO shape: %s\n", LFO_SHAPE[zone->vcf_type_lfo_shape & 0x3]);
-	log(1, "LFO->Pitch: %d\n", emu3_get_percent_level(zone->lfo_to_pitch));
-	log(1, "LFO->Cutoff: %d\n", emu3_get_percent_level(zone->lfo_to_cutoff));
-	log(1, "LFO->VCA: %d\n", emu3_get_percent_level(zone->lfo_to_vca));
-	log(1, "LFO->Pan: %d\n", emu3_get_percent_level(zone->lfo_to_pan));
+	log(1, "LFO->Pitch: %d\n", emu3_get_percent_value(zone->lfo_to_pitch));
+	log(1, "LFO->Cutoff: %d\n", emu3_get_percent_value(zone->lfo_to_cutoff));
+	log(1, "LFO->VCA: %d\n", emu3_get_percent_value(zone->lfo_to_vca));
+	log(1, "LFO->Pan: %d\n", emu3_get_percent_value(zone->lfo_to_pan));
 }
 
 void
@@ -802,7 +830,7 @@ int emu3_add_sample(struct emu3_file *file, char *sample_filename)
 	unsigned int offset = paddresses[emu3_get_max_presets(file->bank)];
 	unsigned int sample_start_addr = emu3_get_sample_start_address(file->bank) + offset;
 	unsigned int * addresses = emu3_get_sample_addresses(file->bank);
-	unsigned int next_sample_addr =	sample_start_addr + addresses[max_samples] - SAMPLE_OFFSET;
+	unsigned int next_sample_addr = sample_start_addr + addresses[max_samples] - SAMPLE_OFFSET;
 	struct emu3_sample * sample = (struct emu3_sample *)&file->raw[next_sample_addr];
 
 	for (i = 0; i < max_samples; i++)
