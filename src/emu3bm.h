@@ -188,7 +188,7 @@ int emu3_add_sample (struct emu3_file *, char *);
 
 int emu3_extract_samples(struct emu3_file *);
 
-int emu3_process_bank (struct emu3_file *, int, char *, int, int, int, int, int);
+int emu3_process_bank (struct emu3_file *, int, int, char *, int, int, int, int, int);
 
 void emu3_print_sample_info (struct emu3_sample *, sf_count_t);
 

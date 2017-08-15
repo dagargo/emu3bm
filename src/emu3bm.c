@@ -734,7 +734,7 @@ struct emu3_file * emu3_open_file(const char* filename)
 }
 
 int
-emu3_process_bank(struct emu3_file * file, int xflg, char *rt_controls, int level, int cutoff, int q, int filter, int pbr)
+emu3_process_bank(struct emu3_file * file, int edit_preset, int xflg, char *rt_controls, int level, int cutoff, int q, int filter, int pbr)
 {
 	int size, channels;
 	struct emu3_bank *bank;
@@ -752,7 +752,7 @@ emu3_process_bank(struct emu3_file * file, int xflg, char *rt_controls, int leve
 
 	addresses = emu3_get_preset_addresses(file->bank);
 	for (int i = 0; i < emu3_get_max_presets(file->bank); i++) {
-		if (addresses[0] != addresses[1]) {
+		if (addresses[0] != addresses[1] && (i == edit_preset || edit_preset == -1)) {
 			address = emu3_get_preset_address(file->bank, addresses[0]);
 			preset = (struct emu3_preset *)&file->raw[address];
 			log(0, "Preset %3d, %.*s", i, NAME_SIZE, preset->name);

@@ -49,11 +49,12 @@ main(int argc, char *argv[])
 	int q = -1;
 	int filter = -1;
 	int pbr = -1;
+	int preset = -1;
 	extern char *optarg;
 	extern int optind, optopt;
 	int result = 0;
 
-	while ((c = getopt(argc, argv, "vna:xr:l:c:q:f:p:")) != -1) {
+	while ((c = getopt(argc, argv, "vna:xr:l:c:q:f:p:P:")) != -1) {
 		switch (c) {
 		case 'v':
 			verbosity++;
@@ -92,6 +93,9 @@ main(int argc, char *argv[])
 		case 'p':
 			pbr = get_positive_int(optarg);
 			modflg++;
+			break;
+		case 'P':
+			preset = get_positive_int(optarg);
 			break;
 		case '?':
 			fprintf(stderr, "Unrecognized option: -%c\n", optopt);
@@ -135,7 +139,7 @@ main(int argc, char *argv[])
 	}
 
 	if (!nflg && !aflg) {
-		result = emu3_process_bank(file, xflg, rt_controls, level, cutoff, q, filter, pbr);
+		result = emu3_process_bank(file, preset, xflg, rt_controls, level, cutoff, q, filter, pbr);
 
 		if (result) {
 			emu3_close_file(file);
