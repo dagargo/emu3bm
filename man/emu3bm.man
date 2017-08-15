@@ -12,43 +12,47 @@ Manage EMU3 banks, add and extract samples and set some preset and zone paramete
 .SH OPTIONS
 .TP
 .BR \-a " sample"
-add the sample in WAV format to the bank
+Add the sample in WAV format to the bank.
+
+.TP
+.BR \-P " preset_to_edit"
+Specify the preset to edit. If no preset is specified all presets will be edited.
 
 .TP
 .BR \-c " filter_cutoff_frequency"
-set the cutoff frequency of the VCF for all the preset zones
+Set the cutoff frequency of the VCF for all the preset zones.
 
 .TP
 .BR \-f " filter_type"
-set the filter type of the VCF for all the preset zones
+Set the filter type of the VCF for all the preset zones.
 
 .TP
 .BR \-l " level"
-set the level of the VCA for all the preset zones
+Set the level of the VCA for all the preset zones.
 
 .TP
 .BR \-n
-create a new EMU SI-32 v3 bank
+Create a new EMU SI-32 v3 bank.
 
 .TP
 .BR \-p " pitch_bend_range"
-set the pitch bend range for all presets
+Set the pitch bend range for all presets.
 
 .TP
 .BR \-q " filter_q"
-set the Q of the VCF for all the preset zones
+Set the Q of the VCF for all the preset zones.
 
 .TP
 .BR \-r " realtime_controls"
-set the realtime controls for all presets using the format 1,2,3,4,5,6,7,8
+Set the realtime controls for all presets using the format 1,2,3,4,5,6,7,8.
 
 .TP
 .BR \-v
-increment the verbosity level
+Increment the verbosity level.
 
 .TP
 .BR \-x
-extract all the bank samples in the current directory
+Extract all the bank samples in the current directory.
 
 .RE
 Options \fB\-a\fR and \fB\-n\fR can not be used in conjuction with options \fB\-c\fR, \fB\-f\fR, \fB\-l\fR, \fB\-p\fR, \fB\-q\fR, \fB\-r\fR and \fB\-x\fR.
