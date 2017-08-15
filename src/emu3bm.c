@@ -241,7 +241,7 @@ emu3_print_zone_info(struct emu3_preset_zone *zone)
 	int vcf_type = zone->vcf_type_lfo_shape >> 3;
 	if (vcf_type > VCF_TYPE_SIZE - 1)
 		vcf_type = VCF_TYPE_SIZE - 1;
-	log(1, "VCF type %s\n", vcf_type, VCF_TYPE[vcf_type]);
+	log(1, "VCF type %s\n", VCF_TYPE[vcf_type]);
 
 	//Cutoff: [0, 255] -> [26, 74040]
 	int cutoff = zone->vcf_cutoff;
@@ -274,7 +274,7 @@ emu3_print_zone_info(struct emu3_preset_zone *zone)
 	log(1, "Velocity to VCF Cutoff: %d\n", zone->vel_to_vcf_cutoff);
 	log(1, "Velocity to VCF Q: %d\n", zone->vel_to_vcf_q);
 	log(1, "Velocity to VCF Attack: %d\n", zone->vel_to_vcf_attack);
-	log(1, "Velocity to Pan: %d\n", emu3_get_vca_pan(zone->vel_to_vca_pan));
+	log(1, "Velocity to Pan: %d\n", emu3_get_percent_value(zone->vel_to_vca_pan));
 	log(1, "Velocity to Sample Start: %d\n", zone->vel_to_sample_start);
 	log(1, "Velocity to Auxiliary Env: %d\n", zone->vel_to_aux_env);
 
@@ -305,7 +305,7 @@ emu3_print_preset_info(struct emu3_preset *preset)
 	}
 	for (int i = 0; i < UNKNOWN_PARAMETERS_SIZE; i++)
 		log(2, "Unknown parameter %d: %d\n", i, preset->unknown_parameters[i]);
-	log(1, "Pitch Bend Range: %x\n", preset->pitch_bend_range)
+	log(1, "Pitch Bend Range: %d\n", preset->pitch_bend_range)
 }
 
 void
@@ -710,6 +710,8 @@ struct emu3_file * emu3_open_file(const char* filename)
 
 			if (strncmp(file->bank->name, file->bank->name_copy, NAME_SIZE))
 				log(2, "Bank name is different than previously found.\n");
+
+			log(2, "Selected preset: %d\n", file->bank->selected_preset);
 
 			log(2, "More geometry:\n");
 			for (int i = 0; i < MORE_BANK_PARAMETERS; i++)

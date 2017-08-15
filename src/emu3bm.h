@@ -34,7 +34,7 @@
 #define FORMAT_SIZE 16
 #define NAME_SIZE 16
 #define BANK_PARAMETERS 5
-#define MORE_BANK_PARAMETERS 4
+#define MORE_BANK_PARAMETERS 3
 #define SAMPLE_ADDR_START_EMU_3X 0x1bd2
 #define SAMPLE_ADDR_START_EMU_THREE 0x204
 #define PRESET_OFFSET_EMU_THREE 0x1a6fe
@@ -61,7 +61,7 @@
 #define MONO_SAMPLE_EMULATOR_3X_5 0x0030ffc3
 #define RT_CONTROLS_SIZE 10
 #define RT_CONTROLS_FS_SIZE 2
-#define UNKNOWN_PARAMETERS_SIZE 15
+#define UNKNOWN_PARAMETERS_SIZE 16
 
 #define ESI_32_V3_DEF      "EMU SI-32 v3   \0"
 #define EMULATOR_3X_DEF    "EMULATOR 3X    \0"
@@ -92,6 +92,7 @@ struct emu3_bank
         unsigned int next;
         unsigned int parameters[BANK_PARAMETERS];
         char name_copy[NAME_SIZE];
+        unsigned int selected_preset;
         unsigned int more_parameters[MORE_BANK_PARAMETERS];
 };
 
@@ -155,7 +156,7 @@ struct emu3_preset
         char rt_controls[RT_CONTROLS_SIZE + RT_CONTROLS_FS_SIZE];
         char unknown_parameters[UNKNOWN_PARAMETERS_SIZE];
         char pitch_bend_range;
-        char data[9];
+        char data[8];
         char nzones;
         char padding[0x58];
 };
