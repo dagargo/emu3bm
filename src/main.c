@@ -147,8 +147,8 @@ main (int argc, char *argv[])
   if (!nflg && !aflg)
     {
       result =
-	emu3_process_bank (file, preset, xflg, rt_controls, level, cutoff, q,
-			   filter, pbr);
+	emu3_process_bank (file, preset, xflg, rt_controls, level,
+			   cutoff, q, filter, pbr);
 
       if (result)
 	{

@@ -21,6 +21,7 @@
 #include "emu3bm.h"
 
 extern int verbosity;
+extern char *note_names[];
 
 const char *RT_CONTROLS_SRC[] = {
   "Pitch Control",
@@ -236,6 +237,7 @@ emu3_print_zone_info (struct emu3_preset_zone *zone)
 {
   emu3_log (1, 3, "Sample: %x\n",
 	    (zone->sample_id_msb << 8) + zone->sample_id_lsb);
+  emu3_log (1, 3, "Root note: %s\n", note_names[zone->root_note]);
   emu3_log (1, 3, "VCA level: %d\n",
 	    emu3_get_percent_value (zone->vca_level));
   emu3_log (1, 3, "VCA pan: %d\n", emu3_get_vca_pan (zone->vca_pan));

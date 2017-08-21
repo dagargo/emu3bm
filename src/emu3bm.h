@@ -132,10 +132,10 @@ struct emu3_preset_zone_def
 
 struct emu3_preset_zone
 {
-  char parameter_a;
+  char root_note;
   unsigned char sample_id_lsb;
   unsigned char sample_id_msb;
-  char parameter_b;
+  char parameter_a;
   struct emu3_envelope vca_envelope;
   char parameters_a2[2];
   unsigned char lfo_variation;
