@@ -27,6 +27,7 @@
 #include <libgen.h>
 #include <errno.h>
 #include <inttypes.h>
+#include <stdarg.h>
 
 #include "../config.h"
 
@@ -71,7 +72,12 @@
 
 #define EMPTY_BANK "res/empty_bank"
 
-#define log(level, ...) if (level <= verbosity) printf(__VA_ARGS__);
+#define emu3_log(level, indent, ...) \
+	if (level <= verbosity) { \
+		for (int i = 0; i < indent; i++) \
+			printf("\t"); \
+		printf(__VA_ARGS__); \
+	}
 
 struct emu3_file
 {
@@ -114,9 +120,20 @@ struct emu3_envelope {
   unsigned char release;
 };
 
+struct emu3_preset_zone_def
+{
+	unsigned char b1;
+	unsigned char b2;
+	unsigned char b3;
+	unsigned char type;
+};
+
 struct emu3_preset_zone
 {
-        char parameters_a[4];
+        char parameter_a;
+        unsigned char sample_id_lsb;
+        unsigned char sample_id_msb;
+        char parameter_b;
         struct emu3_envelope vca_envelope;
         char parameters_a2[2];
         unsigned char lfo_variation;
