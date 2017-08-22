@@ -862,6 +862,13 @@ emu3_process_bank (struct emu3_file *file, int edit_preset, int xflg,
 						   sizeof (struct
 							   emu3_preset_zone_def)
 						   * preset->nzones];
+	  emu3_log (1, 1, "Note mappings:\n");
+	  for (int j = 0; j < NOTES; j++)
+	    {
+	      if (preset->note_zone_mappings[j] != 0xff)
+		emu3_log (1, 2, "%s: %d\n", note_names[j],
+			  preset->note_zone_mappings[j]);
+	    }
 
 	  emu3_log (1, 1, "Zones: %d\n", preset->nzones);
 	  for (int j = 0; j < preset->nzones; j++)

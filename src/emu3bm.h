@@ -64,6 +64,7 @@
 #define RT_CONTROLS_SIZE 10
 #define RT_CONTROLS_FS_SIZE 2
 #define UNKNOWN_PARAMETERS_SIZE 16
+#define NOTES 88		// 0x58
 
 #define ESI_32_V3_DEF      "EMU SI-32 v3   \0"
 #define EMULATOR_3X_DEF    "EMULATOR 3X    \0"
@@ -73,11 +74,12 @@
 
 #define EMPTY_BANK "res/empty_bank"
 
-#define emu3_log(level, indent, ...) \
-	if (level <= verbosity) { \
-		for (int i = 0; i < indent; i++) \
-			printf("\t"); \
-		printf(__VA_ARGS__); \
+#define emu3_log(level, indent, ...) {\
+		if (level <= verbosity) { \
+			for (int i = 0; i < indent; i++) \
+				printf("\t"); \
+			printf(__VA_ARGS__); \
+		}\
 	}
 
 struct emu3_file
@@ -178,7 +180,7 @@ struct emu3_preset
   char pitch_bend_range;
   char data[8];
   char nzones;
-  char padding[0x58];
+  unsigned char note_zone_mappings[NOTES];
 };
 
 struct emu3_sample_descriptor
