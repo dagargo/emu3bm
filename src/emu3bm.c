@@ -162,13 +162,18 @@ char *
 emu3_str_to_emu3name (const char *src)
 {
   int len = strlen (src);
-  char *emu3name = malloc (len + 1);
+  if (len > NAME_SIZE)
+    len = NAME_SIZE;
 
-  strcpy (emu3name, src);
+  char *emu3name = malloc (len + 1);
+  strncpy (emu3name, src, len);
+  emu3name[len] = '\0';
+
   char *c = emu3name;
   for (int i = 0; i < len; i++, c++)
     if (!isalnum (*c) && *c != ' ' && *c != '#')
       *c = '?';
+
   return emu3name;
 }
 
@@ -516,7 +521,8 @@ emu3_append_sample (char *path, struct emu3_sample *sample)
     fprintf (stderr, "Sample neither mono nor stereo. Skipping...\n");
   else
     {
-      filename = basename (path);
+      char *basec = strdup (path);
+      filename = basename (basec);
       emu3_log (1, 1,
 		"Appending sample %s... (%" PRId64
 		" frames, %d channels)\n", filename, input_info.frames,
@@ -525,6 +531,8 @@ emu3_append_sample (char *path, struct emu3_sample *sample)
       char *name = emu3_wav_filename_to_filename (filename);
       char *emu3name = emu3_str_to_emu3name (name);
       emu3_cpystr (sample->name, emu3name);
+
+      free (basec);
       free (name);
       free (emu3name);
 
@@ -1008,9 +1016,6 @@ emu3_create_bank (const char *path)
   char *basec = strdup (path);
   char *dname = dirname (dirc);
   char *bname = basename (basec);
-
-  if (strlen (bname) > NAME_SIZE)
-    bname[NAME_SIZE] = '\0';
 
   char *name = emu3_str_to_emu3name (bname);
   char *src_path =
