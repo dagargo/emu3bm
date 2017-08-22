@@ -117,7 +117,7 @@ main (int argc, char *argv[])
   if (errflg > 0)
     {
       fprintf (stderr, "%s\n", PACKAGE_STRING);
-      fprintf (stderr, "Usage: %s [OPTIONS] input_file.\n",
+      fprintf (stderr, "Usage: %s [OPTIONS] bank_file.\n",
 	       basename (argv[0]));
       exit (EXIT_FAILURE);
     }
