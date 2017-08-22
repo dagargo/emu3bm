@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <stdarg.h>
+#include <libgen.h>
 
 #include "../config.h"
 
@@ -193,13 +194,13 @@ void emu3_close_file (struct emu3_file *);
 
 void emu3_write_file (struct emu3_file *);
 
-char *emu3_e3name_to_filename (const char *);
+char *emu3_emu3name_to_filename (const char *);
 
-char *emu3_e3name_to_wav_filename (const char *);
+char *emu3_emu3name_to_wav_filename (const char *);
 
-char *emu3_wav_filename_to_e3name (const char *);
+char *emu3_wav_filename_to_emu3name (const char *);
 
-char *emu3_str_to_e3name (const char *);
+char *emu3_str_to_emu3name (const char *);
 
 void emu3_cpystr (char *, const char *);
 

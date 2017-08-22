@@ -107,7 +107,7 @@ const char *VCF_TYPE[] = {
 const int VCF_TYPE_SIZE = sizeof (VCF_TYPE) / sizeof (char *);
 
 char *
-emu3_e3name_to_filename (const char *objname)
+emu3_emu3name_to_filename (const char *objname)
 {
   int i, size;
   const char *index = &objname[NAME_SIZE - 1];
@@ -130,9 +130,9 @@ emu3_e3name_to_filename (const char *objname)
 }
 
 char *
-emu3_e3name_to_wav_filename (const char *e3name)
+emu3_emu3name_to_wav_filename (const char *emu3name)
 {
-  char *fname = emu3_e3name_to_filename (e3name);
+  char *fname = emu3_emu3name_to_filename (emu3name);
   char *wname = malloc (strlen (fname) + 5);
 
   strcpy (wname, fname);
@@ -159,17 +159,17 @@ emu3_wav_filename_to_filename (const char *wav_file)
 }
 
 char *
-emu3_str_to_e3name (const char *src)
+emu3_str_to_emu3name (const char *src)
 {
   int len = strlen (src);
-  char *e3name = malloc (len + 1);
+  char *emu3name = malloc (len + 1);
 
-  strcpy (e3name, src);
-  char *c = e3name;
+  strcpy (emu3name, src);
+  char *c = emu3name;
   for (int i = 0; i < len; i++, c++)
     if (!isalnum (*c) && *c != ' ' && *c != '#')
       *c = '?';
-  return e3name;
+  return emu3name;
 }
 
 void
@@ -523,10 +523,10 @@ emu3_append_sample (char *path, struct emu3_sample *sample)
 		input_info.channels);
       //Sample header initialization
       char *name = emu3_wav_filename_to_filename (filename);
-      char *e3name = emu3_str_to_e3name (name);
-      emu3_cpystr (sample->name, e3name);
+      char *emu3name = emu3_str_to_emu3name (name);
+      emu3_cpystr (sample->name, emu3name);
       free (name);
-      free (e3name);
+      free (emu3name);
 
       data_size = sizeof (short int) * (input_info.frames + 4);
       mono_size = sizeof (struct emu3_sample) + data_size;
@@ -613,7 +613,7 @@ emu3_write_sample_file (struct emu3_sample *sample, sf_count_t nframes)
   output_info.channels = channels;
   output_info.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
 
-  wav_file = emu3_e3name_to_wav_filename (sample->name);
+  wav_file = emu3_emu3name_to_wav_filename (sample->name);
   schannels = channels == 1 ? "mono" : "stereo";
   emu3_log (0, 1, "Extracting %s sample %s...\n", schannels, wav_file);
 
@@ -798,7 +798,7 @@ emu3_open_file (const char *filename)
     }
   else
     {
-      fprintf (stderr, "Error: file %s could not be opened.\n", filename);
+      fprintf (stderr, "Error while opening %s for input\n", filename);
       return NULL;
     }
 }
@@ -1000,42 +1000,61 @@ emu3_write_file (struct emu3_file *file)
 }
 
 int
-emu3_create_bank (const char *ifile)
+emu3_create_bank (const char *path)
 {
+  int rvalue;
   struct emu3_bank bank;
-  char *name = emu3_str_to_e3name (ifile);
-  char *fname = emu3_e3name_to_filename (name);
-  char *path =
+  char *dirc = strdup (path);
+  char *basec = strdup (path);
+  char *dname = dirname (dirc);
+  char *bname = basename (basec);
+
+  if (strlen (bname) > NAME_SIZE)
+    bname[NAME_SIZE] = '\0';
+
+  char *name = emu3_str_to_emu3name (bname);
+  char *src_path =
     malloc (strlen (DATADIR) + strlen (PACKAGE) + strlen (EMPTY_BANK) + 3);
-  int ret = sprintf (path, "%s/%s/%s", DATADIR, PACKAGE, EMPTY_BANK);
+  int ret = sprintf (src_path, "%s/%s/%s", DATADIR, PACKAGE, EMPTY_BANK);
 
   if (ret < 0)
     {
-      fprintf (stderr, "Error while creating full path");
-      return EXIT_FAILURE;
+      fprintf (stderr, "Error while creating src path");
+      rvalue = EXIT_FAILURE;
+      goto out1;
+    }
+
+  char *dst_path = malloc (strlen (dname) + strlen (name) + 2);
+  ret = sprintf (dst_path, "%s/%s", dname, name);
+
+  if (ret < 0)
+    {
+      fprintf (stderr, "Error while creating dst path");
+      rvalue = EXIT_FAILURE;
+      goto out2;
+    }
+
+  FILE *src = fopen (src_path, "rb");
+  if (!src)
+    {
+      fprintf (stderr, "Error while opening %s for input\n", src_path);
+      rvalue = EXIT_FAILURE;
+      goto out3;
+    }
+
+  FILE *dst = fopen (dst_path, "w+b");
+  if (!dst)
+    {
+      fprintf (stderr, "Error while opening %s for output\n", dst_path);
+      rvalue = EXIT_FAILURE;
+      goto out4;
     }
 
   char buf[BUFSIZ];
   size_t size;
 
-  FILE *src = fopen (path, "rb");
-  if (!src)
-    {
-      fprintf (stderr, "Error while opening %s for input\n", path);
-      return EXIT_FAILURE;
-    }
-
-  FILE *dst = fopen (fname, "w+b");
-  if (!dst)
-    {
-      fprintf (stderr, "Error while opening %s for output\n", fname);
-      return EXIT_FAILURE;
-    }
-
   while (size = fread (buf, 1, BUFSIZ, src))
     fwrite (buf, 1, size, dst);
-
-  fclose (src);
 
   rewind (dst);
 
@@ -1047,11 +1066,21 @@ emu3_create_bank (const char *ifile)
       fwrite (&bank, sizeof (struct emu3_bank), 1, dst);
     }
 
+  printf ("File created in %s\n", dst_path);
+
+  rvalue = EXIT_SUCCESS;
+
   fclose (dst);
-
+out4:
+  fclose (src);
+out3:
+  free (dst_path);
+out2:
+  free (src_path);
+out1:
+  free (dirc);
+  free (basec);
   free (name);
-  free (fname);
-  free (path);
+  return rvalue;
 
-  return EXIT_SUCCESS;
 }

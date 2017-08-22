@@ -111,6 +111,9 @@ main (int argc, char *argv[])
   else
     errflg++;
 
+  if (nflg && aflg)
+    errflg++;
+
   if ((nflg || aflg) && modflg)
     errflg++;
 
@@ -123,10 +126,10 @@ main (int argc, char *argv[])
     }
 
   if (nflg)
-    result = emu3_create_bank (bank_filename);
-
-  if (result)
-    exit (result);
+    {
+      result = emu3_create_bank (bank_filename);
+      exit (result);
+    }
 
   struct emu3_file *file = emu3_open_file (bank_filename);
 
