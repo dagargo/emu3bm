@@ -194,12 +194,16 @@ emu3_get_sample_channels (struct emu3_sample *sample)
 
   switch (sample->format)
     {
-    case STEREO_SAMPLE_1:
-    case STEREO_SAMPLE_2:
+    case STEREO_SAMPLE_UNLOOP:
+    case STEREO_SAMPLE_LOOP:
+    case STEREO_SAMPLE_UNLOOP_NORELEASE:
+    case STEREO_SAMPLE_LOOP_NORELEASE:
       channels = 2;
       break;
-    case MONO_SAMPLE_1:
-    case MONO_SAMPLE_2:
+    case MONO_SAMPLE_UNLOOP:
+    case MONO_SAMPLE_LOOP:
+    case MONO_SAMPLE_UNLOOP_NORELEASE:
+    case MONO_SAMPLE_LOOP_NORELEASE:
     case MONO_SAMPLE_EMULATOR_3X_1:
     case MONO_SAMPLE_EMULATOR_3X_2:
     case MONO_SAMPLE_EMULATOR_3X_3:
@@ -481,7 +485,8 @@ emu3_init_sample_descriptor (struct emu3_sample_descriptor *sd,
   sd->sample = sample;
 
   sd->l_channel = sample->frames;
-  if (sample->format == STEREO_SAMPLE_1)
+  if (sample->format == STEREO_SAMPLE_UNLOOP
+      || sample->format == STEREO_SAMPLE_LOOP)
     //We consider the 4 shorts padding that the left channel has
     sd->r_channel = sample->frames + frames + 4;
 }
@@ -489,9 +494,11 @@ emu3_init_sample_descriptor (struct emu3_sample_descriptor *sd,
 void
 emu3_write_frame (struct emu3_sample_descriptor *sd, short int frame[])
 {
+  struct emu3_sample *sample = sd->sample;
   *sd->l_channel = frame[0];
   sd->l_channel++;
-  if (sd->sample->format == STEREO_SAMPLE_1)
+  if (sample->format == STEREO_SAMPLE_UNLOOP
+      || sample->format == STEREO_SAMPLE_LOOP)
     {
       *sd->r_channel = frame[1];
       sd->r_channel++;
@@ -523,7 +530,7 @@ emu3_append_sample (char *path, struct emu3_sample *sample)
     {
       char *basec = strdup (path);
       filename = basename (basec);
-      emu3_log (1, 1,
+      emu3_log (0, 0,
 		"Appending sample %s... (%" PRId64
 		" frames, %d channels)\n", filename, input_info.frames,
 		input_info.channels);
@@ -549,7 +556,7 @@ emu3_append_sample (char *path, struct emu3_sample *sample)
       //Last sample of right channel
       sample->parameters[4] = input_info.channels == 1 ? 0 : size - 2;
 
-      int loop_start = 4;	//This is an arbitrary value
+      int loop_start = 4;	//This is a constant
       //Example (mono and stereo): Loop start @ 9290 sample is stored as ((9290 + 2) * 2) + sizeof (struct emu3_sample)
       sample->parameters[5] =
 	((loop_start + 2) * 2) + sizeof (struct emu3_sample);
@@ -561,7 +568,7 @@ emu3_append_sample (char *path, struct emu3_sample *sample)
 	1 ? (loop_start + 2) * 2 : input_info.frames * 2 +
 	sample->parameters[5] + 8;
 
-      int loop_end = input_info.frames - 10;	//This is an arbitrary value
+      int loop_end = input_info.frames - 10;	//This is a constant
       //Example (mono and stereo): Loop end @ 94008 sample is stored as ((94008 + 1) * 2) + sizeof (struct emu3_sample)
       sample->parameters[7] =
 	((loop_end + 1) * 2) + sizeof (struct emu3_sample);
@@ -576,7 +583,7 @@ emu3_append_sample (char *path, struct emu3_sample *sample)
       sample->sample_rate = DEFAULT_SAMPLING_FREQ;
 
       sample->format =
-	input_info.channels == 1 ? MONO_SAMPLE_1 : STEREO_SAMPLE_1;
+	input_info.channels == 1 ? MONO_SAMPLE_LOOP : STEREO_SAMPLE_LOOP;
 
       for (int i = 0; i < MORE_SAMPLE_PARAMETERS; i++)
 	sample->more_parameters[i] = 0;
