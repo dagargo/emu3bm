@@ -12,7 +12,11 @@ Manage EMU3 banks, add and extract samples and set some preset and zone paramete
 .SH OPTIONS
 .TP
 .BR \-a " sample"
-Add the sample in WAV format to the bank.
+Add the sample in WAV format to the bank without loop enabled.
+
+.TP
+.BR \-A " sample"
+Add the sample in WAV format to the bank with loop enabled.
 
 .TP
 .BR \-P " preset_to_edit"

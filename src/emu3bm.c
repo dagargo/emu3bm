@@ -190,30 +190,13 @@ emu3_cpystr (char *dst, const char *src)
 int
 emu3_get_sample_channels (struct emu3_sample *sample)
 {
-  int channels;
-
-  switch (sample->format)
-    {
-    case STEREO_SAMPLE_UNLOOP:
-    case STEREO_SAMPLE_LOOP:
-    case STEREO_SAMPLE_UNLOOP_NORELEASE:
-    case STEREO_SAMPLE_LOOP_NORELEASE:
-      channels = 2;
-      break;
-    case MONO_SAMPLE_UNLOOP:
-    case MONO_SAMPLE_LOOP:
-    case MONO_SAMPLE_UNLOOP_NORELEASE:
-    case MONO_SAMPLE_LOOP_NORELEASE:
-    case MONO_SAMPLE_EMULATOR_3X_1:
-    case MONO_SAMPLE_EMULATOR_3X_2:
-    case MONO_SAMPLE_EMULATOR_3X_3:
-    case MONO_SAMPLE_EMULATOR_3X_4:
-    case MONO_SAMPLE_EMULATOR_3X_5:
-    default:
-      channels = 1;
-      break;
-    }
-  return channels;
+  if (sample->format & STEREO_SAMPLE == STEREO_SAMPLE)
+    return 2;
+  else if (sample->format & MONO_SAMPLE == MONO_SAMPLE
+	   || sample->format & MONO_SAMPLE_3X == MONO_SAMPLE_3X)
+    return 1;
+  else
+    return 1;
 }
 
 void
@@ -225,6 +208,9 @@ emu3_print_sample_info (struct emu3_sample *sample, sf_count_t nframes)
   emu3_log (1, 1, "Channels: %d\n", emu3_get_sample_channels (sample));
   emu3_log (1, 1, "Frames: %" PRId64 "\n", nframes);
   emu3_log (1, 1, "Sample rate: %dHz\n", sample->sample_rate);
+  emu3_log (1, 1, "Loop enabled: %s\n", sample->format & LOOP ? "on" : "off");
+  emu3_log (1, 1, "Loop in release: %s\n",
+	    sample->format & LOOP_RELEASE ? "on" : "off");
 }
 
 //Level: [0, 0x7f] -> [0, 100]
@@ -485,8 +471,7 @@ emu3_init_sample_descriptor (struct emu3_sample_descriptor *sd,
   sd->sample = sample;
 
   sd->l_channel = sample->frames;
-  if (sample->format == STEREO_SAMPLE_UNLOOP
-      || sample->format == STEREO_SAMPLE_LOOP)
+  if (sample->format & STEREO_SAMPLE == STEREO_SAMPLE)
     //We consider the 4 shorts padding that the left channel has
     sd->r_channel = sample->frames + frames + 4;
 }
@@ -497,8 +482,7 @@ emu3_write_frame (struct emu3_sample_descriptor *sd, short int frame[])
   struct emu3_sample *sample = sd->sample;
   *sd->l_channel = frame[0];
   sd->l_channel++;
-  if (sample->format == STEREO_SAMPLE_UNLOOP
-      || sample->format == STEREO_SAMPLE_LOOP)
+  if (sample->format & STEREO_SAMPLE == STEREO_SAMPLE)
     {
       *sd->r_channel = frame[1];
       sd->r_channel++;
@@ -507,7 +491,7 @@ emu3_write_frame (struct emu3_sample_descriptor *sd, short int frame[])
 
 //returns the sample size in bytes that the the sample takes in the bank
 int
-emu3_append_sample (char *path, struct emu3_sample *sample)
+emu3_append_sample (char *path, struct emu3_sample *sample, int loop)
 {
   SF_INFO input_info;
   SNDFILE *input;
@@ -582,8 +566,10 @@ emu3_append_sample (char *path, struct emu3_sample *sample)
 
       sample->sample_rate = DEFAULT_SAMPLING_FREQ;
 
-      sample->format =
-	input_info.channels == 1 ? MONO_SAMPLE_LOOP : STEREO_SAMPLE_LOOP;
+      sample->format = input_info.channels == 1 ? MONO_SAMPLE : STEREO_SAMPLE;
+
+      if (loop)
+	sample->format = sample->format | LOOP | LOOP_RELEASE;
 
       for (int i = 0; i < MORE_SAMPLE_PARAMETERS; i++)
 	sample->more_parameters[i] = 0;
@@ -612,7 +598,7 @@ emu3_append_sample (char *path, struct emu3_sample *sample)
 }
 
 void
-emu3_write_sample_file (struct emu3_sample *sample, sf_count_t nframes)
+emu3_extract_sample_file (struct emu3_sample *sample, sf_count_t nframes)
 {
   SF_INFO output_info;
   SNDFILE *output;
@@ -953,14 +939,14 @@ emu3_process_bank (struct emu3_file *file, int edit_preset, int xflg,
       emu3_print_sample_info (sample, nframes);
 
       if (xflg)
-	emu3_write_sample_file (sample, nframes);
+	emu3_extract_sample_file (sample, nframes);
     }
 
   return EXIT_SUCCESS;
 }
 
 int
-emu3_add_sample (struct emu3_file *file, char *sample_filename)
+emu3_add_sample (struct emu3_file *file, char *sample_filename, int loop)
 {
   int i;
   int max_samples = emu3_get_max_samples (file->bank);
@@ -985,7 +971,7 @@ emu3_add_sample (struct emu3_file *file, char *sample_filename)
     }
 
   printf ("Adding sample %d...\n", i + 1);	//Sample number is 1 based
-  unsigned int size = emu3_append_sample (sample_filename, sample);
+  unsigned int size = emu3_append_sample (sample_filename, sample, loop);
 
   if (size)
     {

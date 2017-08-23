@@ -54,8 +54,9 @@ main (int argc, char *argv[])
   extern char *optarg;
   extern int optind, optopt;
   int result = 0;
+  int loop;
 
-  while ((c = getopt (argc, argv, "vna:xr:l:c:q:f:p:P:")) != -1)
+  while ((c = getopt (argc, argv, "vna:A:xr:l:c:q:f:p:P:")) != -1)
     {
       switch (c)
 	{
@@ -65,6 +66,12 @@ main (int argc, char *argv[])
 	case 'a':
 	  aflg++;
 	  sample_filename = optarg;
+	  loop = 0;
+	  break;
+	case 'A':
+	  aflg++;
+	  sample_filename = optarg;
+	  loop = 1;
 	  break;
 	case 'x':
 	  xflg++;
@@ -111,6 +118,9 @@ main (int argc, char *argv[])
   else
     errflg++;
 
+  if (aflg > 1)
+    errflg++;
+
   if (nflg && aflg)
     errflg++;
 
@@ -138,7 +148,7 @@ main (int argc, char *argv[])
 
   if (aflg)
     {
-      result = emu3_add_sample (file, sample_filename);
+      result = emu3_add_sample (file, sample_filename, loop);
 
       if (result)
 	{

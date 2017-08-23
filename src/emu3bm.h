@@ -53,21 +53,12 @@
 #define MORE_SAMPLE_PARAMETERS 8
 #define DEFAULT_SAMPLING_FREQ 44100
 
-#define MONO_SAMPLE_LOOP 0x00390001
-#define MONO_SAMPLE_UNLOOP 0x00380001
-#define MONO_SAMPLE_LOOP_NORELEASE 0x00310001
-#define MONO_SAMPLE_UNLOOP_NORELEASE 0x00300001
+#define LOOP 0x00010000
+#define LOOP_RELEASE 0x00080000
 
-#define STEREO_SAMPLE_LOOP 0x00790001
-#define STEREO_SAMPLE_UNLOOP 0x00780001
-#define STEREO_SAMPLE_LOOP_NORELEASE 0x00710001
-#define STEREO_SAMPLE_UNLOOP_NORELEASE 0x00700001
-
-#define MONO_SAMPLE_EMULATOR_3X_1 0x0030fe02
-#define MONO_SAMPLE_EMULATOR_3X_2 0x0039fe02
-#define MONO_SAMPLE_EMULATOR_3X_3 0xff30fe02
-#define MONO_SAMPLE_EMULATOR_3X_4 0xff39fe02
-#define MONO_SAMPLE_EMULATOR_3X_5 0x0030ffc3
+#define MONO_SAMPLE 0x00300001
+#define STEREO_SAMPLE 0x00700001
+#define MONO_SAMPLE_3X 0x0030fe02
 
 #define RT_CONTROLS_SIZE 10
 #define RT_CONTROLS_FS_SIZE 2
@@ -214,7 +205,7 @@ char *emu3_str_to_emu3name (const char *);
 
 void emu3_cpystr (char *, const char *);
 
-int emu3_add_sample (struct emu3_file *, char *);
+int emu3_add_sample (struct emu3_file *, char *, int);
 
 int emu3_extract_samples (struct emu3_file *);
 
@@ -227,7 +218,7 @@ void emu3_print_preset_info (struct emu3_preset *);
 
 int emu3_get_sample_channels (struct emu3_sample *);
 
-void emu3_write_sample_file (struct emu3_sample *, sf_count_t);
+void emu3_extract_sample_file (struct emu3_sample *, sf_count_t);
 
 int emu3_create_bank (const char *);
 
