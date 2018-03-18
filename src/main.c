@@ -75,7 +75,6 @@ main (int argc, char *argv[])
 	  break;
 	case 'x':
 	  xflg++;
-	  modflg++;
 	  break;
 	case 'n':
 	  nflg++;
