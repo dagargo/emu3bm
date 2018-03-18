@@ -171,7 +171,7 @@ emu3_str_to_emu3name (const char *src)
 
   char *c = emu3name;
   for (int i = 0; i < len; i++, c++)
-    if (!isalnum (*c) && *c != ' ' && *c != '#')
+    if (!isalnum (*c) && *c != ' ' && *c != '#' && *c != '-')
       *c = '?';
 
   return emu3name;
