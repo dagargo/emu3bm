@@ -62,7 +62,7 @@ Extract all the bank samples in the current directory.
 Options \fB\-a\fR and \fB\-n\fR can not be used in conjuction with options \fB\-c\fR, \fB\-f\fR, \fB\-l\fR, \fB\-p\fR, \fB\-q\fR, \fB\-r\fR and \fB\-x\fR.
 
 .SH COPYRIGHT
-Copyright © 2017 David García Goñi.  License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+Copyright © 2018 David García Goñi.  License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
 .br
 This is free software: you are free to change and redistribute it.  There is NO WARRANTY, to the extent permitted by law.
 
