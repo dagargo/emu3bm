@@ -190,10 +190,10 @@ emu3_cpystr (char *dst, const char *src)
 int
 emu3_get_sample_channels (struct emu3_sample *sample)
 {
-  if (sample->format & STEREO_SAMPLE == STEREO_SAMPLE)
+  if ((sample->format & STEREO_SAMPLE) == STEREO_SAMPLE)
     return 2;
-  else if (sample->format & MONO_SAMPLE == MONO_SAMPLE
-	   || sample->format & MONO_SAMPLE_3X == MONO_SAMPLE_3X)
+  else if ((sample->format & MONO_SAMPLE) == MONO_SAMPLE
+	   || (sample->format & MONO_SAMPLE_3X) == MONO_SAMPLE_3X)
     return 1;
   else
     return 1;
@@ -205,6 +205,7 @@ emu3_print_sample_info (struct emu3_sample *sample, sf_count_t nframes)
   for (int i = 0; i < SAMPLE_PARAMETERS; i++)
     emu3_log (2, 1, "0x%08x ", sample->parameters[i]);
   emu3_log (2, 1, "\n");
+  emu3_log (2, 1, "Sample format: 0x%08x\n", sample->format);
   emu3_log (1, 1, "Channels: %d\n", emu3_get_sample_channels (sample));
   emu3_log (1, 1, "Frames: %" PRId64 "\n", nframes);
   emu3_log (1, 1, "Sample rate: %dHz\n", sample->sample_rate);
@@ -471,7 +472,7 @@ emu3_init_sample_descriptor (struct emu3_sample_descriptor *sd,
   sd->sample = sample;
 
   sd->l_channel = sample->frames;
-  if (sample->format & STEREO_SAMPLE == STEREO_SAMPLE)
+  if ((sample->format & STEREO_SAMPLE) == STEREO_SAMPLE)
     //We consider the 4 shorts padding that the left channel has
     sd->r_channel = sample->frames + frames + 4;
 }
@@ -482,7 +483,7 @@ emu3_write_frame (struct emu3_sample_descriptor *sd, short int frame[])
   struct emu3_sample *sample = sd->sample;
   *sd->l_channel = frame[0];
   sd->l_channel++;
-  if (sample->format & STEREO_SAMPLE == STEREO_SAMPLE)
+  if ((sample->format & STEREO_SAMPLE) == STEREO_SAMPLE)
     {
       *sd->r_channel = frame[1];
       sd->r_channel++;
