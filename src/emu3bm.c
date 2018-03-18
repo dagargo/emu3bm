@@ -190,9 +190,11 @@ emu3_cpystr (char *dst, const char *src)
 int
 emu3_get_sample_channels (struct emu3_sample *sample)
 {
-  if ((sample->format & STEREO_SAMPLE) == STEREO_SAMPLE)
+  if ((sample->format & STEREO_SAMPLE) == STEREO_SAMPLE
+      || (sample->format & STEREO_SAMPLE_2) == STEREO_SAMPLE_2)
     return 2;
   else if ((sample->format & MONO_SAMPLE) == MONO_SAMPLE
+	   || (sample->format & MONO_SAMPLE_2) == MONO_SAMPLE_2
 	   || (sample->format & MONO_SAMPLE_3X) == MONO_SAMPLE_3X)
     return 1;
   else
