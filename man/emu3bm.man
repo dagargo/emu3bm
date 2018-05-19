@@ -59,7 +59,7 @@ Increment the verbosity level.
 Extract all the bank samples in the current directory.
 
 .RE
-Options \fB\-a\fR and \fB\-n\fR can not be used in conjuction with options \fB\-c\fR, \fB\-f\fR, \fB\-l\fR, \fB\-p\fR, \fB\-q\fR, \fB\-r\fR and \fB\-x\fR.
+Options \fB\-a\fR, \fB\-A\fR and \fB\-n\fR can not be used in conjuction with options \fB\-c\fR, \fB\-f\fR, \fB\-l\fR, \fB\-p\fR, \fB\-q\fR, \fB\-r\fR and \fB\-x\fR.
 
 .SH COPYRIGHT
 Copyright © 2018 David García Goñi.  License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
