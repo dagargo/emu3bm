@@ -38,6 +38,25 @@ Add a primary layer to preset 0 from sample 001 with original key F#2 from C2 to
 $ emu3bm -z 1,pri,F#2,C2,C3,0 bank
 ```
 
+Set preset 0 pitch bend range to 24.
+```
+$ emu3bm -e 0 -b 24 bank
+```
+
+Set all presets realtime controllers. In this case, we are setting:
+- Pitch Control to Pitch
+- Mod Control to LFO -> Pitch
+- Pressure Control to Attack
+- Pedal Control to Crossfade
+- MIDI A Control to VCF Cutoff
+- MIDI B Control to VCF NoteOn Q
+- Footswitch 1 to Off
+- Footswitch 2 to Off
+
+```
+$ emu3bm -r 1,4,8,9,2,10,0,0 bank
+```
+
 ## Bugs
 
 Due to the reverse engineering nature of the project, there might be errors.
