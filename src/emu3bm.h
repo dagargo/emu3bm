@@ -67,9 +67,9 @@
 #define UNKNOWN_PARAMETERS_SIZE 16
 #define NOTES 88		// 0x58
 
-#define ESI_32_V3_DEF      "EMU SI-32 v3   \0"
-#define EMULATOR_3X_DEF    "EMULATOR 3X    \0"
-#define EMULATOR_THREE_DEF "EMULATOR THREE \0"
+#define ESI_32_V3_DEF      "EMU SI-32 v3   "
+#define EMULATOR_3X_DEF    "EMULATOR 3X    "
+#define EMULATOR_THREE_DEF "EMULATOR THREE "
 
 #define SAMPLE_EXT ".wav"
 
@@ -99,8 +99,9 @@ struct emu3_bank
   char format[FORMAT_SIZE];
   char name[NAME_SIZE];
   unsigned int objects;
-  unsigned int padding[4];
-  unsigned int next;
+  unsigned int padding[3];
+  unsigned int next_preset;
+  unsigned int next_sample;
   unsigned int parameters[BANK_PARAMETERS];
   char name_copy[NAME_SIZE];
   unsigned int selected_preset;
@@ -208,6 +209,22 @@ char *emu3_str_to_emu3name (const char *);
 void emu3_cpystr (char *, const char *);
 
 int emu3_add_sample (struct emu3_file *, char *, int);
+
+int emu3_get_max_samples (struct emu3_bank *);
+
+int emu3_get_max_presets (struct emu3_bank *);
+
+unsigned int emu3_get_sample_start_address (struct emu3_bank *);
+
+unsigned int *emu3_get_preset_addresses (struct emu3_bank *);
+
+unsigned int *emu3_get_sample_addresses (struct emu3_bank *);
+
+unsigned int emu3_get_next_sample_address (struct emu3_bank *);
+
+unsigned int emu3_get_preset_address (struct emu3_bank *, int);
+
+int emu3_add_preset (struct emu3_file *, char *);
 
 int emu3_extract_samples (struct emu3_file *);
 

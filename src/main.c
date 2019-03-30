@@ -41,9 +41,10 @@ int
 main (int argc, char *argv[])
 {
   int c;
-  int xflg = 0, aflg = 0, nflg = 0, errflg = 0, modflg = 0;
+  int xflg = 0, sflg = 0, nflg = 0, errflg = 0, modflg = 0, pflg = 0;
   char *bank_filename;
   char *sample_filename;
+  char *preset_name;
   char *rt_controls = NULL;
   int level = -1;
   int cutoff = -1;
@@ -56,20 +57,20 @@ main (int argc, char *argv[])
   int result = 0;
   int loop;
 
-  while ((c = getopt (argc, argv, "vna:A:xr:l:c:q:f:p:P:")) != -1)
+  while ((c = getopt (argc, argv, "vns:S:xr:l:c:q:f:b:e:p:")) != -1)
     {
       switch (c)
 	{
 	case 'v':
 	  verbosity++;
 	  break;
-	case 'a':
-	  aflg++;
+	case 's':
+	  sflg++;
 	  sample_filename = optarg;
 	  loop = 0;
 	  break;
-	case 'A':
-	  aflg++;
+	case 'S':
+	  sflg++;
 	  sample_filename = optarg;
 	  loop = 1;
 	  break;
@@ -99,12 +100,16 @@ main (int argc, char *argv[])
 	  filter = get_positive_int (optarg);
 	  modflg++;
 	  break;
-	case 'p':
+	case 'b':
 	  pbr = get_positive_int (optarg);
 	  modflg++;
 	  break;
-	case 'P':
+	case 'e':
 	  preset = get_positive_int (optarg);
+	  break;
+	case 'p':
+	  preset_name = optarg;
+	  pflg++;
 	  break;
 	case '?':
 	  fprintf (stderr, "Unrecognized option: -%c\n", optopt);
@@ -117,13 +122,16 @@ main (int argc, char *argv[])
   else
     errflg++;
 
-  if (aflg > 1)
+  if (sflg > 1)
     errflg++;
 
-  if (nflg && aflg)
+  if (pflg > 1)
     errflg++;
 
-  if ((nflg || aflg) && modflg)
+  if (nflg && sflg)
+    errflg++;
+
+  if ((nflg || sflg || pflg) && modflg)
     errflg++;
 
   if (errflg > 0)
@@ -145,7 +153,7 @@ main (int argc, char *argv[])
   if (!file)
     exit (result);
 
-  if (aflg)
+  if (sflg)
     {
       result = emu3_add_sample (file, sample_filename, loop);
 
@@ -156,7 +164,18 @@ main (int argc, char *argv[])
 	}
     }
 
-  if (!nflg && !aflg)
+  if (pflg)
+    {
+      result = emu3_add_preset (file, preset_name);
+
+      if (result)
+	{
+	  emu3_close_file (file);
+	  exit (result);
+	}
+    }
+
+  if (!nflg && !sflg && !pflg)
     {
       result =
 	emu3_process_bank (file, preset, xflg, rt_controls, level,
@@ -169,7 +188,7 @@ main (int argc, char *argv[])
 	}
     }
 
-  if (aflg || modflg)
+  if (sflg || pflg || modflg)
     emu3_write_file (file);
 
   emu3_close_file (file);

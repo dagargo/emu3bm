@@ -23,6 +23,9 @@
 extern int verbosity;
 extern char *note_names[];
 
+char DEFAULT_RT_CONTROLS[RT_CONTROLS_SIZE + RT_CONTROLS_FS_SIZE] =
+  { 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 8 };
+
 const char *RT_CONTROLS_SRC[] = {
   "Pitch Control",
   "Mod Control",
@@ -150,7 +153,7 @@ emu3_wav_filename_to_filename (const char *wav_file)
   if (strcmp (ext, SAMPLE_EXT) == 0)
     {
       free (filename);
-      int len_wo_ext = strlen (wav_file) - strlen (SAMPLE_EXT);
+      size_t len_wo_ext = strlen (wav_file) - strlen (SAMPLE_EXT);
       filename = malloc (len_wo_ext + 1);
       strncpy (filename, wav_file, len_wo_ext);
       filename[len_wo_ext] = '\0';
@@ -161,7 +164,7 @@ emu3_wav_filename_to_filename (const char *wav_file)
 char *
 emu3_str_to_emu3name (const char *src)
 {
-  int len = strlen (src);
+  size_t len = strlen (src);
   if (len > NAME_SIZE)
     len = NAME_SIZE;
 
@@ -251,7 +254,7 @@ emu3_print_zone_info (struct emu3_preset_zone *zone)
   int vcf_type = zone->vcf_type_lfo_shape >> 3;
   if (vcf_type > VCF_TYPE_SIZE - 1)
     vcf_type = VCF_TYPE_SIZE - 1;
-  emu3_log (1, 3, "VCF type %s\n", VCF_TYPE[vcf_type]);
+  emu3_log (1, 3, "VCF type: %s\n", VCF_TYPE[vcf_type]);
 
   //Cutoff: [0, 255] -> [26, 74040]
   int cutoff = zone->vcf_cutoff;
@@ -644,12 +647,14 @@ emu3_extract_sample_file (struct emu3_sample *sample, sf_count_t nframes)
 }
 
 unsigned int
-emu3_get_preset_address (struct emu3_bank *bank, unsigned int offset)
+emu3_get_preset_address (struct emu3_bank *bank, int preset)
 {
-  if (strncmp (EMULATOR_3X_DEF, bank->format, FORMAT_SIZE) == 0 ||
-      strncmp (ESI_32_V3_DEF, bank->format, FORMAT_SIZE) == 0)
+  unsigned int offset = emu3_get_preset_addresses (bank)[preset];
+
+  if (strcmp (EMULATOR_3X_DEF, bank->format) == 0 ||
+      strcmp (ESI_32_V3_DEF, bank->format) == 0)
     return PRESET_START_EMU_3X + offset;
-  else if (strncmp (EMULATOR_THREE_DEF, bank->format, FORMAT_SIZE) == 0)
+  else if (strcmp (EMULATOR_THREE_DEF, bank->format) == 0)
     return PRESET_START_EMU_THREE + offset - PRESET_OFFSET_EMU_THREE;
   else
     return 0;
@@ -658,15 +663,22 @@ emu3_get_preset_address (struct emu3_bank *bank, unsigned int offset)
 unsigned int
 emu3_get_sample_start_address (struct emu3_bank *bank)
 {
-  if (strncmp (EMULATOR_3X_DEF, bank->format, FORMAT_SIZE) == 0 ||
-      strncmp (ESI_32_V3_DEF, bank->format, FORMAT_SIZE) == 0)
+  int max_presets = emu3_get_max_presets (bank);
+  unsigned int *paddresses = emu3_get_preset_addresses (bank);
+  unsigned int offset = paddresses[max_presets];
+  unsigned int start_address;
+
+  if (strcmp (EMULATOR_3X_DEF, bank->format) == 0 ||
+      strcmp (ESI_32_V3_DEF, bank->format) == 0)
     //There is always a 0xee byte before the samples
-    return PRESET_START_EMU_3X + 1;
-  else if (strncmp (EMULATOR_THREE_DEF, bank->format, FORMAT_SIZE) == 0)
+    start_address = PRESET_START_EMU_3X + 1;
+  else if (strcmp (EMULATOR_THREE_DEF, bank->format) == 0)
     //There is always a 0x00 byte before the samples
-    return PRESET_START_EMU_THREE + 1 - PRESET_OFFSET_EMU_THREE;
+    start_address = PRESET_START_EMU_THREE + 1 - PRESET_OFFSET_EMU_THREE;
   else
-    return 0;
+    start_address = 0;
+
+  return start_address + offset;
 }
 
 unsigned int *
@@ -674,13 +686,23 @@ emu3_get_sample_addresses (struct emu3_bank *bank)
 {
   char *raw = (char *) bank;
 
-  if (strncmp (EMULATOR_3X_DEF, bank->format, FORMAT_SIZE) == 0 ||
-      strncmp (ESI_32_V3_DEF, bank->format, FORMAT_SIZE) == 0)
+  if (strcmp (EMULATOR_3X_DEF, bank->format) == 0 ||
+      strcmp (ESI_32_V3_DEF, bank->format) == 0)
     return (unsigned int *) &(raw[SAMPLE_ADDR_START_EMU_3X]);
-  else if (strncmp (EMULATOR_THREE_DEF, bank->format, FORMAT_SIZE) == 0)
+  else if (strcmp (EMULATOR_THREE_DEF, bank->format) == 0)
     return (unsigned int *) &(raw[SAMPLE_ADDR_START_EMU_THREE]);
   else
     return NULL;
+}
+
+unsigned int
+emu3_get_next_sample_address (struct emu3_bank *bank)
+{
+  int max_samples = emu3_get_max_samples (bank);
+  unsigned int *saddresses = emu3_get_sample_addresses (bank);
+  unsigned int sample_start_addr = emu3_get_sample_start_address (bank);
+
+  return sample_start_addr + saddresses[max_samples] - SAMPLE_OFFSET;
 }
 
 unsigned int *
@@ -688,10 +710,10 @@ emu3_get_preset_addresses (struct emu3_bank *bank)
 {
   char *raw = (char *) bank;
 
-  if (strncmp (EMULATOR_3X_DEF, bank->format, FORMAT_SIZE) == 0 ||
-      strncmp (ESI_32_V3_DEF, bank->format, FORMAT_SIZE) == 0)
+  if (strcmp (EMULATOR_3X_DEF, bank->format) == 0 ||
+      strcmp (ESI_32_V3_DEF, bank->format) == 0)
     return (unsigned int *) &raw[PRESET_SIZE_ADDR_START_EMU_3X];
-  else if (strncmp (EMULATOR_THREE_DEF, bank->format, FORMAT_SIZE) == 0)
+  else if (strcmp (EMULATOR_THREE_DEF, bank->format) == 0)
     return (unsigned int *) &raw[PRESET_SIZE_ADDR_START_EMU_THREE];
   else
     return NULL;
@@ -700,9 +722,9 @@ emu3_get_preset_addresses (struct emu3_bank *bank)
 int
 emu3_check_bank_format (struct emu3_bank *bank)
 {
-  if (strncmp (EMULATOR_3X_DEF, bank->format, FORMAT_SIZE) == 0 ||
-      strncmp (ESI_32_V3_DEF, bank->format, FORMAT_SIZE) == 0 ||
-      strncmp (EMULATOR_THREE_DEF, bank->format, FORMAT_SIZE) == 0)
+  if (strcmp (EMULATOR_3X_DEF, bank->format) == 0 ||
+      strcmp (ESI_32_V3_DEF, bank->format) == 0 ||
+      strcmp (EMULATOR_THREE_DEF, bank->format) == 0)
     return 1;
   else
     return 0;
@@ -711,10 +733,10 @@ emu3_check_bank_format (struct emu3_bank *bank)
 int
 emu3_get_max_samples (struct emu3_bank *bank)
 {
-  if (strncmp (EMULATOR_3X_DEF, bank->format, FORMAT_SIZE) == 0 ||
-      strncmp (ESI_32_V3_DEF, bank->format, FORMAT_SIZE) == 0)
+  if (strcmp (EMULATOR_3X_DEF, bank->format) == 0 ||
+      strcmp (ESI_32_V3_DEF, bank->format) == 0)
     return MAX_SAMPLES_EMU_3X;
-  else if (strncmp (EMULATOR_THREE_DEF, bank->format, FORMAT_SIZE) == 0)
+  else if (strcmp (EMULATOR_THREE_DEF, bank->format) == 0)
     return MAX_SAMPLES_EMU_THREE;
   else
     return 0;
@@ -723,10 +745,10 @@ emu3_get_max_samples (struct emu3_bank *bank)
 int
 emu3_get_max_presets (struct emu3_bank *bank)
 {
-  if (strncmp (EMULATOR_3X_DEF, bank->format, FORMAT_SIZE) == 0 ||
-      strncmp (ESI_32_V3_DEF, bank->format, FORMAT_SIZE) == 0)
+  if (strcmp (EMULATOR_3X_DEF, bank->format) == 0 ||
+      strcmp (ESI_32_V3_DEF, bank->format) == 0)
     return MAX_PRESETS_EMU_3X;
-  else if (strncmp (EMULATOR_THREE_DEF, bank->format, FORMAT_SIZE) == 0)
+  else if (strcmp (EMULATOR_THREE_DEF, bank->format) == 0)
     return MAX_PRESETS_EMU_THREE;
 
   else
@@ -763,7 +785,7 @@ emu3_open_file (const char *filename)
 
 	  emu3_log (2, 1, "Geometry:\n");
 	  emu3_log (2, 1, "Objects: %d\n", file->bank->objects + 1);
-	  emu3_log (2, 1, "Next: 0x%08x\n", file->bank->next);
+	  emu3_log (2, 1, "Next: 0x%08x\n", file->bank->next_sample);
 
 	  for (int i = 0; i < BANK_PARAMETERS; i++)
 	    emu3_log (2, 1, "Parameter %2d: 0x%08x (%d)\n", i,
@@ -833,7 +855,7 @@ emu3_process_bank (struct emu3_file *file, int edit_preset, int xflg,
       if (addresses[0] != addresses[1]
 	  && (i == edit_preset || edit_preset == -1))
 	{
-	  address = emu3_get_preset_address (file->bank, addresses[0]);
+	  address = emu3_get_preset_address (file->bank, i);
 	  preset = (struct emu3_preset *) &file->raw[address];
 	  emu3_log (0, 0, "Preset %3d, %.*s", i, NAME_SIZE, preset->name);
 	  emu3_log (1, 0, " @ 0x%08x", address);
@@ -907,16 +929,14 @@ emu3_process_bank (struct emu3_file *file, int edit_preset, int xflg,
       addresses++;
     }
 
-  sample_start_addr =
-    emu3_get_sample_start_address (file->bank) + addresses[0];
+  sample_start_addr = emu3_get_sample_start_address (file->bank);
   emu3_log (1, 0, "Sample start: 0x%08x\n", sample_start_addr);
 
   max_samples = emu3_get_max_samples (file->bank);
   addresses = emu3_get_sample_addresses (file->bank);
   emu3_log (1, 0, "Start with offset: 0x%08x\n", addresses[0]);
   emu3_log (1, 0, "Next with offset: 0x%08x\n", addresses[max_samples]);
-  next_sample_addr =
-    sample_start_addr + addresses[max_samples] - SAMPLE_OFFSET;
+  next_sample_addr = emu3_get_next_sample_address (file->bank);
   emu3_log (1, 0, "Next sample: 0x%08x\n", next_sample_addr);
 
   for (int i = 0; i < max_samples; i++)
@@ -953,18 +973,15 @@ emu3_add_sample (struct emu3_file *file, char *sample_filename, int loop)
 {
   int i;
   int max_samples = emu3_get_max_samples (file->bank);
-  unsigned int *paddresses = emu3_get_preset_addresses (file->bank);
-  unsigned int offset = paddresses[emu3_get_max_presets (file->bank)];
-  unsigned int sample_start_addr =
-    emu3_get_sample_start_address (file->bank) + offset;
-  unsigned int *addresses = emu3_get_sample_addresses (file->bank);
-  unsigned int next_sample_addr =
-    sample_start_addr + addresses[max_samples] - SAMPLE_OFFSET;
+  int max_presets = emu3_get_max_presets (file->bank);
+  unsigned int *saddresses = emu3_get_sample_addresses (file->bank);
+  unsigned int sample_start_addr = emu3_get_sample_start_address (file->bank);
+  unsigned int next_sample_addr = emu3_get_next_sample_address (file->bank);
   struct emu3_sample *sample =
     (struct emu3_sample *) &file->raw[next_sample_addr];
 
   for (i = 0; i < max_samples; i++)
-    if (addresses[i] == 0)
+    if (saddresses[i] == 0)
       break;
 
   if (i == max_samples)
@@ -979,9 +996,9 @@ emu3_add_sample (struct emu3_file *file, char *sample_filename, int loop)
   if (size)
     {
       file->bank->objects++;
-      file->bank->next = next_sample_addr + size - sample_start_addr;
-      addresses[i] = addresses[max_samples];
-      addresses[max_samples] = file->bank->next + SAMPLE_OFFSET;
+      file->bank->next_sample = next_sample_addr + size - sample_start_addr;
+      saddresses[i] = saddresses[max_samples];
+      saddresses[max_samples] = file->bank->next_sample + SAMPLE_OFFSET;
       return EXIT_SUCCESS;
     }
   else
@@ -991,15 +1008,86 @@ emu3_add_sample (struct emu3_file *file, char *sample_filename, int loop)
     }
 }
 
+int
+emu3_add_preset (struct emu3_file *file, char *preset_name)
+{
+  int i, objects;
+  unsigned int copy_start_addr;
+  int max_samples = emu3_get_max_samples (file->bank);
+  int max_presets = emu3_get_max_presets (file->bank);
+  unsigned int *paddresses = emu3_get_preset_addresses (file->bank);
+  unsigned int *saddresses = emu3_get_sample_addresses (file->bank);
+  unsigned int next_sample_addr = emu3_get_next_sample_address (file->bank);
+  unsigned int sample_start_addr = emu3_get_sample_start_address (file->bank);
+  void *src, *dst;
+
+  for (i = 0; i < max_samples; i++)
+    if (saddresses[i] == 0)
+      break;
+
+  objects = i;
+
+  for (i = 0; i < max_presets; i++)
+    {
+      if (paddresses[0] == paddresses[1])
+	break;
+      paddresses++;
+    }
+
+  objects += i;
+
+  printf ("Adding preset %d...\n", i);
+
+  if (i == max_presets)
+    {
+      fprintf (stderr, "No more presets could be added.\n");
+      return EXIT_FAILURE;
+    }
+
+  copy_start_addr = emu3_get_preset_address (file->bank, i);
+
+  src = &file->raw[copy_start_addr];
+  dst = &file->raw[copy_start_addr + sizeof (struct emu3_preset)];
+
+  i++;
+  paddresses++;
+
+  for (; i < max_presets + 1; i++)
+    {
+      paddresses[0] += sizeof (struct emu3_preset);
+      paddresses++;
+    }
+
+  size_t size = next_sample_addr - copy_start_addr;
+
+  emu3_log (1, 0, "Moving %d bytes...\n", size);
+
+  memmove (dst, src, size);
+
+  struct emu3_preset *new_preset = (struct emu3_preset *) src;
+  emu3_cpystr (new_preset->name, preset_name);
+  memcpy (new_preset->rt_controls, DEFAULT_RT_CONTROLS,
+	  RT_CONTROLS_SIZE + RT_CONTROLS_FS_SIZE);
+  memset (new_preset->unknown_parameters, 0, UNKNOWN_PARAMETERS_SIZE);
+  new_preset->pitch_bend_range = 2;
+  memset (new_preset->data, 0, 8);
+  new_preset->nzones = 0;
+  memset (new_preset->note_zone_mappings, 0xff, NOTES);
+
+  file->bank->objects = objects;
+  file->bank->next_preset += sizeof (struct emu3_preset);
+  file->bank->selected_preset = 0;
+
+  return EXIT_SUCCESS;
+}
+
 void
 emu3_write_file (struct emu3_file *file)
 {
   FILE *fd = fopen (file->filename, "w");
   unsigned int *addresses = emu3_get_preset_addresses (file->bank);
-  unsigned int offset = addresses[emu3_get_max_presets (file->bank)];
-  unsigned int sample_start_addr =
-    emu3_get_sample_start_address (file->bank) + offset;
-  size_t filesize = file->bank->next + sample_start_addr;
+  unsigned int sample_start_addr = emu3_get_sample_start_address (file->bank);
+  size_t filesize = file->bank->next_sample + sample_start_addr;
 
   if (fd)
     {

@@ -11,15 +11,19 @@ Manage EMU3 banks, add and extract samples and set some preset and zone paramete
 
 .SH OPTIONS
 .TP
-.BR \-a " sample"
+.BR \-s " sample"
 Add the sample in WAV format to the bank without loop enabled.
 
 .TP
-.BR \-A " sample"
+.BR \-S " sample"
 Add the sample in WAV format to the bank with loop enabled.
 
 .TP
-.BR \-P " preset_to_edit"
+.BR \-p " preset_names"
+Add a new preset with the given name.
+
+.TP
+.BR \-e " preset_to_edit"
 Specify the preset to edit. If no preset is specified all presets will be edited.
 
 .TP
@@ -39,7 +43,7 @@ Set the level of the VCA for all the preset zones.
 Create a new EMU SI-32 v3 bank.
 
 .TP
-.BR \-p " pitch_bend_range"
+.BR \-b " pitch_bend_range"
 Set the pitch bend range for all presets.
 
 .TP
@@ -62,7 +66,7 @@ Extract all the bank samples in the current directory.
 Options \fB\-a\fR, \fB\-A\fR and \fB\-n\fR can not be used in conjuction with options \fB\-c\fR, \fB\-f\fR, \fB\-l\fR, \fB\-p\fR, \fB\-q\fR, \fB\-r\fR and \fB\-x\fR.
 
 .SH COPYRIGHT
-Copyright © 2018 David García Goñi.  License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+Copyright © 2018 David García Goñi. License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
 .br
 This is free software: you are free to change and redistribute it.  There is NO WARRANTY, to the extent permitted by law.
 
