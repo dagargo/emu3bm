@@ -129,9 +129,9 @@ struct emu3_envelope
 
 struct emu3_preset_zone_def
 {
-  unsigned char b1;
-  unsigned char b2;
-  unsigned char b3;
+  unsigned char unknown_1;
+  unsigned char unknown_2;
+  unsigned char n;
   unsigned char type;
 };
 

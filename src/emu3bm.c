@@ -1149,12 +1149,14 @@ emu3_add_preset_zone (struct emu3_file *file, char *zone_params)
 
   for (i = lower_key_int; i <= higher_key_int; i++)
     preset->note_zone_mappings[i] = preset->nzones;
+
+  zone_def->unknown_1 = 0;
+  zone_def->unknown_2 = 0;
+  zone_def->n = preset->nzones;
+  zone_def->type = layer_int;
+
   preset->nzones++;
 
-  zone_def->b1 = 0;
-  zone_def->b2 = 0;
-  zone_def->b3 = 0;
-  zone_def->type = layer_int;
   //TODO: initialize struct zone
   zone->root_note = original_key_int;
   zone->sample_id_lsb = sample_num % 256;
