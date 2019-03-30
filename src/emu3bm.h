@@ -170,8 +170,8 @@ struct emu3_preset_zone
   char unknown_3;
   char vca_pan;
   unsigned char vcf_type_lfo_shape;
-  char foo;			//0xff
-  char bar;			///0x01
+  unsigned char end1;		//0xff
+  unsigned char end2;		//0x01
 };
 
 struct emu3_preset
@@ -226,6 +226,8 @@ unsigned int emu3_get_preset_address (struct emu3_bank *, int);
 
 int emu3_add_preset (struct emu3_file *, char *);
 
+int emu3_add_preset_zone (struct emu3_file *, char *);
+
 int emu3_extract_samples (struct emu3_file *);
 
 int emu3_process_bank (struct emu3_file *, int, int, char *, int, int, int,
@@ -257,3 +259,5 @@ void emu3_set_preset_zone_cutoff (struct emu3_preset_zone *, int);
 void emu3_set_preset_zone_q (struct emu3_preset_zone *, int);
 
 void emu3_set_preset_zone_filter (struct emu3_preset_zone *, int);
+
+int emu3_reverse_note_search (char *);

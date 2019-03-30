@@ -41,11 +41,13 @@ int
 main (int argc, char *argv[])
 {
   int c;
-  int xflg = 0, sflg = 0, nflg = 0, errflg = 0, modflg = 0, pflg = 0;
+  int xflg = 0, sflg = 0, nflg = 0, errflg = 0, modflg = 0, pflg = 0, zflg =
+    0;
   char *bank_filename;
   char *sample_filename;
   char *preset_name;
   char *rt_controls = NULL;
+  char *zone_params = NULL;
   int level = -1;
   int cutoff = -1;
   int q = -1;
@@ -57,7 +59,7 @@ main (int argc, char *argv[])
   int result = 0;
   int loop;
 
-  while ((c = getopt (argc, argv, "vns:S:xr:l:c:q:f:b:e:p:")) != -1)
+  while ((c = getopt (argc, argv, "vns:S:xr:l:c:q:f:b:e:p:z:")) != -1)
     {
       switch (c)
 	{
@@ -111,6 +113,10 @@ main (int argc, char *argv[])
 	  preset_name = optarg;
 	  pflg++;
 	  break;
+	case 'z':
+	  zone_params = optarg;
+	  zflg++;
+	  break;
 	case '?':
 	  fprintf (stderr, "Unrecognized option: -%c\n", optopt);
 	  errflg++;
@@ -122,16 +128,22 @@ main (int argc, char *argv[])
   else
     errflg++;
 
+  if (nflg > 1)
+    errflg++;
+
   if (sflg > 1)
     errflg++;
 
   if (pflg > 1)
     errflg++;
 
-  if (nflg && sflg)
+  if (zflg > 1)
     errflg++;
 
-  if ((nflg || sflg || pflg) && modflg)
+  if (nflg + sflg + pflg + zflg > 1)
+    errflg++;
+
+  if ((nflg || sflg || pflg || zflg) && modflg)
     errflg++;
 
   if (errflg > 0)
@@ -175,7 +187,18 @@ main (int argc, char *argv[])
 	}
     }
 
-  if (!nflg && !sflg && !pflg)
+  if (zflg)
+    {
+      result = emu3_add_preset_zone (file, zone_params);
+
+      if (result)
+	{
+	  emu3_close_file (file);
+	  exit (result);
+	}
+    }
+
+  if (!nflg && !sflg && !pflg && !zflg)
     {
       result =
 	emu3_process_bank (file, preset, xflg, rt_controls, level,
@@ -188,7 +211,7 @@ main (int argc, char *argv[])
 	}
     }
 
-  if (sflg || pflg || modflg)
+  if (sflg || pflg || zflg || modflg)
     emu3_write_file (file);
 
   emu3_close_file (file);

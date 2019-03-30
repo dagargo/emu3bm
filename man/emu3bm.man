@@ -7,7 +7,7 @@ emu3bm \- manage EMU3 banks
 \fBemu3bm\fP [OPTIONS] \fIbank\fP
 
 .SH DESCRIPTION
-Manage EMU3 banks, add and extract samples and set some preset and zone parameters.
+Manage EMU3 banks, add and extract samples, create presets and set some preset and zone parameters.
 
 .SH OPTIONS
 .TP
@@ -19,8 +19,12 @@ Add the sample in WAV format to the bank without loop enabled.
 Add the sample in WAV format to the bank with loop enabled.
 
 .TP
-.BR \-p " preset_names"
+.BR \-p " preset_name"
 Add a new preset with the given name.
+
+.TP
+.BR \-z " zone_parameters"
+Add a new zone to a preset using the format sample,[pri|sec],original_key,lower_key,higher_key,preset.
 
 .TP
 .BR \-e " preset_to_edit"
@@ -44,7 +48,7 @@ Create a new EMU SI-32 v3 bank.
 
 .TP
 .BR \-b " pitch_bend_range"
-Set the pitch bend range for all presets.
+Set the pitch bend range.
 
 .TP
 .BR \-q " filter_q"
@@ -52,7 +56,7 @@ Set the Q of the VCF for all the preset zones.
 
 .TP
 .BR \-r " realtime_controls"
-Set the realtime controls for all presets using the format 1,2,3,4,5,6,7,8.
+Set the 8 realtime controls sources separating them by commas.
 
 .TP
 .BR \-v
@@ -63,7 +67,7 @@ Increment the verbosity level.
 Extract all the bank samples in the current directory.
 
 .RE
-Options \fB\-a\fR, \fB\-A\fR and \fB\-n\fR can not be used in conjuction with options \fB\-c\fR, \fB\-f\fR, \fB\-l\fR, \fB\-p\fR, \fB\-q\fR, \fB\-r\fR and \fB\-x\fR.
+Options \fB\-s\fR, \fB\-S\fR, \fB\-p\fR, \fB\-z\fR and \fB\-n\fR can not be used in conjuction with options \fB\-c\fR, \fB\-f\fR, \fB\-l\fR, \fB\-b\fR, \fB\-q\fR, \fB\-r\fR and \fB\-x\fR.
 
 .SH COPYRIGHT
 Copyright © 2018 David García Goñi. License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.

@@ -18,6 +18,8 @@
  *   along with emu3bm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string.h>
+
 const char *note_names[] = {
   "A-1",
   "A#-1",
@@ -108,3 +110,15 @@ const char *note_names[] = {
   "B6",
   "C7"
 };
+
+const int notes = sizeof (note_names) / sizeof (char *);
+
+int
+emu3_reverse_note_search (char *note_name)
+{
+  for (int i = 0; i < notes; i++)
+    if (strcmp (note_names[i], note_name) == 0)
+      return i;
+
+  return -1;
+}

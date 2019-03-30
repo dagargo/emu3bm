@@ -238,7 +238,7 @@ emu3_print_zone_info (struct emu3_preset_zone *zone)
 {
   emu3_log (1, 3, "Sample: %x\n",
 	    (zone->sample_id_msb << 8) + zone->sample_id_lsb);
-  emu3_log (1, 3, "Root note: %s\n", note_names[zone->root_note]);
+  emu3_log (1, 3, "Original note: %s\n", note_names[zone->root_note]);
   emu3_log (1, 3, "VCA level: %d\n",
 	    emu3_get_percent_value (zone->vca_level));
   emu3_log (1, 3, "VCA pan: %d\n", emu3_get_vca_pan (zone->vca_pan));
@@ -1006,6 +1006,182 @@ emu3_add_sample (struct emu3_file *file, char *sample_filename, int loop)
       fprintf (stderr, "Error while adding sample.\n");
       return EXIT_FAILURE;
     }
+}
+
+void
+emu3_reset_envelope (struct emu3_envelope *envelope)
+{
+  envelope->attack = 0;
+  envelope->hold = 0;
+  envelope->decay = 0;
+  envelope->sustain = 0x7f;
+  envelope->release = 0;
+}
+
+int
+emu3_add_preset_zone (struct emu3_file *file, char *zone_params)
+{
+  int max_samples = emu3_get_max_samples (file->bank);
+  int max_presets = emu3_get_max_presets (file->bank);
+  char *sample_str = strsep (&zone_params, ",");
+  char *layer = strsep (&zone_params, ",");
+  char *original_key = strsep (&zone_params, ",");
+  char *lower_key = strsep (&zone_params, ",");
+  char *higher_key = strsep (&zone_params, ",");
+  char *preset_str = strsep (&zone_params, ",");
+  char *endtoken;
+  unsigned int sample_num;
+  unsigned int preset_num;
+  unsigned int *paddresses = emu3_get_preset_addresses (file->bank);
+  unsigned int *saddresses = emu3_get_sample_addresses (file->bank);
+  int inc_size =
+    sizeof (struct emu3_preset_zone_def) + sizeof (struct emu3_preset_zone);
+  int i, total;
+  void *src, *dst;
+  unsigned int copy_start_addr, addr;
+  unsigned int next_sample_addr = emu3_get_next_sample_address (file->bank);
+  struct emu3_preset_zone_def *zone_def;
+  struct emu3_preset_zone *zone;
+
+  for (i = 0; i < max_samples; i++)
+    if (saddresses[i] == 0)
+      break;
+  total = i;
+
+  sample_num = strtol (sample_str, &endtoken, 10);
+  if (*endtoken != '\0' || sample_num <= 0 || sample_num > max_samples
+      || sample_num > total)
+    {
+      fprintf (stderr, "Illegal sample number: %d\n", sample_num);
+      return EXIT_FAILURE;
+    }
+
+  for (i = 0; i < max_presets; i++)
+    {
+      if (paddresses[0] == paddresses[1])
+	break;
+      paddresses++;
+    }
+  total = i;
+
+  preset_num = strtol (preset_str, &endtoken, 10);
+  if (*endtoken != '\0' || preset_num < 0 || preset_num > max_presets
+      || preset_num > total)
+    {
+      fprintf (stderr, "Illegal preset number: %d\n", preset_num);
+      return EXIT_FAILURE;
+    }
+
+  int original_key_int = emu3_reverse_note_search (original_key);
+  if (original_key_int == -1)
+    {
+      fprintf (stderr, "Illegal key %s.\n", original_key);
+      return EXIT_FAILURE;
+    }
+
+  int lower_key_int = emu3_reverse_note_search (lower_key);
+  if (original_key_int == -1)
+    {
+      fprintf (stderr, "Illegal key %s.\n", lower_key);
+      return EXIT_FAILURE;
+    }
+
+  int higher_key_int = emu3_reverse_note_search (higher_key);
+  if (original_key_int == -1)
+    {
+      fprintf (stderr, "Illegal key %s.\n", higher_key);
+      return EXIT_FAILURE;
+    }
+
+  int layer_int = 0;
+  if (!strcmp ("pri", layer))
+    layer_int = 0xff;
+  if (!strcmp ("sec", layer))
+    layer_int = 0x03;
+
+  if (!layer_int)
+    {
+      fprintf (stderr, "Illegal layer %s.\n", layer);
+      return EXIT_FAILURE;
+    }
+
+  printf
+    ("Adding %s zone for sample %d on %s (%d) from %s (%d) to %s (%d) to preset %d...\n",
+     layer, sample_num, original_key, original_key_int, lower_key,
+     lower_key_int, higher_key, higher_key_int, preset_num);
+
+  copy_start_addr = emu3_get_preset_address (file->bank, preset_num + 1);
+
+  src = &file->raw[copy_start_addr];
+  dst = &file->raw[copy_start_addr + inc_size];
+
+  zone_def = (struct emu3_preset_zone_def *) src;
+  zone =
+    (struct emu3_preset_zone *) &file->raw[copy_start_addr +
+					   sizeof (struct
+						   emu3_preset_zone_def)];
+
+  paddresses = emu3_get_preset_addresses (file->bank);
+  for (i = preset_num + 1; i < max_presets + 1; i++)
+    paddresses[i] += inc_size;
+
+  size_t size = next_sample_addr - copy_start_addr;
+
+  emu3_log (1, 0, "Moving %d bytes...\n", size);
+
+  memmove (dst, src, size);
+
+  addr = emu3_get_preset_address (file->bank, preset_num);
+  struct emu3_preset *preset = (struct emu3_preset *) &file->raw[addr];
+  preset->nzones++;
+  for (i = lower_key_int; i <= higher_key_int; i++)
+    preset->note_zone_mappings[i] = preset->nzones;
+
+  zone_def->b1 = 0;
+  zone_def->b2 = 0;
+  zone_def->b3 = 0;
+  zone_def->type = layer_int;
+  //TODO: initialize struct zone
+  zone->root_note = original_key_int;
+  zone->sample_id_lsb = sample_num % 256;
+  zone->sample_id_msb = sample_num / 256;
+  zone->parameter_a = 0x1f;
+  emu3_reset_envelope (&zone->vca_envelope);
+  zone->parameters_a2[0] = 0x41;
+  zone->parameters_a2[1] = 0x00;
+  zone->lfo_variation = 0;
+  zone->vcf_cutoff = 0xef;
+  zone->vcf_q = 0x80;
+  zone->vcf_envelope_amount = 0;
+  emu3_reset_envelope (&zone->vcf_envelope);
+  emu3_reset_envelope (&zone->aux_envelope);
+  zone->aux_envelope_amount = 0;
+  zone->aux_envelope_dest = 0;
+  zone->vel_to_vca_level = 0;
+  zone->vel_to_vca_attack = 0;
+  zone->vel_to_vcf_cutoff = 0;
+  zone->vel_to_pitch = 0;
+  zone->vel_to_aux_env = 0;
+  zone->vel_to_vcf_q = 0;
+  zone->vel_to_vcf_attack = 0;
+  zone->vel_to_sample_start = 0;
+  zone->vel_to_vca_pan = 0;
+  zone->lfo_to_pitch = 0;
+  zone->lfo_to_vca = 0;
+  zone->lfo_to_cutoff = 0;
+  zone->lfo_to_pan = 0;
+  zone->vca_level = 0x7f;
+  zone->unknown_1 = 0;
+  zone->unknown_2 = 0x40;
+  zone->unknown_3 = 0;
+  zone->vca_pan = 0x40;
+  zone->vcf_type_lfo_shape = 0x8;
+  zone->end1 = 0xff;
+  zone->end2 = 0x01;
+
+  file->bank->next_preset += inc_size;
+
+  return EXIT_SUCCESS;
 }
 
 int
