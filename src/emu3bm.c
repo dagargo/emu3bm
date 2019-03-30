@@ -236,7 +236,7 @@ emu3_get_vca_pan (char vca_pan)
 void
 emu3_print_zone_info (struct emu3_preset_zone *zone)
 {
-  emu3_log (1, 3, "Sample: %x\n",
+  emu3_log (1, 3, "Sample: %d\n",
 	    (zone->sample_id_msb << 8) + zone->sample_id_lsb);
   emu3_log (1, 3, "Original note: %s\n", note_names[zone->root_note]);
   emu3_log (1, 3, "VCA level: %d\n",
@@ -1038,7 +1038,7 @@ emu3_add_preset_zone (struct emu3_file *file, char *zone_params)
     sizeof (struct emu3_preset_zone_def) + sizeof (struct emu3_preset_zone);
   int i, total;
   void *src, *dst;
-  unsigned int copy_start_addr, addr;
+  unsigned int copy_start_addr, addr, zone_addr, zone_def_addr;
   unsigned int next_sample_addr = emu3_get_next_sample_address (file->bank);
   struct emu3_preset_zone_def *zone_def;
   struct emu3_preset_zone *zone;
@@ -1115,27 +1115,41 @@ emu3_add_preset_zone (struct emu3_file *file, char *zone_params)
   src = &file->raw[copy_start_addr];
   dst = &file->raw[copy_start_addr + inc_size];
 
-  zone_def = (struct emu3_preset_zone_def *) src;
-  zone =
-    (struct emu3_preset_zone *) &file->raw[copy_start_addr +
-					   sizeof (struct
-						   emu3_preset_zone_def)];
-
   paddresses = emu3_get_preset_addresses (file->bank);
   for (i = preset_num + 1; i < max_presets + 1; i++)
     paddresses[i] += inc_size;
 
   size_t size = next_sample_addr - copy_start_addr;
 
-  emu3_log (1, 0, "Moving %d bytes...\n", size);
+  emu3_log (1, 0, "Moving next data (%d bytes)...\n", size);
 
   memmove (dst, src, size);
 
   addr = emu3_get_preset_address (file->bank, preset_num);
   struct emu3_preset *preset = (struct emu3_preset *) &file->raw[addr];
-  preset->nzones++;
+
+  zone_def_addr =
+    addr + sizeof (struct emu3_preset) +
+    sizeof (struct emu3_preset_zone_def) * (preset->nzones);
+  zone_def = (struct emu3_preset_zone_def *) &file->raw[zone_def_addr];
+  zone_addr =
+    zone_def_addr + sizeof (struct emu3_preset_zone_def) +
+    sizeof (struct emu3_preset_zone) * (preset->nzones);
+  zone = (struct emu3_preset_zone *) &file->raw[zone_addr];
+
+  src = &file->raw[zone_def_addr];
+  dst = &file->raw[zone_def_addr + sizeof (struct emu3_preset_zone_def)];
+
+  size = sizeof (struct emu3_preset_zone) * preset->nzones;
+
+  emu3_log (1, 0, "Moving %d zones data (%d bytes)...\n", preset->nzones,
+	    size);
+
+  memmove (dst, src, size);
+
   for (i = lower_key_int; i <= higher_key_int; i++)
     preset->note_zone_mappings[i] = preset->nzones;
+  preset->nzones++;
 
   zone_def->b1 = 0;
   zone_def->b2 = 0;
