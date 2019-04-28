@@ -2,6 +2,8 @@
 
 emu3bm is an EMU3 bank manager. It allows to create banks, add and extract mono or stereo samples and edit some preset parameters.
 
+Due to the reverse engineering nature of the project, there might be errors. Note that this has only be tested on an EMU ESI-2000.
+
 ## Installation
 
 Simply run `make && sudo make install`.
@@ -57,11 +59,6 @@ Set all presets realtime controllers. In this case, we are setting:
 $ emu3bm -r 1,4,8,9,2,10,0,0 bank
 ```
 
-## Bugs
-
-Due to the reverse engineering nature of the project, there might be errors.
-This has only be tested on an EMU ESI-2000.
-
-### Related project
+## Related project
 
 [emu3fs](https://github.com/dagargo/emu3fs) is a Linux kernel module that allows to read from and write to disks formatted in an E-MU emu3 sampler family filesystem.
