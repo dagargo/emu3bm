@@ -64,7 +64,8 @@
 
 #define RT_CONTROLS_SIZE 10
 #define RT_CONTROLS_FS_SIZE 2
-#define UNKNOWN_PARAMETERS_SIZE 16
+#define PRESET_UNKNOWN_0_SIZE 16
+#define PRESET_UNKNOWN_1_SIZE 8
 #define NOTES 88		// 0x58
 
 #define ESI_32_V3_DEF      "EMU SI-32 v3   "
@@ -178,9 +179,9 @@ struct emu3_preset
 {
   char name[NAME_SIZE];
   char rt_controls[RT_CONTROLS_SIZE + RT_CONTROLS_FS_SIZE];
-  char unknown_parameters[UNKNOWN_PARAMETERS_SIZE];
+  char unknown_0[PRESET_UNKNOWN_0_SIZE];
   char pitch_bend_range;
-  char data[8];
+  char unknown_1[PRESET_UNKNOWN_1_SIZE];
   char nzones;
   unsigned char note_zone_mappings[NOTES];
 };

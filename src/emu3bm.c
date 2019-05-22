@@ -336,9 +336,8 @@ emu3_print_preset_info (struct emu3_preset *preset)
 		RT_CONTROLS_FS_DST[preset->rt_controls
 				   [RT_CONTROLS_SIZE + i]]);
     }
-  for (int i = 0; i < UNKNOWN_PARAMETERS_SIZE; i++)
-    emu3_log (2, 1, "Unknown parameter %d: %d\n", i,
-	      preset->unknown_parameters[i]);
+  for (int i = 0; i < PRESET_UNKNOWN_0_SIZE; i++)
+    emu3_log (2, 1, "Unknown_0 %d: %d\n", i, preset->unknown_0[i]);
   emu3_log (1, 1, "Pitch Bend Range: %d\n", preset->pitch_bend_range);
 }
 
@@ -1260,9 +1259,9 @@ emu3_add_preset (struct emu3_file *file, char *preset_name)
   emu3_cpystr (new_preset->name, preset_name);
   memcpy (new_preset->rt_controls, DEFAULT_RT_CONTROLS,
 	  RT_CONTROLS_SIZE + RT_CONTROLS_FS_SIZE);
-  memset (new_preset->unknown_parameters, 0, UNKNOWN_PARAMETERS_SIZE);
+  memset (new_preset->unknown_0, 0, PRESET_UNKNOWN_0_SIZE);
   new_preset->pitch_bend_range = 2;
-  memset (new_preset->data, 0, 8);
+  memset (new_preset->unknown_1, 0, PRESET_UNKNOWN_1_SIZE);
   new_preset->nzones = 0;
   memset (new_preset->note_zone_mappings, 0xff, NOTES);
 
