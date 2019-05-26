@@ -979,6 +979,11 @@ emu3_add_sample (struct emu3_file *file, char *sample_filename, int loop)
   struct emu3_sample *sample =
     (struct emu3_sample *) &file->raw[next_sample_addr];
 
+  if (access(sample_filename, R_OK) != 0) {
+    fprintf (stderr, "Error while opening %s for input\n", sample_filename);
+    return EXIT_FAILURE;
+  }
+
   for (i = 0; i < max_samples; i++)
     if (saddresses[i] == 0)
       break;
