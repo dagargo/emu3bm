@@ -133,13 +133,12 @@ emu3_emu3name_to_filename (const char *objname)
 }
 
 char *
-emu3_emu3name_to_wav_filename (const char *emu3name)
+emu3_emu3name_to_wav_filename (const char *emu3name, int num)
 {
   char *fname = emu3_emu3name_to_filename (emu3name);
-  char *wname = malloc (strlen (fname) + 5);
+  char *wname = malloc (strlen (fname) + 9);
 
-  strcpy (wname, fname);
-  strcat (wname, SAMPLE_EXT);
+  sprintf(wname, "%03d-%s%s", num, fname, SAMPLE_EXT);
   return wname;
 }
 
@@ -603,7 +602,7 @@ emu3_append_sample (char *path, struct emu3_sample *sample, int loop)
 }
 
 void
-emu3_extract_sample_file (struct emu3_sample *sample, sf_count_t nframes)
+emu3_extract_sample (struct emu3_sample *sample, int num, sf_count_t nframes)
 {
   SF_INFO output_info;
   SNDFILE *output;
@@ -619,7 +618,7 @@ emu3_extract_sample_file (struct emu3_sample *sample, sf_count_t nframes)
   output_info.channels = channels;
   output_info.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
 
-  wav_file = emu3_emu3name_to_wav_filename (sample->name);
+  wav_file = emu3_emu3name_to_wav_filename (sample->name, num);
   schannels = channels == 1 ? "mono" : "stereo";
   emu3_log (0, 1, "Extracting %s sample %s...\n", schannels, wav_file);
 
@@ -961,7 +960,7 @@ emu3_process_bank (struct emu3_file *file, int edit_preset, int xflg,
       emu3_print_sample_info (sample, nframes);
 
       if (xflg)
-	emu3_extract_sample_file (sample, nframes);
+	emu3_extract_sample (sample, i + 1, nframes);
     }
 
   return EXIT_SUCCESS;
