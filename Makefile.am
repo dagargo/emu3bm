@@ -1,1 +1,1 @@
-SUBDIRS=src res man
+SUBDIRS=src res man test
