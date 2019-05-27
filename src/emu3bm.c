@@ -126,7 +126,7 @@ emu3_emu3name_to_filename (const char *objname)
   strncpy (fname, objname, size);
   fname[size] = '\0';
   for (i = 0; i < size; i++)
-    if (fname[i] == '/')
+    if (fname[i] == '/'  || fname[i] == 127)
       fname[i] = '?';
 
   return fname;
@@ -173,7 +173,7 @@ emu3_str_to_emu3name (const char *src)
 
   char *c = emu3name;
   for (int i = 0; i < len; i++, c++)
-    if (!isalnum (*c) && *c != ' ' && *c != '#' && *c != '-')
+    if (*c < 32 || *c >= 127)
       *c = '?';
 
   return emu3name;
