@@ -132,8 +132,8 @@ struct emu3_preset_zone_def
 {
   unsigned char unknown_1;
   unsigned char unknown_2;
-  unsigned char n;
-  unsigned char type;
+  unsigned char type_1;
+  unsigned char type_2;
 };
 
 struct emu3_preset_zone

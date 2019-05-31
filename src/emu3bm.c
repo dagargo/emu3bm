@@ -783,7 +783,7 @@ emu3_open_file (const char *filename)
 
 	  emu3_log (2, 1, "Geometry:\n");
 	  emu3_log (2, 1, "Objects: %d\n", file->bank->objects + 1);
-	  emu3_log (2, 1, "Next: 0x%08x\n", file->bank->next_sample);
+	  emu3_log (2, 1, "Next sample: 0x%08x\n", file->bank->next_sample);
 
 	  for (int i = 0; i < BANK_PARAMETERS; i++)
 	    emu3_log (2, 1, "Parameter %2d: 0x%08x (%d)\n", i,
@@ -900,19 +900,19 @@ emu3_process_bank (struct emu3_file *file, int edit_preset, int xflg,
 		emu3_set_preset_zone_filter (zones, filter);
 
 	      //If the zone is for pri, sec layer or both
-	      if (zone_defs->type == 0xff)
+	      if (zone_defs->type_1 == 0 && zone_defs->type_2 == 0xff)
 		{
 		  emu3_log (1, 2, "pri\n");
 		  emu3_print_zone_info (zones);
 		  zones++;
 		}
-	      else if (zone_defs->type == 0x03)
+	      else if (zone_defs->type_1 == 0xff && zone_defs->type_2 == 1)
 		{
 		  emu3_log (1, 2, "sec\n");
 		  emu3_print_zone_info (zones);
 		  zones++;
 		}
-	      else if (zone_defs->type == 0x01)
+	      else if (zone_defs->type_1 == 0 && zone_defs->type_2 == 1)
 		{
 		  emu3_log (1, 2, "pri\n");
 		  emu3_print_zone_info (zones);
@@ -1021,11 +1021,111 @@ emu3_reset_envelope (struct emu3_envelope *envelope)
   envelope->release = 0;
 }
 
+struct emu3_preset *
+emu3_get_preset(struct emu3_file *file, int preset_num) {
+  unsigned int addr = emu3_get_preset_address (file->bank, preset_num);
+  return (struct emu3_preset *) &file->raw[addr];
+}
+
+unsigned int
+emu3_get_preset_zone_def_addr(struct emu3_file *file, int preset_num) {
+  unsigned int addr = emu3_get_preset_address (file->bank, preset_num);
+  return addr + sizeof (struct emu3_preset);
+}
+
+unsigned int
+emu3_get_preset_zone_addr(struct emu3_file *file, int preset_num) {
+  struct emu3_preset * preset = emu3_get_preset (file, preset_num);
+  return emu3_get_preset_zone_def_addr(file, preset_num) +
+    (preset->nzones) * sizeof (struct emu3_preset_zone_def);
+}
+
+struct emu3_preset_zone_def *
+emu3_get_preset_zone_def(struct emu3_file *file, int preset_num) {
+  unsigned int addr = emu3_get_preset_zone_def_addr(file, preset_num);
+  return (struct emu3_preset_zone_def *) &file->raw[addr];
+}
+
+unsigned int
+emu3_add_zones (struct emu3_file *file, int preset_num, int zone_num,
+  struct emu3_preset_zone ** preset_zone)
+{
+  void *src, *dst, *zone_src, *zone_dst;
+  unsigned int next_preset_addr, dst_addr;
+  unsigned int *paddresses;
+  size_t size, inc_size;
+  unsigned int next_sample_addr;
+  struct emu3_preset * preset;
+  struct emu3_preset_zone_def * preset_zone_def;
+  int max_presets;
+
+  inc_size = sizeof (struct emu3_preset_zone);
+  if (zone_num == -1)
+    inc_size += sizeof (struct emu3_preset_zone_def);
+
+  next_preset_addr = emu3_get_preset_address (file->bank, preset_num + 1);
+  dst_addr = next_preset_addr + inc_size;
+
+  paddresses = emu3_get_preset_addresses (file->bank);
+  max_presets = emu3_get_max_presets (file->bank);
+  for (int i = preset_num + 1; i < max_presets + 1; i++)
+    paddresses[i] += inc_size;
+
+  next_sample_addr = emu3_get_next_sample_address (file->bank);
+  size = next_sample_addr - next_preset_addr;
+
+  emu3_log (2, 0, "Moving %dB from 0x%08x to 0x%08x...\n", size, next_preset_addr, dst_addr);
+
+  src = &file->raw[next_preset_addr];
+  dst = &file->raw[dst_addr];
+  memmove (dst, src, size);
+
+  preset = emu3_get_preset(file, preset_num);
+
+  if (zone_num == -1) {
+    unsigned int zone_addr = emu3_get_preset_zone_addr(file, preset_num);
+    unsigned int zone_addr_dst = zone_addr + sizeof (struct emu3_preset_zone_def);
+
+    zone_src = &file->raw[zone_addr];
+    zone_dst = &file->raw[zone_addr_dst];
+
+    if (preset->nzones > 0) {
+      size = next_preset_addr - zone_addr;
+
+      emu3_log (2, 0, "Moving %dB from from 0x%08x to 0x%08x...\n", size, zone_addr, zone_addr_dst);
+
+      memmove (zone_dst, zone_src, size);
+    }
+
+    preset_zone_def = zone_src;
+    preset_zone_def->unknown_1 = 0;
+    preset_zone_def->unknown_2 = 0;
+    preset_zone_def->type_1 = 0;
+    preset_zone_def->type_2 = 0xff;
+
+    unsigned int next_zone_addr = next_preset_addr + sizeof (struct emu3_preset_zone_def);
+
+    *preset_zone = (struct emu3_preset_zone *) &file->raw[next_zone_addr];
+
+    preset->nzones++;
+  } else {
+//TODO: check if zone is last one
+
+    preset_zone_def = &emu3_get_preset_zone_def(file, preset_num)[zone_num];
+    preset_zone_def->unknown_1 = 0;
+    preset_zone_def->unknown_2 = 0;
+    preset_zone_def->type_1 = 0;
+    preset_zone_def->type_2 = 1;
+
+    *preset_zone = NULL; //(struct emu3_preset_zone *) &file->raw[next_preset_addr];
+  }
+
+  return inc_size;
+}
+
 int
 emu3_add_preset_zone (struct emu3_file *file, char *zone_params)
 {
-  int max_samples = emu3_get_max_samples (file->bank);
-  int max_presets = emu3_get_max_presets (file->bank);
   char *sample_str = strsep (&zone_params, ",");
   char *layer = strsep (&zone_params, ",");
   char *original_key = strsep (&zone_params, ",");
@@ -1037,15 +1137,28 @@ emu3_add_preset_zone (struct emu3_file *file, char *zone_params)
   unsigned int preset_num;
   unsigned int *paddresses = emu3_get_preset_addresses (file->bank);
   unsigned int *saddresses = emu3_get_sample_addresses (file->bank);
-  int inc_size =
-    sizeof (struct emu3_preset_zone_def) + sizeof (struct emu3_preset_zone);
-  int i, total;
-  void *src, *dst;
-  unsigned int copy_start_addr, addr, zone_addr, zone_def_addr;
-  unsigned int next_sample_addr = emu3_get_next_sample_address (file->bank);
-  struct emu3_preset_zone_def *zone_def;
+  int sec_zone_id;
+  int i, total, max_samples, max_presets;
+  unsigned int addr, zone_addr, zone_def_addr, inc_size;
+  struct emu3_preset *preset;
   struct emu3_preset_zone *zone;
 
+  max_presets = emu3_get_max_presets (file->bank);
+  for (i = 0; i < max_presets; i++)
+  {
+    if (paddresses[0] == paddresses[1])
+    break;
+    paddresses++;
+  }
+  total = i;
+
+  if (total == 0)
+  {
+    fprintf (stderr, "No presets in bank\n");
+    return EXIT_FAILURE;
+  }
+
+  max_samples = emu3_get_max_samples (file->bank);
   for (i = 0; i < max_samples; i++)
     if (saddresses[i] == 0)
       break;
@@ -1058,14 +1171,6 @@ emu3_add_preset_zone (struct emu3_file *file, char *zone_params)
       fprintf (stderr, "Illegal sample number: %d\n", sample_num);
       return EXIT_FAILURE;
     }
-
-  for (i = 0; i < max_presets; i++)
-    {
-      if (paddresses[0] == paddresses[1])
-	break;
-      paddresses++;
-    }
-  total = i;
 
   preset_num = strtol (preset_str, &endtoken, 10);
   if (*endtoken != '\0' || preset_num < 0 || preset_num > max_presets
@@ -1096,71 +1201,47 @@ emu3_add_preset_zone (struct emu3_file *file, char *zone_params)
       return EXIT_FAILURE;
     }
 
-  int layer_int = 0;
-  if (!strcmp ("pri", layer))
-    layer_int = 0xff;
-  if (!strcmp ("sec", layer))
-    layer_int = 0x03;
-
-  if (!layer_int)
-    {
-      fprintf (stderr, "Illegal layer %s.\n", layer);
-      return EXIT_FAILURE;
-    }
-
-  printf
-    ("Adding %s zone for sample %d on %s (%d) from %s (%d) to %s (%d) to preset %d...\n",
+  emu3_log (1, 0,
+    "Adding %s zone for sample %d with key %s (%d) from %s (%d) to %s (%d) to preset %d...\n",
      layer, sample_num, original_key, original_key_int, lower_key,
      lower_key_int, higher_key, higher_key_int, preset_num);
 
-  copy_start_addr = emu3_get_preset_address (file->bank, preset_num + 1);
+  preset = emu3_get_preset (file, preset_num);
 
-  src = &file->raw[copy_start_addr];
-  dst = &file->raw[copy_start_addr + inc_size];
+  if (!strcmp ("pri", layer)) {
+    int assigned = 0;
+    for (i = lower_key_int; i <= higher_key_int; i++)
+      if (preset->note_zone_mappings[i] != 0xff)
+        assigned = 1;
+    if (assigned == 1)
+      {
+        fprintf (stderr, "Zone already assigned to notes.\n");
+        return EXIT_FAILURE;
+      }
 
-  paddresses = emu3_get_preset_addresses (file->bank);
-  for (i = preset_num + 1; i < max_presets + 1; i++)
-    paddresses[i] += inc_size;
+    for (i = lower_key_int; i <= higher_key_int; i++)
+      preset->note_zone_mappings[i] = preset->nzones;
 
-  size_t size = next_sample_addr - copy_start_addr;
+    inc_size = emu3_add_zones(file, preset_num, -1, &zone);
 
-  emu3_log (1, 0, "Moving next data (%d bytes)...\n", size);
+  } else if (!strcmp ("sec", layer)) {
+    sec_zone_id = preset->note_zone_mappings[lower_key_int];
+    int several = 0;
+    for (i = lower_key_int + 1; i <= higher_key_int; i++)
+      if (preset->note_zone_mappings[i] != sec_zone_id)
+        several = 1;
+    if (several == 1)
+      {
+        fprintf (stderr, "Note range in several zones.\n");
+        return EXIT_FAILURE;
+      }
 
-  memmove (dst, src, size);
+      inc_size = emu3_add_zones(file, preset_num, sec_zone_id, &zone);
+  } else {
+    fprintf (stderr, "Invalid layer %s.\n", layer);
+    return EXIT_FAILURE;
+  }
 
-  addr = emu3_get_preset_address (file->bank, preset_num);
-  struct emu3_preset *preset = (struct emu3_preset *) &file->raw[addr];
-
-  zone_def_addr =
-    addr + sizeof (struct emu3_preset) +
-    sizeof (struct emu3_preset_zone_def) * (preset->nzones);
-  zone_def = (struct emu3_preset_zone_def *) &file->raw[zone_def_addr];
-  zone_addr =
-    zone_def_addr + sizeof (struct emu3_preset_zone_def) +
-    sizeof (struct emu3_preset_zone) * (preset->nzones);
-  zone = (struct emu3_preset_zone *) &file->raw[zone_addr];
-
-  src = &file->raw[zone_def_addr];
-  dst = &file->raw[zone_def_addr + sizeof (struct emu3_preset_zone_def)];
-
-  size = sizeof (struct emu3_preset_zone) * preset->nzones;
-
-  emu3_log (1, 0, "Moving %d zones data (%d bytes)...\n", preset->nzones,
-	    size);
-
-  memmove (dst, src, size);
-
-  for (i = lower_key_int; i <= higher_key_int; i++)
-    preset->note_zone_mappings[i] = preset->nzones;
-
-  zone_def->unknown_1 = 0;
-  zone_def->unknown_2 = 0;
-  zone_def->n = preset->nzones;
-  zone_def->type = layer_int;
-
-  preset->nzones++;
-
-  //TODO: initialize struct zone
   zone->root_note = original_key_int;
   zone->sample_id_lsb = sample_num % 256;
   zone->sample_id_msb = sample_num / 256;
@@ -1255,7 +1336,7 @@ emu3_add_preset (struct emu3_file *file, char *preset_name)
 
   size_t size = next_sample_addr - copy_start_addr;
 
-  emu3_log (1, 0, "Moving %d bytes...\n", size);
+  emu3_log (1, 0, "Moving %dB...\n", size);
 
   memmove (dst, src, size);
 
@@ -1280,7 +1361,6 @@ void
 emu3_write_file (struct emu3_file *file)
 {
   FILE *fd = fopen (file->filename, "w");
-  unsigned int *addresses = emu3_get_preset_addresses (file->bank);
   unsigned int sample_start_addr = emu3_get_sample_start_address (file->bank);
   size_t filesize = file->bank->next_sample + sample_start_addr;
 
