@@ -128,12 +128,12 @@ struct emu3_envelope
   unsigned char release;
 };
 
-struct emu3_preset_zone_def
+struct emu3_preset_note_zone
 {
   unsigned char unknown_1;
   unsigned char unknown_2;
-  unsigned char type_1;
-  unsigned char type_2;
+  unsigned char pri_zone;
+  unsigned char sec_zone;
 };
 
 struct emu3_preset_zone
@@ -182,7 +182,7 @@ struct emu3_preset
   char unknown_0[PRESET_UNKNOWN_0_SIZE];
   char pitch_bend_range;
   char unknown_1[PRESET_UNKNOWN_1_SIZE];
-  char nzones;
+  char note_zones;
   unsigned char note_zone_mappings[NOTES];
 };
 
