@@ -859,7 +859,11 @@ emu3_process_bank (struct emu3_file *file, int edit_preset, int xflg,
 	  emu3_log (1, 0, " @ 0x%08x", address);
 	  emu3_log (0, 0, "\n");
 	  if (rt_controls)
-	    emu3_set_preset_rt_controls (preset, rt_controls);
+	    {
+	      char *rtc = strdup (rt_controls);
+	      emu3_set_preset_rt_controls (preset, rtc);
+	      free (rtc);
+	    }
 
 	  if (pbr != -1)
 	    emu3_set_preset_pbr (preset, pbr);
