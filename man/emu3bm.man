@@ -66,6 +66,10 @@ Increment the verbosity level.
 .BR \-x
 Extract all the bank samples in the current directory.
 
+.TP
+.BR \-X
+Extract all the bank samples in the current directory prepending the sample number to the sample name.
+
 .RE
 Options \fB\-s\fR, \fB\-S\fR, \fB\-p\fR, \fB\-z\fR and \fB\-n\fR can not be used in conjuction with options \fB\-c\fR, \fB\-f\fR, \fB\-l\fR, \fB\-b\fR, \fB\-q\fR, \fB\-r\fR and \fB\-x\fR.
 

@@ -201,7 +201,7 @@ void emu3_write_file (struct emu3_file *);
 
 char *emu3_emu3name_to_filename (const char *);
 
-char *emu3_emu3name_to_wav_filename (const char *, int);
+char *emu3_emu3name_to_wav_filename (const char *, int, int);
 
 char *emu3_wav_filename_to_emu3name (const char *);
 

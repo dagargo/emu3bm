@@ -42,7 +42,7 @@ main (int argc, char *argv[])
 {
   int c;
   int xflg = 0, sflg = 0, nflg = 0, errflg = 0, modflg = 0, pflg = 0, zflg =
-    0;
+    0, ext_mode = 0;
   char *bank_filename;
   char *sample_filename;
   char *preset_name;
@@ -59,7 +59,7 @@ main (int argc, char *argv[])
   int result = 0;
   int loop;
 
-  while ((c = getopt (argc, argv, "vns:S:xr:l:c:q:f:b:e:p:z:")) != -1)
+  while ((c = getopt (argc, argv, "vns:S:xXr:l:c:q:f:b:e:p:z:")) != -1)
     {
       switch (c)
 	{
@@ -78,6 +78,11 @@ main (int argc, char *argv[])
 	  break;
 	case 'x':
 	  xflg++;
+	  ext_mode = 1;
+	  break;
+	case 'X':
+	  xflg++;
+	  ext_mode = 2;
 	  break;
 	case 'n':
 	  nflg++;
@@ -163,58 +168,34 @@ main (int argc, char *argv[])
   struct emu3_file *file = emu3_open_file (bank_filename);
 
   if (!file)
-    exit (result);
+    exit (EXIT_FAILURE);
 
   if (sflg)
     {
       result = emu3_add_sample (file, sample_filename, loop);
-
-      if (result)
-	{
-	  emu3_close_file (file);
-	  exit (result);
-	}
+      goto close;
     }
 
   if (pflg)
     {
       result = emu3_add_preset (file, preset_name);
-
-      if (result)
-	{
-	  emu3_close_file (file);
-	  exit (result);
-	}
+      goto close;
     }
 
   if (zflg)
     {
       result = emu3_add_preset_zone (file, zone_params);
-
-      if (result)
-	{
-	  emu3_close_file (file);
-	  exit (result);
-	}
+      goto close;
     }
 
-  if (!nflg && !sflg && !pflg && !zflg)
-    {
-      result =
-	emu3_process_bank (file, preset, xflg, rt_controls, level,
-			   cutoff, q, filter, pbr);
+  if (modflg || xflg)
+    result =
+      emu3_process_bank (file, preset, ext_mode, rt_controls, level,
+			 cutoff, q, filter, pbr);
 
-      if (result)
-	{
-	  emu3_close_file (file);
-	  exit (result);
-	}
-    }
-
+close:
   if (sflg || pflg || zflg || modflg)
     emu3_write_file (file);
-
   emu3_close_file (file);
-
   exit (result);
 }

@@ -133,12 +133,16 @@ emu3_emu3name_to_filename (const char *objname)
 }
 
 char *
-emu3_emu3name_to_wav_filename (const char *emu3name, int num)
+emu3_emu3name_to_wav_filename (const char *emu3name, int num, int ext_mode)
 {
   char *fname = emu3_emu3name_to_filename (emu3name);
   char *wname = malloc (strlen (fname) + 9);
 
-  sprintf (wname, "%03d-%s%s", num, fname, SAMPLE_EXT);
+  if (ext_mode == 1)
+    sprintf (wname, "%s%s", fname, SAMPLE_EXT);
+  else
+    sprintf (wname, "%03d-%s%s", num, fname, SAMPLE_EXT);
+
   return wname;
 }
 
@@ -607,7 +611,8 @@ close:
 }
 
 void
-emu3_extract_sample (struct emu3_sample *sample, int num, sf_count_t nframes)
+emu3_extract_sample (struct emu3_sample *sample, int num, sf_count_t nframes,
+		     int ext_mode)
 {
   SF_INFO sfinfo;
   SNDFILE *output;
@@ -622,7 +627,7 @@ emu3_extract_sample (struct emu3_sample *sample, int num, sf_count_t nframes)
   sfinfo.channels = channels;
   sfinfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
 
-  wav_file = emu3_emu3name_to_wav_filename (sample->name, num);
+  wav_file = emu3_emu3name_to_wav_filename (sample->name, num, ext_mode);
   schannels = channels == 1 ? "mono" : "stereo";
   emu3_log (0, 1, "Extracting %s sample %s...\n", schannels, wav_file);
 
@@ -645,6 +650,8 @@ emu3_extract_sample (struct emu3_sample *sample, int num, sf_count_t nframes)
 	  break;
 	}
     }
+
+  free (wav_file);
   sf_close (output);
 }
 
@@ -831,7 +838,7 @@ emu3_open_file (const char *filename)
 }
 
 int
-emu3_process_bank (struct emu3_file *file, int edit_preset, int xflg,
+emu3_process_bank (struct emu3_file *file, int edit_preset, int ext_mode,
 		   char *rt_controls, int level, int cutoff, int q,
 		   int filter, int pbr)
 {
@@ -955,8 +962,8 @@ emu3_process_bank (struct emu3_file *file, int edit_preset, int xflg,
       emu3_log (0, 0, "\n");
       emu3_print_sample_info (sample, nframes);
 
-      if (xflg)
-	emu3_extract_sample (sample, i + 1, nframes);
+      if (ext_mode)
+	emu3_extract_sample (sample, i + 1, nframes, ext_mode);
     }
 
   return EXIT_SUCCESS;
