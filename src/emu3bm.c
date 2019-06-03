@@ -497,9 +497,9 @@ emu3_write_frame (struct emu3_sample_descriptor *sd, short int frame[])
 int
 emu3_append_sample (char *path, struct emu3_sample *sample, int loop)
 {
-  SF_INFO input_info;
+  SF_INFO sfinfo;
   SNDFILE *input;
-  int size = 0;
+  int size;
   unsigned int data_size;
   short int frame[2];
   short int zero[] = { 0, 0 };
@@ -507,95 +507,100 @@ emu3_append_sample (char *path, struct emu3_sample *sample, int loop)
   const char *filename;
   struct emu3_sample_descriptor sd;
 
-  input_info.format = 0;
-  input = sf_open (path, SFM_READ, &input_info);
+  size = 0;
+  sfinfo.format = 0;
+  input = sf_open (path, SFM_READ, &sfinfo);
   //TODO: add more formats
-  if ((input_info.format & SF_FORMAT_TYPEMASK) != SF_FORMAT_WAV)
-    fprintf (stderr, "Sample not in a valid format. Skipping...\n");
-  else if (input_info.channels > 2)
-    fprintf (stderr, "Sample neither mono nor stereo. Skipping...\n");
-  else
+  if ((sfinfo.format & SF_FORMAT_TYPEMASK) != SF_FORMAT_WAV)
     {
-      char *basec = strdup (path);
-      filename = basename (basec);
-      emu3_log (0, 0,
-		"Appending sample %s... (%" PRId64
-		" frames, %d channels)\n", filename, input_info.frames,
-		input_info.channels);
-      //Sample header initialization
-      char *name = emu3_wav_filename_to_filename (filename);
-      char *emu3name = emu3_str_to_emu3name (name);
-      emu3_cpystr (sample->name, emu3name);
-
-      free (basec);
-      free (name);
-      free (emu3name);
-
-      data_size = sizeof (short int) * (input_info.frames + 4);
-      mono_size = sizeof (struct emu3_sample) + data_size;
-      size = mono_size + (input_info.channels == 1 ? 0 : data_size);
-      sample->parameters[0] = 0;
-      //Start of left channel
-      sample->parameters[1] = sizeof (struct emu3_sample);
-      //Start of right channel
-      sample->parameters[2] = input_info.channels == 1 ? 0 : mono_size;
-      //Last sample of left channel
-      sample->parameters[3] = mono_size - 2;
-      //Last sample of right channel
-      sample->parameters[4] = input_info.channels == 1 ? 0 : size - 2;
-
-      int loop_start = 4;	//This is a constant
-      //Example (mono and stereo): Loop start @ 9290 sample is stored as ((9290 + 2) * 2) + sizeof (struct emu3_sample)
-      sample->parameters[5] =
-	((loop_start + 2) * 2) + sizeof (struct emu3_sample);
-      //Example
-      //Mono: Loop start @ 9290 sample is stored as (9290 + 2) * 2
-      //Stereo: Frames * 2 + parameters[5] + 8
-      sample->parameters[6] =
-	input_info.channels ==
-	1 ? (loop_start + 2) * 2 : input_info.frames * 2 +
-	sample->parameters[5] + 8;
-
-      int loop_end = input_info.frames - 10;	//This is a constant
-      //Example (mono and stereo): Loop end @ 94008 sample is stored as ((94008 + 1) * 2) + sizeof (struct emu3_sample)
-      sample->parameters[7] =
-	((loop_end + 1) * 2) + sizeof (struct emu3_sample);
-      //Example
-      //Mono: Loop end @ 94008 sample is stored as ((94008 + 1) * 2)
-      //Stereo: Frames * 2 + parameters[7] + 8
-      sample->parameters[8] =
-	input_info.channels ==
-	1 ? (loop_end + 1) * 2 : input_info.frames * 2 +
-	sample->parameters[7] + 8;
-
-      sample->sample_rate = DEFAULT_SAMPLING_FREQ;
-
-      sample->format = input_info.channels == 1 ? MONO_SAMPLE : STEREO_SAMPLE;
-
-      if (loop)
-	sample->format = sample->format | LOOP | LOOP_RELEASE;
-
-      for (int i = 0; i < MORE_SAMPLE_PARAMETERS; i++)
-	sample->more_parameters[i] = 0;
-
-      emu3_init_sample_descriptor (&sd, sample, input_info.frames);
-
-      //2 first frames set to 0
-      emu3_write_frame (&sd, zero);
-      emu3_write_frame (&sd, zero);
-
-      for (int i = 0; i < input_info.frames; i++)
-	{
-	  sf_readf_short (input, frame, 1);
-	  emu3_write_frame (&sd, frame);
-	}
-
-      //2 end frames set to 0
-      emu3_write_frame (&sd, zero);
-      emu3_write_frame (&sd, zero);
-
-      emu3_log (1, 1, "Appended %dB (0x%08x).\n", size, size);
+      fprintf (stderr, "Sample not in a valid format. Skipping...\n");
+      goto close;
     }
+
+  if (sfinfo.channels > 2)
+    {
+      fprintf (stderr, "Sample neither mono nor stereo. Skipping...\n");
+      goto close;
+    }
+
+  char *basec = strdup (path);
+  filename = basename (basec);
+  emu3_log (0, 0,
+	    "Appending sample %s... (%" PRId64
+	    " frames, %d channels)\n", filename, sfinfo.frames,
+	    sfinfo.channels);
+  //Sample header initialization
+  char *name = emu3_wav_filename_to_filename (filename);
+  char *emu3name = emu3_str_to_emu3name (name);
+  emu3_cpystr (sample->name, emu3name);
+
+  free (basec);
+  free (name);
+  free (emu3name);
+
+  data_size = sizeof (short int) * (sfinfo.frames + 4);
+  mono_size = sizeof (struct emu3_sample) + data_size;
+  size = mono_size + (sfinfo.channels == 1 ? 0 : data_size);
+  sample->parameters[0] = 0;
+  //Start of left channel
+  sample->parameters[1] = sizeof (struct emu3_sample);
+  //Start of right channel
+  sample->parameters[2] = sfinfo.channels == 1 ? 0 : mono_size;
+  //Last sample of left channel
+  sample->parameters[3] = mono_size - 2;
+  //Last sample of right channel
+  sample->parameters[4] = sfinfo.channels == 1 ? 0 : size - 2;
+
+  int loop_start = 4;		//This is a constant
+  //Example (mono and stereo): Loop start @ 9290 sample is stored as ((9290 + 2) * 2) + sizeof (struct emu3_sample)
+  sample->parameters[5] =
+    ((loop_start + 2) * 2) + sizeof (struct emu3_sample);
+  //Example
+  //Mono: Loop start @ 9290 sample is stored as (9290 + 2) * 2
+  //Stereo: Frames * 2 + parameters[5] + 8
+  sample->parameters[6] =
+    sfinfo.channels ==
+    1 ? (loop_start + 2) * 2 : sfinfo.frames * 2 + sample->parameters[5] + 8;
+
+  int loop_end = sfinfo.frames - 10;	//This is a constant
+  //Example (mono and stereo): Loop end @ 94008 sample is stored as ((94008 + 1) * 2) + sizeof (struct emu3_sample)
+  sample->parameters[7] = ((loop_end + 1) * 2) + sizeof (struct emu3_sample);
+  //Example
+  //Mono: Loop end @ 94008 sample is stored as ((94008 + 1) * 2)
+  //Stereo: Frames * 2 + parameters[7] + 8
+  sample->parameters[8] =
+    sfinfo.channels ==
+    1 ? (loop_end + 1) * 2 : sfinfo.frames * 2 + sample->parameters[7] + 8;
+
+  sample->sample_rate = sfinfo.samplerate;
+
+  sample->format = sfinfo.channels == 1 ? MONO_SAMPLE : STEREO_SAMPLE;
+
+  if (loop)
+    sample->format = sample->format | LOOP | LOOP_RELEASE;
+
+  for (int i = 0; i < MORE_SAMPLE_PARAMETERS; i++)
+    sample->more_parameters[i] = 0;
+
+  emu3_init_sample_descriptor (&sd, sample, sfinfo.frames);
+
+  //2 first frames set to 0
+  emu3_write_frame (&sd, zero);
+  emu3_write_frame (&sd, zero);
+
+  for (int i = 0; i < sfinfo.frames; i++)
+    {
+      sf_readf_short (input, frame, 1);
+      emu3_write_frame (&sd, frame);
+    }
+
+  //2 end frames set to 0
+  emu3_write_frame (&sd, zero);
+  emu3_write_frame (&sd, zero);
+
+  emu3_log (1, 1, "Appended %dB (0x%08x).\n", size, size);
+
+close:
   sf_close (input);
 
   return size;
@@ -604,25 +609,24 @@ emu3_append_sample (char *path, struct emu3_sample *sample, int loop)
 void
 emu3_extract_sample (struct emu3_sample *sample, int num, sf_count_t nframes)
 {
-  SF_INFO output_info;
+  SF_INFO sfinfo;
   SNDFILE *output;
   char *wav_file;
   short *l_channel, *r_channel;
   short frame[2];
   char *schannels;
   int channels = emu3_get_sample_channels (sample);
-  int samplerate = sample->sample_rate;
 
-  output_info.frames = nframes;
-  output_info.samplerate = samplerate;
-  output_info.channels = channels;
-  output_info.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+  sfinfo.frames = nframes;
+  sfinfo.samplerate = sample->sample_rate;
+  sfinfo.channels = channels;
+  sfinfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
 
   wav_file = emu3_emu3name_to_wav_filename (sample->name, num);
   schannels = channels == 1 ? "mono" : "stereo";
   emu3_log (0, 1, "Extracting %s sample %s...\n", schannels, wav_file);
 
-  output = sf_open (wav_file, SFM_WRITE, &output_info);
+  output = sf_open (wav_file, SFM_WRITE, &sfinfo);
   l_channel = sample->frames + 2;
   if (channels == 2)
     r_channel = sample->frames + nframes + 6;
@@ -748,7 +752,6 @@ emu3_get_max_presets (struct emu3_bank *bank)
     return MAX_PRESETS_EMU_3X;
   else if (strcmp (EMULATOR_THREE_DEF, bank->format) == 0)
     return MAX_PRESETS_EMU_THREE;
-
   else
     return 0;
 }
