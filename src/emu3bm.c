@@ -514,12 +514,6 @@ emu3_append_sample (char *path, struct emu3_sample *sample, int loop)
   size = 0;
   sfinfo.format = 0;
   input = sf_open (path, SFM_READ, &sfinfo);
-  //TODO: add more formats
-  if ((sfinfo.format & SF_FORMAT_TYPEMASK) != SF_FORMAT_WAV)
-    {
-      fprintf (stderr, "Sample not in a valid format. Skipping...\n");
-      goto close;
-    }
 
   if (sfinfo.channels > 2)
     {
