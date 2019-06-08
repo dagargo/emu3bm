@@ -770,65 +770,56 @@ emu3_open_file (const char *filename)
   struct emu3_file *file;
   FILE *fd = fopen (filename, "r");
 
-  if (fd)
-    {
-      file = (struct emu3_file *) malloc (sizeof (struct emu3_file));
-
-      file->filename = filename;
-      file->raw = (char *) malloc (MEM_SIZE);
-      file->fsize = fread (file->raw, 1, MEM_SIZE, fd);
-      fclose (fd);
-
-      if (emu3_check_bank_format (file->bank))
-	{
-	  emu3_log (0, 0, "Bank name: %.*s\n", NAME_SIZE, file->bank->name);
-	  emu3_log (1, 0, "Bank fsize: %zuB\n", file->fsize);
-	  emu3_log (1, 0, "Bank format: %s\n", file->bank->format);
-
-	  emu3_log (2, 1, "Geometry:\n");
-	  emu3_log (2, 1, "Objects: %d\n", file->bank->objects + 1);
-	  emu3_log (2, 1, "Next sample: 0x%08x\n", file->bank->next_sample);
-
-	  for (int i = 0; i < BANK_PARAMETERS; i++)
-	    emu3_log (2, 1, "Parameter %2d: 0x%08x (%d)\n", i,
-		      file->bank->parameters[i], file->bank->parameters[i]);
-
-	  if (file->bank->parameters[1] + file->bank->parameters[2] !=
-	      file->bank->parameters[4])
-	    emu3_log (2, 1, "Kind of checksum error.\n");
-
-	  if (strncmp (file->bank->name, file->bank->name_copy, NAME_SIZE))
-	    emu3_log (2, 1,
-		      "Bank name is different than previously found.\n");
-
-	  emu3_log (2, 1, "Selected preset: %d\n",
-		    file->bank->selected_preset);
-
-	  emu3_log (2, 1, "More geometry:\n");
-	  for (int i = 0; i < MORE_BANK_PARAMETERS; i++)
-	    emu3_log (2, 1, "Parameter %d: 0x%08x (%d)\n", i,
-		      file->bank->more_parameters[i],
-		      file->bank->more_parameters[i]);
-
-	  emu3_log (2, 1, "Current preset: %d\n",
-		    file->bank->more_parameters[0]);
-	  emu3_log (2, 1, "Current sample: %d\n",
-		    file->bank->more_parameters[1]);
-
-	  return file;
-	}
-      else
-	{
-	  fprintf (stderr, "Bank format not supported.\n");
-	  emu3_close_file (file);
-	  return NULL;
-	}
-    }
-  else
+  if (!fd)
     {
       fprintf (stderr, "Error while opening %s for input\n", filename);
       return NULL;
     }
+
+  file = (struct emu3_file *) malloc (sizeof (struct emu3_file));
+
+  file->filename = filename;
+  file->raw = (char *) malloc (MEM_SIZE);
+  file->fsize = fread (file->raw, 1, MEM_SIZE, fd);
+  fclose (fd);
+
+  if (!emu3_check_bank_format (file->bank))
+    {
+      fprintf (stderr, "Bank format not supported.\n");
+      emu3_close_file (file);
+      return NULL;
+    }
+
+  emu3_log (0, 0, "Bank name: %.*s\n", NAME_SIZE, file->bank->name);
+  emu3_log (1, 0, "Bank fsize: %zuB\n", file->fsize);
+  emu3_log (1, 0, "Bank format: %s\n", file->bank->format);
+
+  emu3_log (2, 1, "Geometry:\n");
+  emu3_log (2, 1, "Objects: %d\n", file->bank->objects + 1);
+  emu3_log (2, 1, "Next sample: 0x%08x\n", file->bank->next_sample);
+
+  for (int i = 0; i < BANK_PARAMETERS; i++)
+    emu3_log (2, 1, "Parameter %2d: 0x%08x (%d)\n", i,
+	      file->bank->parameters[i], file->bank->parameters[i]);
+
+  if (file->bank->parameters[1] + file->bank->parameters[2] !=
+      file->bank->parameters[4])
+    emu3_log (2, 1, "Kind of checksum error.\n");
+
+  if (strncmp (file->bank->name, file->bank->name_copy, NAME_SIZE))
+    emu3_log (2, 1, "Bank name is different than previously found.\n");
+
+  emu3_log (2, 1, "Selected preset: %d\n", file->bank->selected_preset);
+
+  emu3_log (2, 1, "More geometry:\n");
+  for (int i = 0; i < MORE_BANK_PARAMETERS; i++)
+    emu3_log (2, 1, "Parameter %d: 0x%08x (%d)\n", i,
+	      file->bank->more_parameters[i], file->bank->more_parameters[i]);
+
+  emu3_log (2, 1, "Current preset: %d\n", file->bank->more_parameters[0]);
+  emu3_log (2, 1, "Current sample: %d\n", file->bank->more_parameters[1]);
+
+  return file;
 }
 
 int
