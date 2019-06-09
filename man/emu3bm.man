@@ -24,7 +24,7 @@ Add a new preset with the given name.
 
 .TP
 .BR \-z " zone_parameters"
-Add a new zone to a preset using the format sample,[pri|sec],original_key,lower_key,higher_key,preset.
+Add a new zone to a preset using the format sample,[pri|sec],original_key,lower_key,higher_key. This must be used with -e.
 
 .TP
 .BR \-e " preset_to_edit"

@@ -53,11 +53,13 @@ main (int argc, char *argv[])
   int q = -1;
   int filter = -1;
   int pbr = -1;
-  int preset = -1;
+  int preset_num = -1;
   extern char *optarg;
   extern int optind, optopt;
   int result = 0;
   int loop;
+  int sample_num;
+  struct emu3_zone_range zone_range;
 
   while ((c = getopt (argc, argv, "vns:S:xXr:l:c:q:f:b:e:p:z:")) != -1)
     {
@@ -112,7 +114,7 @@ main (int argc, char *argv[])
 	  modflg++;
 	  break;
 	case 'e':
-	  preset = get_positive_int (optarg);
+	  preset_num = get_positive_int (optarg);
 	  break;
 	case 'p':
 	  preset_name = optarg;
@@ -120,6 +122,52 @@ main (int argc, char *argv[])
 	  break;
 	case 'z':
 	  zone_params = optarg;
+
+	  char *sample_str = strsep (&zone_params, ",");
+	  char *layer = strsep (&zone_params, ",");
+	  char *original_key = strsep (&zone_params, ",");
+	  char *lower_key = strsep (&zone_params, ",");
+	  char *higher_key = strsep (&zone_params, ",");
+	  char *endtoken;
+
+	  sample_num = strtol (sample_str, &endtoken, 10);
+	  if (*endtoken != '\0' || sample_num <= 0)
+	    {
+	      fprintf (stderr, "Illegal sample %d.\n", sample_num);
+	      exit (EXIT_FAILURE);
+	    }
+
+	  zone_range.original_key = emu3_reverse_note_search (original_key);
+	  if (zone_range.original_key == -1)
+	    {
+	      fprintf (stderr, "Illegal original key %s.\n", original_key);
+	      exit (EXIT_FAILURE);
+	    }
+
+	  zone_range.lower_key = emu3_reverse_note_search (lower_key);
+	  if (zone_range.lower_key == -1)
+	    {
+	      fprintf (stderr, "Illegal lower key %s.\n", lower_key);
+	      exit (EXIT_FAILURE);
+	    }
+
+	  zone_range.higher_key = emu3_reverse_note_search (higher_key);
+	  if (zone_range.higher_key == -1)
+	    {
+	      fprintf (stderr, "Illegal higher key %s.\n", higher_key);
+	      exit (EXIT_FAILURE);
+	    }
+
+	  if (!strcmp ("pri", layer))
+	    zone_range.layer = 1;
+	  else if (!strcmp ("sec", layer))
+	    zone_range.layer = 2;
+	  else
+	    {
+	      fprintf (stderr, "Invalid layer %s.\n", layer);
+	      return EXIT_FAILURE;
+	    }
+
 	  zflg++;
 	  break;
 	case '?':
@@ -154,8 +202,8 @@ main (int argc, char *argv[])
   if (errflg > 0)
     {
       fprintf (stderr, "%s\n", PACKAGE_STRING);
-      fprintf (stderr, "Usage: %s [OPTIONS] bank_file.\n",
-	       basename (argv[0]));
+      char *runnable = basename (argv[0]);
+      fprintf (stderr, "Usage: %s [OPTIONS] bank_file.\n", runnable);
       exit (EXIT_FAILURE);
     }
 
@@ -184,13 +232,14 @@ main (int argc, char *argv[])
 
   if (zflg)
     {
-      result = emu3_add_preset_zone (file, zone_params);
+      result =
+	emu3_add_preset_zone (file, preset_num, sample_num, &zone_range);
       goto close;
     }
 
   if (modflg || xflg)
     result =
-      emu3_process_bank (file, preset, ext_mode, rt_controls, level,
+      emu3_process_bank (file, preset_num, ext_mode, rt_controls, level,
 			 cutoff, q, filter, pbr);
 
 close:

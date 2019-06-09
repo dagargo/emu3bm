@@ -193,6 +193,14 @@ struct emu3_sample_descriptor
   struct emu3_sample *sample;
 };
 
+struct emu3_zone_range
+{
+  int layer;
+  int original_key;
+  int lower_key;
+  int higher_key;
+};
+
 struct emu3_file *emu3_open_file (const char *);
 
 void emu3_close_file (struct emu3_file *);
@@ -227,7 +235,8 @@ unsigned int emu3_get_preset_address (struct emu3_bank *, int);
 
 int emu3_add_preset (struct emu3_file *, char *);
 
-int emu3_add_preset_zone (struct emu3_file *, char *);
+int emu3_add_preset_zone (struct emu3_file *, int preset_num, int sample_num,
+			  struct emu3_zone_range *);
 
 int emu3_extract_samples (struct emu3_file *);
 

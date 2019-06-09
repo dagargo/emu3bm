@@ -523,7 +523,7 @@ emu3_append_sample (char *path, struct emu3_sample *sample, int loop)
 
   char *basec = strdup (path);
   filename = basename (basec);
-  emu3_log (0, 0,
+  emu3_log (1, 0,
 	    "Appending sample %s... (%" PRId64
 	    " frames, %d channels)\n", filename, sfinfo.frames,
 	    sfinfo.channels);
@@ -955,11 +955,49 @@ emu3_process_bank (struct emu3_file *file, int edit_preset, int ext_mode,
 }
 
 int
+emu3_get_bank_presets (struct emu3_bank *bank)
+{
+  unsigned int *paddresses = emu3_get_preset_addresses (bank);
+  int max_presets = emu3_get_max_presets (bank);
+  int total = 0;
+
+  while (paddresses[0] != paddresses[1] && total < max_presets)
+    {
+      paddresses++;
+      total++;
+    }
+
+  return total;
+}
+
+int
+emu3_get_bank_samples (struct emu3_bank *bank)
+{
+  unsigned int *saddresses = emu3_get_sample_addresses (bank);
+  int max_samples = emu3_get_max_samples (bank);
+  int total = 0;
+
+  while (saddresses[0] != 0 && total < max_samples)
+    {
+      saddresses++;
+      total++;
+    }
+
+  return total;
+}
+
+int
+emu3_get_bank_objects (struct emu3_bank *bank)
+{
+  return emu3_get_bank_samples (bank) + emu3_get_bank_presets (bank);
+}
+
+int
 emu3_add_sample (struct emu3_file *file, char *sample_filename, int loop)
 {
   int i;
   int max_samples = emu3_get_max_samples (file->bank);
-  int max_presets = emu3_get_max_presets (file->bank);
+  int total_samples = emu3_get_bank_samples (file->bank);
   unsigned int *saddresses = emu3_get_sample_addresses (file->bank);
   unsigned int sample_start_addr = emu3_get_sample_start_address (file->bank);
   unsigned int next_sample_addr = emu3_get_next_sample_address (file->bank);
@@ -972,24 +1010,20 @@ emu3_add_sample (struct emu3_file *file, char *sample_filename, int loop)
       return EXIT_FAILURE;
     }
 
-  for (i = 0; i < max_samples; i++)
-    if (saddresses[i] == 0)
-      break;
-
-  if (i == max_samples)
+  if (total_samples == max_samples)
     {
       fprintf (stderr, "No more samples could be added.\n");
       return EXIT_FAILURE;
     }
 
-  printf ("Adding sample %d...\n", i + 1);	//Sample number is 1 based
+  printf ("Adding sample %d...\n", total_samples + 1);	//Sample number is 1 based
   unsigned int size = emu3_append_sample (sample_filename, sample, loop);
 
   if (size)
     {
       file->bank->objects++;
       file->bank->next_sample = next_sample_addr + size - sample_start_addr;
-      saddresses[i] = saddresses[max_samples];
+      saddresses[total_samples] = saddresses[max_samples];
       saddresses[max_samples] = file->bank->next_sample + SAMPLE_OFFSET;
       return EXIT_SUCCESS;
     }
@@ -1139,94 +1173,35 @@ emu3_add_zones (struct emu3_file *file, int preset_num, int zone_num,
 }
 
 int
-emu3_add_preset_zone (struct emu3_file *file, char *zone_params)
+emu3_add_preset_zone (struct emu3_file *file, int preset_num, int sample_num,
+		      struct emu3_zone_range *zone_range)
 {
-  char *sample_str = strsep (&zone_params, ",");
-  char *layer = strsep (&zone_params, ",");
-  char *original_key = strsep (&zone_params, ",");
-  char *lower_key = strsep (&zone_params, ",");
-  char *higher_key = strsep (&zone_params, ",");
-  char *preset_str = strsep (&zone_params, ",");
-  char *endtoken;
-  unsigned int sample_num;
-  unsigned int preset_num;
-  unsigned int *paddresses = emu3_get_preset_addresses (file->bank);
-  unsigned int *saddresses = emu3_get_sample_addresses (file->bank);
   int sec_zone_id;
-  int i, total, max_samples, max_presets;
+  int total_presets = emu3_get_bank_presets (file->bank);
+  int total_samples = emu3_get_bank_samples (file->bank);
   unsigned int addr, zone_addr, zone_def_addr, inc_size;
   struct emu3_preset *preset;
   struct emu3_preset_zone *zone;
 
-  max_presets = emu3_get_max_presets (file->bank);
-  for (i = 0; i < max_presets; i++)
-    {
-      if (paddresses[0] == paddresses[1])
-	break;
-      paddresses++;
-    }
-  total = i;
-
-  if (total == 0)
-    {
-      fprintf (stderr, "No presets in bank\n");
-      return EXIT_FAILURE;
-    }
-
-  max_samples = emu3_get_max_samples (file->bank);
-  for (i = 0; i < max_samples; i++)
-    if (saddresses[i] == 0)
-      break;
-  total = i;
-
-  sample_num = strtol (sample_str, &endtoken, 10);
-  if (*endtoken != '\0' || sample_num <= 0 || sample_num > max_samples
-      || sample_num > total)
-    {
-      fprintf (stderr, "Illegal sample number: %d\n", sample_num);
-      return EXIT_FAILURE;
-    }
-
-  preset_num = strtol (preset_str, &endtoken, 10);
-  if (*endtoken != '\0' || preset_num < 0 || preset_num > max_presets
-      || preset_num > total)
+  if (preset_num < 0 || preset_num > total_presets)
     {
       fprintf (stderr, "Illegal preset number: %d\n", preset_num);
       return EXIT_FAILURE;
     }
 
-  int original_key_int = emu3_reverse_note_search (original_key);
-  if (original_key_int == -1)
-    {
-      fprintf (stderr, "Illegal key %s.\n", original_key);
-      return EXIT_FAILURE;
-    }
-
-  int lower_key_int = emu3_reverse_note_search (lower_key);
-  if (original_key_int == -1)
-    {
-      fprintf (stderr, "Illegal key %s.\n", lower_key);
-      return EXIT_FAILURE;
-    }
-
-  int higher_key_int = emu3_reverse_note_search (higher_key);
-  if (original_key_int == -1)
-    {
-      fprintf (stderr, "Illegal key %s.\n", higher_key);
-      return EXIT_FAILURE;
-    }
-
   emu3_log (1, 0,
-	    "Adding %s zone for sample %d with key %s (%d) from %s (%d) to %s (%d) to preset %d...\n",
-	    layer, sample_num, original_key, original_key_int, lower_key,
-	    lower_key_int, higher_key, higher_key_int, preset_num);
+	    "Adding sample %d to %s layer with original key %d (%s) from %d (%s) to %d (%s) to preset %d...\n",
+	    sample_num, zone_range->layer, zone_range->original_key,
+	    note_names[zone_range->original_key], zone_range->lower_key,
+	    note_names[zone_range->lower_key], zone_range->higher_key,
+	    note_names[zone_range->higher_key], preset_num);
 
   preset = emu3_get_preset (file, preset_num);
 
-  if (!strcmp ("pri", layer))
+  if (zone_range->layer == 1)
     {
       int assigned = 0;
-      for (i = lower_key_int; i <= higher_key_int; i++)
+      for (int i = zone_range->lower_key; i <= zone_range->higher_key; i++)
 	if (preset->note_zone_mappings[i] != 0xff)
 	  assigned = 1;
       if (assigned == 1)
@@ -1235,17 +1210,18 @@ emu3_add_preset_zone (struct emu3_file *file, char *zone_params)
 	  return EXIT_FAILURE;
 	}
 
-      for (i = lower_key_int; i <= higher_key_int; i++)
+      for (int i = zone_range->lower_key; i <= zone_range->higher_key; i++)
 	preset->note_zone_mappings[i] = preset->note_zones;
 
       inc_size = emu3_add_zones (file, preset_num, -1, &zone);
 
     }
-  else if (!strcmp ("sec", layer))
+  else if (zone_range->layer == 2)
     {
-      sec_zone_id = preset->note_zone_mappings[lower_key_int];
+      sec_zone_id = preset->note_zone_mappings[zone_range->lower_key];
       int several = 0;
-      for (i = lower_key_int + 1; i <= higher_key_int; i++)
+      for (int i = zone_range->lower_key + 1; i <= zone_range->higher_key;
+	   i++)
 	if (preset->note_zone_mappings[i] != sec_zone_id)
 	  several = 1;
       if (several == 1)
@@ -1256,13 +1232,8 @@ emu3_add_preset_zone (struct emu3_file *file, char *zone_params)
 
       inc_size = emu3_add_zones (file, preset_num, sec_zone_id, &zone);
     }
-  else
-    {
-      fprintf (stderr, "Invalid layer %s.\n", layer);
-      return EXIT_FAILURE;
-    }
 
-  zone->root_note = original_key_int;
+  zone->root_note = zone_range->original_key;
   zone->sample_id_lsb = sample_num % 256;
   zone->sample_id_msb = sample_num / 256;
   zone->parameter_a = 0x1f;
@@ -1309,19 +1280,13 @@ emu3_add_preset (struct emu3_file *file, char *preset_name)
 {
   int i, objects;
   unsigned int copy_start_addr;
-  int max_samples = emu3_get_max_samples (file->bank);
   int max_presets = emu3_get_max_presets (file->bank);
   unsigned int *paddresses = emu3_get_preset_addresses (file->bank);
-  unsigned int *saddresses = emu3_get_sample_addresses (file->bank);
   unsigned int next_sample_addr = emu3_get_next_sample_address (file->bank);
   unsigned int sample_start_addr = emu3_get_sample_start_address (file->bank);
   void *src, *dst;
 
-  for (i = 0; i < max_samples; i++)
-    if (saddresses[i] == 0)
-      break;
-
-  objects = i;
+  objects = emu3_get_bank_samples (file->bank);
 
   for (i = 0; i < max_presets; i++)
     {
