@@ -38,6 +38,73 @@ get_positive_int (char *str)
 }
 
 int
+parse_zone_params (char *zone_params, int *sample_num,
+		   struct emu3_zone_range *zone_range, int is_num)
+{
+  char *sample_str = strsep (&zone_params, ",");
+  char *layer = strsep (&zone_params, ",");
+  char *original_key = strsep (&zone_params, ",");
+  char *lower_key = strsep (&zone_params, ",");
+  char *higher_key = strsep (&zone_params, ",");
+  char *endtoken;
+
+  *sample_num = strtol (sample_str, &endtoken, 10);
+  if (*endtoken != '\0' || sample_num <= 0)
+    {
+      fprintf (stderr, "Illegal sample %d.\n", sample_num);
+      return EXIT_FAILURE;
+    }
+
+  int orig_key_int;
+  if (is_num)
+    orig_key_int = strtol (original_key, &endtoken, 10);
+  else
+    orig_key_int = emu3_reverse_note_search (original_key);
+  if (orig_key_int == -1 || orig_key_int < 0 || orig_key_int >= NOTES)
+    {
+      fprintf (stderr, "Illegal original key %s.\n", original_key);
+      return EXIT_FAILURE;
+    }
+  zone_range->original_key = orig_key_int;
+
+  int lower_key_int;
+  if (is_num)
+    lower_key_int = strtol (lower_key, &endtoken, 10);
+  else
+    lower_key_int = emu3_reverse_note_search (lower_key);
+  if (lower_key_int == -1 || lower_key_int < 0 || lower_key_int >= NOTES)
+    {
+      fprintf (stderr, "Illegal lower key %s.\n", lower_key);
+      return EXIT_FAILURE;
+    }
+  zone_range->lower_key = lower_key_int;
+
+  int higher_key_int;
+  if (is_num)
+    higher_key_int = strtol (higher_key, &endtoken, 10);
+  else
+    higher_key_int = emu3_reverse_note_search (higher_key);
+  if (higher_key_int == -1 || higher_key_int < 0 || higher_key_int >= NOTES)
+    {
+      fprintf (stderr, "Illegal higher key %s.\n", higher_key);
+      return EXIT_FAILURE;
+    }
+  zone_range->higher_key = higher_key_int;
+
+  if (!strcmp ("pri", layer))
+    zone_range->layer = 1;
+  else if (!strcmp ("sec", layer))
+    zone_range->layer = 2;
+  else
+    {
+      fprintf (stderr, "Invalid layer %s.\n", layer);
+      return EXIT_FAILURE;
+    }
+
+  return 0;
+}
+
+int
 main (int argc, char *argv[])
 {
   int c;
@@ -61,7 +128,7 @@ main (int argc, char *argv[])
   int sample_num;
   struct emu3_zone_range zone_range;
 
-  while ((c = getopt (argc, argv, "vns:S:xXr:l:c:q:f:b:e:p:z:")) != -1)
+  while ((c = getopt (argc, argv, "vns:S:xXr:l:c:q:f:b:e:p:z:Z:")) != -1)
     {
       switch (c)
 	{
@@ -121,53 +188,13 @@ main (int argc, char *argv[])
 	  pflg++;
 	  break;
 	case 'z':
+	case 'Z':
 	  zone_params = optarg;
-
-	  char *sample_str = strsep (&zone_params, ",");
-	  char *layer = strsep (&zone_params, ",");
-	  char *original_key = strsep (&zone_params, ",");
-	  char *lower_key = strsep (&zone_params, ",");
-	  char *higher_key = strsep (&zone_params, ",");
-	  char *endtoken;
-
-	  sample_num = strtol (sample_str, &endtoken, 10);
-	  if (*endtoken != '\0' || sample_num <= 0)
-	    {
-	      fprintf (stderr, "Illegal sample %d.\n", sample_num);
-	      exit (EXIT_FAILURE);
-	    }
-
-	  zone_range.original_key = emu3_reverse_note_search (original_key);
-	  if (zone_range.original_key == -1)
-	    {
-	      fprintf (stderr, "Illegal original key %s.\n", original_key);
-	      exit (EXIT_FAILURE);
-	    }
-
-	  zone_range.lower_key = emu3_reverse_note_search (lower_key);
-	  if (zone_range.lower_key == -1)
-	    {
-	      fprintf (stderr, "Illegal lower key %s.\n", lower_key);
-	      exit (EXIT_FAILURE);
-	    }
-
-	  zone_range.higher_key = emu3_reverse_note_search (higher_key);
-	  if (zone_range.higher_key == -1)
-	    {
-	      fprintf (stderr, "Illegal higher key %s.\n", higher_key);
-	      exit (EXIT_FAILURE);
-	    }
-
-	  if (!strcmp ("pri", layer))
-	    zone_range.layer = 1;
-	  else if (!strcmp ("sec", layer))
-	    zone_range.layer = 2;
-	  else
-	    {
-	      fprintf (stderr, "Invalid layer %s.\n", layer);
-	      return EXIT_FAILURE;
-	    }
-
+	  int result =
+	    parse_zone_params (zone_params, &sample_num, &zone_range,
+			       c == 'Z');
+	  if (result)
+	    exit (result);
 	  zflg++;
 	  break;
 	case '?':

@@ -19,6 +19,7 @@
  */
 
 #include <string.h>
+#include "emu3bm.h"
 
 const char *note_names[] = {
   "A-1",
@@ -111,12 +112,10 @@ const char *note_names[] = {
   "C7"
 };
 
-const int notes = sizeof (note_names) / sizeof (char *);
-
 int
 emu3_reverse_note_search (char *note_name)
 {
-  for (int i = 0; i < notes; i++)
+  for (int i = 0; i < NOTES; i++)
     if (strcmp (note_names[i], note_name) == 0)
       return i;
 
