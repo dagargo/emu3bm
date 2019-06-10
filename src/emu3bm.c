@@ -469,6 +469,7 @@ emu3_set_preset_rt_controls (struct emu3_preset *preset, char *rt_controls)
 void
 emu3_set_preset_pbr (struct emu3_preset *preset, int pbr)
 {
+  emu3_log (0, 1, "Setting pitch bend range to %d...\n", pbr);
   preset->pitch_bend_range = pbr;
 }
 
