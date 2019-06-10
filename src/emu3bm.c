@@ -469,8 +469,14 @@ emu3_set_preset_rt_controls (struct emu3_preset *preset, char *rt_controls)
 void
 emu3_set_preset_pbr (struct emu3_preset *preset, int pbr)
 {
-  emu3_log (0, 1, "Setting pitch bend range to %d...\n", pbr);
-  preset->pitch_bend_range = pbr;
+  if (pbr < 0 || pbr > 36)
+    fprintf (stderr, "Value for pitch bend range %d not in range [0, 36]\n",
+	     pbr);
+  else
+    {
+      emu3_log (0, 1, "Setting pitch bend range to %d...\n", pbr);
+      preset->pitch_bend_range = pbr;
+    }
 }
 
 void
@@ -823,10 +829,46 @@ emu3_open_file (const char *filename)
   return file;
 }
 
+void
+emu3_process_zone (struct emu3_preset_zone *zone, int level,
+		   int cutoff, int q, int filter)
+{
+  if (level != -1)
+    emu3_set_preset_zone_level (zone, level);
+  if (cutoff != -1)
+    emu3_set_preset_zone_cutoff (zone, cutoff);
+  if (q != -1)
+    emu3_set_preset_zone_q (zone, q);
+  if (filter != -1)
+    emu3_set_preset_zone_filter (zone, filter);
+}
+
+void
+emu3_process_note_zone (struct emu3_preset_zone *zones,
+			struct emu3_preset_note_zone *note_zone, int level,
+			int cutoff, int q, int filter)
+{
+  //If the zone is for pri, sec layer or both
+  if (note_zone->pri_zone != 0xff)
+    {
+      emu3_log (1, 2, "pri\n");
+      struct emu3_preset_zone *zone = &zones[note_zone->pri_zone];
+      emu3_process_zone (zone, level, cutoff, q, filter);
+      emu3_print_preset_zone_info (zone);
+    }
+  if (note_zone->sec_zone != 0xff)
+    {
+      emu3_log (1, 2, "sec\n");
+      struct emu3_preset_zone *zone = &zones[note_zone->sec_zone];
+      emu3_process_zone (zone, level, cutoff, q, filter);
+      emu3_print_preset_zone_info (zone);
+    }
+}
+
 int
 emu3_process_bank (struct emu3_file *file, int edit_preset, int ext_mode,
-		   char *rt_controls, int level, int cutoff, int q,
-		   int filter, int pbr)
+		   char *rt_controls, int pbr, int level, int cutoff, int q,
+		   int filter)
 {
   int size, channels;
   struct emu3_bank *bank;
@@ -890,26 +932,8 @@ emu3_process_bank (struct emu3_file *file, int edit_preset, int ext_mode,
 	  for (int j = 0; j < preset->note_zones; j++)
 	    {
 	      emu3_log (1, 1, "Zone %d\n", j);
-	      if (level != -1)
-		emu3_set_preset_zone_level (zones, level);
-	      if (cutoff != -1)
-		emu3_set_preset_zone_cutoff (zones, cutoff);
-	      if (q != -1)
-		emu3_set_preset_zone_q (zones, q);
-	      if (filter != -1)
-		emu3_set_preset_zone_filter (zones, filter);
-
-	      //If the zone is for pri, sec layer or both
-	      if (note_zones->pri_zone != 0xff)
-		{
-		  emu3_log (1, 2, "pri\n");
-		  emu3_print_preset_zone_info (&zones[note_zones->pri_zone]);
-		}
-	      if (note_zones->sec_zone != 0xff)
-		{
-		  emu3_log (1, 2, "sec\n");
-		  emu3_print_preset_zone_info (&zones[note_zones->sec_zone]);
-		}
+	      emu3_process_note_zone (zones, note_zones, level, cutoff, q,
+				      filter);
 	      note_zones++;
 	    }
 	}
