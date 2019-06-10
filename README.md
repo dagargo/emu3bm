@@ -37,7 +37,12 @@ $ emu3bm -p BassDrum bank
 
 Add a primary layer to preset 0 from sample 001 with original key F#2 from C2 to C3.
 ```
-$ emu3bm -z 1,pri,F#2,C2,C3,0 bank
+$ emu3bm -e 0 -z 1,pri,F#2,C2,C3 bank
+```
+
+The same thing can be acomplished by using key numbers.
+```
+$ emu3bm -e 0 -Z 1,pri,33,27,38 bank
 ```
 
 Set preset 0 pitch bend range to 24.
