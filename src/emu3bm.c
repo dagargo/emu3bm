@@ -437,6 +437,9 @@ emu3_set_preset_rt_controls (struct emu3_preset *preset, char *rt_controls)
   int i;
   int controller;
 
+  if (rt_controls == NULL)
+    return;
+
   emu3_log (0, 1, "Setting realtime controls...\n");
   i = 0;
   while (i < RT_CONTROLS_SIZE && (token = strsep (&rt_controls, ",")) != NULL)
@@ -846,30 +849,27 @@ emu3_process_zone (struct emu3_preset_zone *zone, int level,
 void
 emu3_process_note_zone (struct emu3_preset_zone *zones,
 			struct emu3_preset_note_zone *note_zone,
-			int edit_preset, int level, int cutoff, int q,
-			int filter)
+			int level, int cutoff, int q, int filter)
 {
   //If the zone is for pri, sec layer or both
   if (note_zone->pri_zone != 0xff)
     {
       emu3_log (1, 2, "pri\n");
       struct emu3_preset_zone *zone = &zones[note_zone->pri_zone];
-      if (edit_preset != -1)
-	emu3_process_zone (zone, level, cutoff, q, filter);
+      emu3_process_zone (zone, level, cutoff, q, filter);
       emu3_print_preset_zone_info (zone);
     }
   if (note_zone->sec_zone != 0xff)
     {
       emu3_log (1, 2, "sec\n");
       struct emu3_preset_zone *zone = &zones[note_zone->sec_zone];
-      if (edit_preset != -1)
-	emu3_process_zone (zone, level, cutoff, q, filter);
+      emu3_process_zone (zone, level, cutoff, q, filter);
       emu3_print_preset_zone_info (zone);
     }
 }
 
 int
-emu3_process_preset (struct emu3_file *file, int preset_num, int edit_preset,
+emu3_process_preset (struct emu3_file *file, int preset_num,
 		     char *rt_controls, int pbr, int level, int cutoff, int q,
 		     int filter)
 {
@@ -881,14 +881,15 @@ emu3_process_preset (struct emu3_file *file, int preset_num, int edit_preset,
   emu3_log (0, 0, "Preset %3d, %.*s", preset_num, NAME_SIZE, preset->name);
   emu3_log (1, 0, " @ 0x%08x", address);
   emu3_log (0, 0, "\n");
-  if (edit_preset != -1 && rt_controls)
+
+  if (rt_controls)
     {
       char *rtc = strdup (rt_controls);
       emu3_set_preset_rt_controls (preset, rtc);
       free (rtc);
     }
 
-  if (edit_preset != -1 && pbr != -1)
+  if (pbr != -1)
     emu3_set_preset_pbr (preset, pbr);
 
   emu3_print_preset_info (preset);
@@ -916,10 +917,23 @@ emu3_process_preset (struct emu3_file *file, int preset_num, int edit_preset,
   for (int j = 0; j < preset->note_zones; j++)
     {
       emu3_log (1, 1, "Zone %d\n", j);
-      emu3_process_note_zone (zones, note_zones, edit_preset, level, cutoff,
-			      q, filter);
+      emu3_process_note_zone (zones, note_zones, level, cutoff, q, filter);
       note_zones++;
     }
+}
+
+int
+emu3_get_sample_size (int next_sample_addr, unsigned int *addresses,
+		      unsigned int address)
+{
+  int size;
+
+  if (addresses[1] == 0)
+    size = next_sample_addr - address;
+  else
+    size = addresses[1] - addresses[0];
+
+  return size;
 }
 
 int
@@ -927,22 +941,22 @@ emu3_process_bank (struct emu3_file *file, int ext_mode, int edit_preset,
 		   char *rt_controls, int pbr, int level, int cutoff, int q,
 		   int filter)
 {
-  int size, channels;
+  int i, size, channels;
   struct emu3_bank *bank;
   unsigned int *addresses;
   unsigned int address;
   unsigned int sample_start_addr;
   unsigned int next_sample_addr;
   struct emu3_sample *sample;
-  int max_samples = emu3_get_max_presets (file->bank);
+  int max_samples;
+  int max_presets = emu3_get_max_presets (file->bank);
 
-  int i = 0;
+  i = 0;
   addresses = emu3_get_preset_addresses (file->bank);
-  while (addresses[0] != addresses[1] && i < max_samples)
+  while (addresses[0] != addresses[1] && i < max_presets)
     {
-      if (i == edit_preset || edit_preset == -1)
-	emu3_process_preset (file, i, edit_preset, rt_controls, pbr, level,
-			     cutoff, q, filter);
+      emu3_process_preset (file, i, rt_controls, pbr, level, cutoff, q,
+			   filter);
       addresses++;
       i++;
     }
@@ -957,15 +971,13 @@ emu3_process_bank (struct emu3_file *file, int ext_mode, int edit_preset,
   next_sample_addr = emu3_get_next_sample_address (file->bank);
   emu3_log (1, 0, "Next sample: 0x%08x\n", next_sample_addr);
 
-  for (int i = 0; i < max_samples; i++)
+  i = 0;
+  while (addresses[i] != 0 && i < max_samples)
     {
-      if (addresses[i] == 0)
-	break;
       address = sample_start_addr + addresses[i] - SAMPLE_OFFSET;
-      if (addresses[i + 1] == 0)
-	size = next_sample_addr - address;
-      else
-	size = addresses[i + 1] - addresses[i];
+
+      size = emu3_get_sample_size (next_sample_addr, &addresses[i], address);
+
       sample = (struct emu3_sample *) &file->raw[address];
       channels = emu3_get_sample_channels (sample);
       //We divide between the bytes per frame (number of channels * 2 bytes)
@@ -981,6 +993,8 @@ emu3_process_bank (struct emu3_file *file, int ext_mode, int edit_preset,
 
       if (ext_mode)
 	emu3_extract_sample (sample, i + 1, nframes, ext_mode);
+
+      i++;
     }
 
   return EXIT_SUCCESS;
