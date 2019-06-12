@@ -264,9 +264,9 @@ main (int argc, char *argv[])
       goto close;
     }
 
-  if (modflg || xflg)
+  if (!nflg && !sflg && !pflg && !zflg)
     result =
-      emu3_process_bank (file, preset_num, ext_mode, rt_controls, pbr, level,
+      emu3_process_bank (file, ext_mode, preset_num, rt_controls, pbr, level,
 			 cutoff, q, filter);
 
 close:

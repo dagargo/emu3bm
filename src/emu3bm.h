@@ -79,7 +79,7 @@
 #define emu3_log(level, indent, ...) {\
 		if (level <= verbosity) { \
 			for (int i = 0; i < indent; i++) \
-				printf("\t"); \
+				printf("  "); \
 			printf(__VA_ARGS__); \
 		}\
 	}
