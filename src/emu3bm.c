@@ -153,7 +153,7 @@ emu3_wav_filename_to_filename (const char *wav_file)
 
   strcpy (filename, wav_file);
   char *ext = strrchr (wav_file, '.');
-  if (strcmp (ext, SAMPLE_EXT) == 0)
+  if (strcasecmp (ext, SAMPLE_EXT) == 0)
     {
       free (filename);
       size_t len_wo_ext = strlen (wav_file) - strlen (SAMPLE_EXT);
