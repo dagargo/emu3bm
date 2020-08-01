@@ -108,13 +108,15 @@ int
 main (int argc, char *argv[])
 {
   int c;
-  int xflg = 0, sflg = 0, nflg = 0, errflg = 0, modflg = 0, pflg = 0, zflg =
-    0, ext_mode = 0;
+  int xflg = 0, dflg = 0, sflg = 0, nflg = 0, errflg = 0, modflg = 0, pflg =
+    0, zflg = 0, ext_mode = 0;
+  char *device = NULL;
   char *bank_filename;
   char *sample_filename;
   char *preset_name;
   char *rt_controls = NULL;
   char *zone_params = NULL;
+  char *type;
   int level = -1;
   int cutoff = -1;
   int q = -1;
@@ -128,12 +130,16 @@ main (int argc, char *argv[])
   int sample_num;
   struct emu3_zone_range zone_range;
 
-  while ((c = getopt (argc, argv, "vns:S:xXr:l:c:q:f:b:e:p:z:Z:")) != -1)
+  while ((c = getopt (argc, argv, "vd:ns:S:xXr:l:c:q:f:b:e:p:z:Z:")) != -1)
     {
       switch (c)
 	{
 	case 'v':
 	  verbosity++;
+	  break;
+	case 'd':
+	  dflg++;
+	  device = optarg;
 	  break;
 	case 's':
 	  sflg++;
@@ -208,6 +214,17 @@ main (int argc, char *argv[])
   else
     errflg++;
 
+  if (!device)
+    device = DEVICE_ESI2000;
+  else if (strcmp (device, DEVICE_ESI2000) && strcmp (device, DEVICE_EMU3X))
+    errflg++;
+
+  if (dflg > 1)
+    errflg++;
+
+  if (dflg && !nflg)
+    errflg++;
+
   if (nflg > 1)
     errflg++;
 
@@ -236,7 +253,7 @@ main (int argc, char *argv[])
 
   if (nflg)
     {
-      result = emu3_create_bank (bank_filename);
+      result = emu3_create_bank (bank_filename, device);
       exit (result);
     }
 

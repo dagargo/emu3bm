@@ -48,7 +48,11 @@ Set the level of the VCA for all the preset zones.
 
 .TP
 .BR \-n
-Create a new EMU SI-32 v3 bank.
+Create a new bank. Use it with -d to set the device.
+
+.TP
+.BR \-d
+Set the device type. Only 'esi2000' and 'emu3x' values are allowed. If not used, 'esi2000' is used as the device type.
 
 .TP
 .BR \-b " pitch_bend_range"

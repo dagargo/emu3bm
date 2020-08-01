@@ -1405,7 +1405,7 @@ emu3_write_file (struct emu3_file *file)
 }
 
 int
-emu3_create_bank (const char *path)
+emu3_create_bank (const char *path, const char *type)
 {
   int rvalue;
   struct emu3_bank bank;
@@ -1416,8 +1416,11 @@ emu3_create_bank (const char *path)
 
   char *name = emu3_str_to_emu3name (bname);
   char *src_path =
-    malloc (strlen (DATADIR) + strlen (PACKAGE) + strlen (EMPTY_BANK) + 3);
-  int ret = sprintf (src_path, "%s/%s/%s", DATADIR, PACKAGE, EMPTY_BANK);
+    malloc (strlen (DATADIR) + strlen (PACKAGE) +
+	    strlen (EMPTY_BANK_TEMPLATE) + strlen (type) + 3);
+  int ret =
+    sprintf (src_path, "%s/%s/%s%s", DATADIR, PACKAGE, EMPTY_BANK_TEMPLATE,
+	     type);
 
   if (ret < 0)
     {

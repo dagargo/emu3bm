@@ -74,7 +74,10 @@
 
 #define SAMPLE_EXT ".wav"
 
-#define EMPTY_BANK "res/empty_bank"
+#define EMPTY_BANK_TEMPLATE "res/empty_bank_"
+
+#define DEVICE_ESI2000 "esi2000"
+#define DEVICE_EMU3X "emu3x"
 
 #define emu3_log(level, indent, ...) {\
 		if (level <= verbosity) { \
@@ -251,7 +254,7 @@ int emu3_get_sample_channels (struct emu3_sample *);
 
 void emu3_extract_sample_file (struct emu3_sample *, sf_count_t);
 
-int emu3_create_bank (const char *);
+int emu3_create_bank (const char *, const char *);
 
 void emu3_init_sample_descriptor (struct emu3_sample_descriptor *,
 				  struct emu3_sample *, int);

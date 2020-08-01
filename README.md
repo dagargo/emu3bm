@@ -17,7 +17,8 @@ Simply run `make && sudo make install`.
 
 Create a new bank.
 ```
-$ emu3bm -n bank
+$ emu3bm -d esi2000 -n bank
+$ emu3bm -d emu3x -n bank
 ```
 
 Import a sample.
