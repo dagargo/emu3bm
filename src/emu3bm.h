@@ -269,7 +269,8 @@ void emu3_set_preset_zone_level (struct emu3_preset_zone *, int);
 
 void emu3_set_preset_zone_cutoff (struct emu3_preset_zone *, int);
 
-void emu3_set_preset_zone_q (struct emu3_preset_zone *, int);
+void emu3_set_preset_zone_q (struct emu3_file *, struct emu3_preset_zone *,
+			     int);
 
 void emu3_set_preset_zone_filter (struct emu3_preset_zone *, int);
 

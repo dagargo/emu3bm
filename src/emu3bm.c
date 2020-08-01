@@ -237,7 +237,8 @@ emu3_get_vca_pan (char vca_pan)
 }
 
 void
-emu3_print_preset_zone_info (struct emu3_preset_zone *zone)
+emu3_print_preset_zone_info (struct emu3_file *file,
+			     struct emu3_preset_zone *zone)
 {
   emu3_log (1, 3, "Sample: %d\n",
 	    (zone->sample_id_msb << 8) + zone->sample_id_lsb);
@@ -266,7 +267,10 @@ emu3_print_preset_zone_info (struct emu3_preset_zone *zone)
   //Filter Q might only work with ESI banks
   //ESI Q: [0x80, 0xff] -> [0, 100]
   //Other formats: [0, 0x7f]
-  int q = (zone->vcf_q - 0x80) * 100 / 127;
+  int q = zone->vcf_q;
+  if (strcmp (ESI_32_V3_DEF, file->bank->format) == 0)
+    q = q - 0x80;
+  q = q * 100 / 127;
 
   emu3_log (1, 3, "VCF Q: %d\n", q);
 
@@ -404,14 +408,17 @@ emu3_set_preset_zone_cutoff (struct emu3_preset_zone *zone, int cutoff)
 }
 
 void
-emu3_set_preset_zone_q (struct emu3_preset_zone *zone, int q)
+emu3_set_preset_zone_q (struct emu3_file *file, struct emu3_preset_zone *zone,
+			int q)
 {
   if (q < 0 || q > 100)
     fprintf (stderr, "Value %d for Q not in range [0, 100]\n", q);
   else
     {
       emu3_log (0, 1, "Setting Q to %d...\n", q);
-      zone->vcf_q = (unsigned char) ((q * 127 / 100) + 0x80);
+      zone->vcf_q = (unsigned char) (q * 127 / 100);
+      if (strcmp (ESI_32_V3_DEF, file->bank->format) == 0)
+	zone->vcf_q += 0x80;
     }
 }
 
@@ -833,38 +840,39 @@ emu3_open_file (const char *filename)
 }
 
 void
-emu3_process_zone (struct emu3_preset_zone *zone, int level,
-		   int cutoff, int q, int filter)
+emu3_process_zone (struct emu3_file *file, struct emu3_preset_zone *zone,
+		   int level, int cutoff, int q, int filter)
 {
   if (level != -1)
     emu3_set_preset_zone_level (zone, level);
   if (cutoff != -1)
     emu3_set_preset_zone_cutoff (zone, cutoff);
   if (q != -1)
-    emu3_set_preset_zone_q (zone, q);
+    emu3_set_preset_zone_q (file, zone, q);
   if (filter != -1)
     emu3_set_preset_zone_filter (zone, filter);
 }
 
 void
-emu3_process_note_zone (struct emu3_preset_zone *zones,
-			struct emu3_preset_note_zone *note_zone,
-			int level, int cutoff, int q, int filter)
+emu3_process_note_zone (struct emu3_file *file,
+			struct emu3_preset_zone *zones,
+			struct emu3_preset_note_zone *note_zone, int level,
+			int cutoff, int q, int filter)
 {
   //If the zone is for pri, sec layer or both
   if (note_zone->pri_zone != 0xff)
     {
       emu3_log (1, 2, "pri\n");
       struct emu3_preset_zone *zone = &zones[note_zone->pri_zone];
-      emu3_process_zone (zone, level, cutoff, q, filter);
-      emu3_print_preset_zone_info (zone);
+      emu3_process_zone (file, zone, level, cutoff, q, filter);
+      emu3_print_preset_zone_info (file, zone);
     }
   if (note_zone->sec_zone != 0xff)
     {
       emu3_log (1, 2, "sec\n");
       struct emu3_preset_zone *zone = &zones[note_zone->sec_zone];
-      emu3_process_zone (zone, level, cutoff, q, filter);
-      emu3_print_preset_zone_info (zone);
+      emu3_process_zone (file, zone, level, cutoff, q, filter);
+      emu3_print_preset_zone_info (file, zone);
     }
 }
 
@@ -917,7 +925,8 @@ emu3_process_preset (struct emu3_file *file, int preset_num,
   for (int j = 0; j < preset->note_zones; j++)
     {
       emu3_log (1, 1, "Zone %d\n", j);
-      emu3_process_note_zone (zones, note_zones, level, cutoff, q, filter);
+      emu3_process_note_zone (file, zones, note_zones, level, cutoff, q,
+			      filter);
       note_zones++;
     }
 }
