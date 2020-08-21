@@ -1297,7 +1297,7 @@ emu3_add_preset_zone (struct emu3_file *file, int preset_num, int sample_num,
   zone->parameters_a2[1] = 0x00;
   zone->lfo_variation = 0;
   zone->vcf_cutoff = 0xef;
-  zone->vcf_q = 0x80;
+  zone->vcf_q = strcmp (ESI_32_V3_DEF, file->bank->format) == 0 ? 0x80 : 0;
   zone->vcf_envelope_amount = 0;
   emu3_reset_envelope (&zone->vcf_envelope);
   emu3_reset_envelope (&zone->aux_envelope);
