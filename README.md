@@ -46,6 +46,26 @@ The same thing can be acomplished by using key numbers.
 $ emu3bm -e 0 -Z 1,pri,33,27,38 bank
 ```
 
+Set preset 0 filter to the first one.
+```
+$ emu3bm -e 0 -f 0 bank
+```
+
+Set preset 0 cutoff to 200.
+```
+$ emu3bm -e 0 -c 200 bank
+```
+
+Set preset 0 Q to 10.
+```
+$ emu3bm -e 0 -q 10 bank
+```
+
+Set preset 0 VCA level to 100%.
+```
+$ emu3bm -e 0 -l 100 bank
+```
+
 Set preset 0 pitch bend range to 24.
 ```
 $ emu3bm -e 0 -b 24 bank
