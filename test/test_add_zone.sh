@@ -64,9 +64,4 @@ $srcdir/../src/emu3bm -e 0 -Z 1,sec,20,15,26 $TEST_BANK_NAME
 diff $TEST_BANK_NAME data/test_add_zone_5
 [ $? -ne 0 ] && cleanUp && exit -1
 
-$srcdir/../src/emu3bm -e 0 -q 25 -c 200 $TEST_BANK_NAME
-[ $? -ne 0 ] && cleanUp && exit -1
-diff $TEST_BANK_NAME data/test_add_zone_6
-[ $? -ne 0 ] && cleanUp && exit -1
-
 cleanUp
