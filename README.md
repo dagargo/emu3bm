@@ -6,7 +6,14 @@ Due to the reverse engineering nature of the project, there might be errors. Not
 
 ## Installation
 
-Simply run `make && sudo make install`.
+As with other autotools project, you need to run the following commands.
+
+```
+autoreconf --install
+./configure
+make
+sudo make install
+```
 
 ## Features not available in the sampler
 
