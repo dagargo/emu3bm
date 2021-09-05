@@ -18,11 +18,56 @@
  *   along with emu3bm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define _GNU_SOURCE
+#include <getopt.h>
 #include "emu3bm.h"
 
-int verbosity = 0;
+static const struct option options[] = {
+  {"add-sample", 1, NULL, 's'},
+  {"add-sample-loop", 1, NULL, 'S'},
+  {"add-preset", 1, NULL, 'p'},
+  {"add-zone", 1, NULL, 'z'},
+  {"add-zone-with-num", 1, NULL, 'Z'},
+  {"preset-to-edit", 1, NULL, 'e'},
+  {"filter-cutoff", 1, NULL, 'c'},
+  {"filter-type", 1, NULL, 'f'},
+  {"level", 1, NULL, 'l'},
+  {"new-bank", 1, NULL, 'n'},
+  {"device-type", 1, NULL, 'd'},
+  {"pitch-bend-range", 1, NULL, 'b'},
+  {"filter-q", 1, NULL, 'q'},
+  {"real-time-controls", 1, NULL, 'r'},
+  {"extract-samples", 0, NULL, 'x'},
+  {"extract-samples-with-num", 0, NULL, 'X'},
+  {"verbosity", 0, NULL, 'v'},
+  {"help", 0, NULL, 'h'},
+  {NULL, 0, NULL, 0}
+};
 
-int
+static void
+emu3bm_print_help (char *executable_path)
+{
+  char *exec_name;
+  struct option *option;
+
+  fprintf (stderr, "%s\n", PACKAGE_STRING);
+  exec_name = basename (executable_path);
+  fprintf (stderr, "Usage: %s [options]\n", exec_name);
+  fprintf (stderr, "Options:\n");
+  option = options;
+  while (option->name)
+    {
+      fprintf (stderr, "  --%s, -%c", option->name, option->val);
+      if (option->has_arg)
+	{
+	  fprintf (stderr, " value");
+	}
+      fprintf (stderr, "\n");
+      option++;
+    }
+}
+
+static int
 get_positive_int (char *str)
 {
   char *endstr;
@@ -37,7 +82,7 @@ get_positive_int (char *str)
   return value;
 }
 
-int
+static int
 parse_zone_params (char *zone_params, int *sample_num,
 		   struct emu3_zone_range *zone_range, int is_num)
 {
@@ -107,7 +152,8 @@ parse_zone_params (char *zone_params, int *sample_num,
 int
 main (int argc, char *argv[])
 {
-  int c;
+  int opt;
+  int long_index = 0;
   int xflg = 0, dflg = 0, sflg = 0, nflg = 0, errflg = 0, modflg = 0, pflg =
     0, zflg = 0, ext_mode = 0;
   char *device = NULL;
@@ -130,10 +176,15 @@ main (int argc, char *argv[])
   int sample_num;
   struct emu3_zone_range zone_range;
 
-  while ((c = getopt (argc, argv, "vd:ns:S:xXr:l:c:q:f:b:e:p:z:Z:")) != -1)
+  while ((opt =
+	  getopt_long (argc, argv, "hvd:ns:S:xXr:l:c:q:f:b:e:p:z:Z:", options,
+		       &long_index)) != -1)
     {
-      switch (c)
+      switch (opt)
 	{
+	case 'h':
+	  emu3bm_print_help (argv[0]);
+	  exit (EXIT_SUCCESS);
 	case 'v':
 	  verbosity++;
 	  break;
@@ -198,7 +249,7 @@ main (int argc, char *argv[])
 	  zone_params = optarg;
 	  int result =
 	    parse_zone_params (zone_params, &sample_num, &zone_range,
-			       c == 'Z');
+			       opt == 'Z');
 	  if (result)
 	    exit (result);
 	  zflg++;

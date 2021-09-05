@@ -79,6 +79,10 @@
 #define DEVICE_ESI2000 "esi2000"
 #define DEVICE_EMU3X "emu3x"
 
+extern int verbosity;
+
+extern const char *note_names[];
+
 #define emu3_log(level, indent, ...) {\
 		if (level <= verbosity) { \
 			for (int i = 0; i < indent; i++) \

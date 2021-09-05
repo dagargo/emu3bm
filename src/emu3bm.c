@@ -20,8 +20,7 @@
 
 #include "emu3bm.h"
 
-extern int verbosity;
-extern char *note_names[];
+int verbosity;
 
 char DEFAULT_RT_CONTROLS[RT_CONTROLS_SIZE + RT_CONTROLS_FS_SIZE] =
   { 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 8 };
