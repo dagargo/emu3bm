@@ -22,10 +22,11 @@
 
 int verbosity;
 
-char DEFAULT_RT_CONTROLS[RT_CONTROLS_SIZE + RT_CONTROLS_FS_SIZE] =
+static const char DEFAULT_RT_CONTROLS[RT_CONTROLS_SIZE +
+				      RT_CONTROLS_FS_SIZE] =
   { 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 8 };
 
-const char *RT_CONTROLS_SRC[] = {
+static const char *RT_CONTROLS_SRC[] = {
   "Pitch Control",
   "Mod Control",
   "Pressure Control",
@@ -34,9 +35,10 @@ const char *RT_CONTROLS_SRC[] = {
   "MIDI B Control"
 };
 
-const int RT_CONTROLS_SRC_SIZE = sizeof (RT_CONTROLS_SRC) / sizeof (char *);
+static const int RT_CONTROLS_SRC_SIZE =
+  sizeof (RT_CONTROLS_SRC) / sizeof (char *);
 
-const char *RT_CONTROLS_DST[] = {
+static const char *RT_CONTROLS_DST[] = {
   "Off",
   "Pitch",
   "VCF Cutoff",
@@ -50,17 +52,18 @@ const char *RT_CONTROLS_DST[] = {
   "VCF NoteOn Q"
 };
 
-const int RT_CONTROLS_DST_SIZE = sizeof (RT_CONTROLS_DST) / sizeof (char *);
+static const int RT_CONTROLS_DST_SIZE =
+  sizeof (RT_CONTROLS_DST) / sizeof (char *);
 
-const char *RT_CONTROLS_FS_SRC[] = {
+static const char *RT_CONTROLS_FS_SRC[] = {
   "Footswitch 1",
   "Footswitch 2",
 };
 
-const int RT_CONTROLS_FS_SRC_SIZE =
+static const int RT_CONTROLS_FS_SRC_SIZE =
   sizeof (RT_CONTROLS_FS_SRC) / sizeof (char *);
 
-const char *RT_CONTROLS_FS_DST[] = {
+static const char *RT_CONTROLS_FS_DST[] = {
   "Off",
   "Sustain",
   "Cross-Switch",
@@ -73,17 +76,17 @@ const char *RT_CONTROLS_FS_DST[] = {
   "Preset Decrement"
 };
 
-const int RT_CONTROLS_FS_DST_SIZE =
+static const int RT_CONTROLS_FS_DST_SIZE =
   sizeof (RT_CONTROLS_FS_DST) / sizeof (char *);
 
-const char *LFO_SHAPE[] = {
+static const char *LFO_SHAPE[] = {
   "triangle",
   "sine",
   "sawtooth",
   "square"
 };
 
-const char *VCF_TYPE[] = {
+static const char *VCF_TYPE[] = {
   "2 Pole Lowpass",
   "4 Pole Lowpass",
   "6 Pole Lowpass",
@@ -106,7 +109,7 @@ const char *VCF_TYPE[] = {
   "Unknown"
 };
 
-const int VCF_TYPE_SIZE = sizeof (VCF_TYPE) / sizeof (char *);
+static const int VCF_TYPE_SIZE = sizeof (VCF_TYPE) / sizeof (char *);
 
 char *
 emu3_emu3name_to_filename (const char *objname)

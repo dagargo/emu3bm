@@ -45,10 +45,10 @@ static const struct option options[] = {
 };
 
 static void
-emu3bm_print_help (char *executable_path)
+print_help (char *executable_path)
 {
   char *exec_name;
-  struct option *option;
+  const struct option *option;
 
   fprintf (stderr, "%s\n", PACKAGE_STRING);
   exec_name = basename (executable_path);
@@ -183,7 +183,7 @@ main (int argc, char *argv[])
       switch (opt)
 	{
 	case 'h':
-	  emu3bm_print_help (argv[0]);
+	  print_help (argv[0]);
 	  exit (EXIT_SUCCESS);
 	case 'v':
 	  verbosity++;
