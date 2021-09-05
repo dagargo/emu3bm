@@ -22,6 +22,15 @@
 
 int verbosity;
 
+enum emu3bm_error
+{
+  ERR_NO_MEM
+};
+
+static const char *EMU3BM_ERROR_STR[] = {
+  "Not enough memory"
+};
+
 static const char DEFAULT_RT_CONTROLS[RT_CONTROLS_SIZE +
 				      RT_CONTROLS_FS_SIZE] =
   { 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 8 };
@@ -980,7 +989,8 @@ emu3_process_bank (struct emu3_file *file, int ext_mode, int edit_preset,
   emu3_log (1, 0, "Start with offset: 0x%08x\n", addresses[0]);
   emu3_log (1, 0, "Next with offset: 0x%08x\n", addresses[max_samples]);
   next_sample_addr = emu3_get_next_sample_address (file->bank);
-  emu3_log (1, 0, "Next sample: 0x%08x\n", next_sample_addr);
+  emu3_log (1, 0, "Next sample: 0x%08x (equals bank size)\n",
+	    next_sample_addr);
 
   i = 0;
   while (addresses[i] != 0 && i < max_samples)
@@ -1076,19 +1086,18 @@ emu3_add_sample (struct emu3_file *file, char *sample_filename, int loop)
   printf ("Adding sample %d...\n", total_samples + 1);	//Sample number is 1 based
   unsigned int size = emu3_append_sample (sample_filename, sample, loop);
 
-  if (size)
-    {
-      file->bank->objects++;
-      file->bank->next_sample = next_sample_addr + size - sample_start_addr;
-      saddresses[total_samples] = saddresses[max_samples];
-      saddresses[max_samples] = file->bank->next_sample + SAMPLE_OFFSET;
-      return EXIT_SUCCESS;
-    }
-  else
+  if (!size)
     {
       fprintf (stderr, "Error while adding sample.\n");
       return EXIT_FAILURE;
     }
+
+  file->bank->objects++;
+  file->bank->next_sample = next_sample_addr + size - sample_start_addr;
+  saddresses[total_samples] = saddresses[max_samples];
+  saddresses[max_samples] = file->bank->next_sample + SAMPLE_OFFSET;
+  file->fsize += size;
+  return EXIT_SUCCESS;
 }
 
 void
@@ -1149,7 +1158,7 @@ emu3_get_preset_zones (struct emu3_file *file, int preset_num)
   return max + 1;
 }
 
-unsigned int
+int
 emu3_add_zones (struct emu3_file *file, int preset_num, int zone_num,
 		struct emu3_preset_zone **preset_zone)
 {
@@ -1165,6 +1174,9 @@ emu3_add_zones (struct emu3_file *file, int preset_num, int zone_num,
   inc_size = sizeof (struct emu3_preset_zone);
   if (zone_num == -1)
     inc_size += sizeof (struct emu3_preset_note_zone);
+
+  if (file->fsize + inc_size > MEM_SIZE)
+    return -1;
 
   next_preset_addr = emu3_get_preset_address (file->bank, preset_num + 1);
   dst_addr = next_preset_addr + inc_size;
@@ -1240,18 +1252,19 @@ emu3_add_preset_zone (struct emu3_file *file, int preset_num, int sample_num,
   struct emu3_preset *preset;
   struct emu3_preset_zone *zone;
 
-  if (preset_num < 0 || preset_num > total_presets)
+  if (preset_num < 0 || preset_num >= total_presets)
     {
       fprintf (stderr, "Illegal preset number: %d\n", preset_num);
       return EXIT_FAILURE;
     }
 
   emu3_log (1, 0,
-	    "Adding sample %d to %s layer with original key %d (%s) from %d (%s) to %d (%s) to preset %d...\n",
-	    sample_num, zone_range->layer, zone_range->original_key,
-	    note_names[zone_range->original_key], zone_range->lower_key,
-	    note_names[zone_range->lower_key], zone_range->higher_key,
-	    note_names[zone_range->higher_key], preset_num);
+	    "Adding sample %d to layer %d with original key %s (%d) from %s (%d) to %s (%d) to preset %d...\n",
+	    sample_num, zone_range->layer,
+	    note_names[zone_range->original_key], zone_range->original_key,
+	    note_names[zone_range->lower_key], zone_range->lower_key,
+	    note_names[zone_range->higher_key], zone_range->higher_key,
+	    preset_num);
 
   preset = emu3_get_preset (file, preset_num);
 
@@ -1271,7 +1284,8 @@ emu3_add_preset_zone (struct emu3_file *file, int preset_num, int sample_num,
 	preset->note_zone_mappings[i] = preset->note_zones;
 
       inc_size = emu3_add_zones (file, preset_num, -1, &zone);
-
+      if (inc_size < 0)
+	return ERR_NO_MEM;
     }
   else if (zone_range->layer == 2)
     {
@@ -1288,6 +1302,8 @@ emu3_add_preset_zone (struct emu3_file *file, int preset_num, int sample_num,
 	}
 
       inc_size = emu3_add_zones (file, preset_num, sec_zone_id, &zone);
+      if (inc_size < 0)
+	return ERR_NO_MEM;
     }
 
   zone->root_note = zone_range->original_key;
@@ -1328,6 +1344,7 @@ emu3_add_preset_zone (struct emu3_file *file, int preset_num, int sample_num,
   zone->end2 = 0x01;
 
   file->bank->next_preset += inc_size;
+  file->fsize += inc_size;
 
   return EXIT_SUCCESS;
 }
@@ -1378,6 +1395,9 @@ emu3_add_preset (struct emu3_file *file, char *preset_name)
 
   size_t size = next_sample_addr - copy_start_addr;
 
+  if (file->fsize + size > MEM_SIZE)
+    return ERR_NO_MEM;
+
   emu3_log (1, 0, "Moving %dB...\n", size);
 
   memmove (dst, src, size);
@@ -1395,6 +1415,7 @@ emu3_add_preset (struct emu3_file *file, char *preset_name)
   file->bank->objects = objects;
   file->bank->next_preset += sizeof (struct emu3_preset);
   file->bank->selected_preset = 0;
+  file->fsize += sizeof (struct emu3_preset);
 
   return EXIT_SUCCESS;
 }
@@ -1403,12 +1424,10 @@ void
 emu3_write_file (struct emu3_file *file)
 {
   FILE *fd = fopen (file->filename, "w");
-  unsigned int sample_start_addr = emu3_get_sample_start_address (file->bank);
-  size_t filesize = file->bank->next_sample + sample_start_addr;
-
   if (fd)
     {
-      fwrite (file->raw, 1, filesize, fd);
+      if (fwrite (file->raw, 1, file->fsize, fd) != file->fsize)
+	fprintf (stderr, "Unexpected written bytes amount.\n");
       fclose (fd);
     }
   else

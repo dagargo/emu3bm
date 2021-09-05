@@ -10,6 +10,9 @@ cleanUp
 
 $srcdir/../src/emu3bm -n $TEST_BANK_NAME
 
+$srcdir/../src/emu3bm -e 0 -z 1,pri,F1,C1,B1 $TEST_BANK_NAME
+[ $? -ne 1 ] && cleanUp && exit -1
+
 $srcdir/../src/emu3bm -p "P0" $TEST_BANK_NAME
 [ $? -ne 0 ] && cleanUp && exit -1
 diff $TEST_BANK_NAME data/test_add_zone_1

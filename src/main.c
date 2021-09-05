@@ -171,7 +171,7 @@ main (int argc, char *argv[])
   int preset_num = -1;
   extern char *optarg;
   extern int optind, optopt;
-  int result = 0;
+  int err = 0;
   int loop;
   int sample_num;
   struct emu3_zone_range zone_range;
@@ -247,11 +247,10 @@ main (int argc, char *argv[])
 	case 'z':
 	case 'Z':
 	  zone_params = optarg;
-	  int result =
-	    parse_zone_params (zone_params, &sample_num, &zone_range,
-			       opt == 'Z');
-	  if (result)
-	    exit (result);
+	  int err = parse_zone_params (zone_params, &sample_num, &zone_range,
+				       opt == 'Z');
+	  if (err)
+	    exit (err);
 	  zflg++;
 	  break;
 	case '?':
@@ -304,8 +303,8 @@ main (int argc, char *argv[])
 
   if (nflg)
     {
-      result = emu3_create_bank (bank_filename, device);
-      exit (result);
+      err = emu3_create_bank (bank_filename, device);
+      exit (err);
     }
 
   struct emu3_file *file = emu3_open_file (bank_filename);
@@ -315,31 +314,30 @@ main (int argc, char *argv[])
 
   if (sflg)
     {
-      result = emu3_add_sample (file, sample_filename, loop);
+      err = emu3_add_sample (file, sample_filename, loop);
       goto close;
     }
 
   if (pflg)
     {
-      result = emu3_add_preset (file, preset_name);
+      err = emu3_add_preset (file, preset_name);
       goto close;
     }
 
   if (zflg)
     {
-      result =
-	emu3_add_preset_zone (file, preset_num, sample_num, &zone_range);
+      err = emu3_add_preset_zone (file, preset_num, sample_num, &zone_range);
       goto close;
     }
 
   if (!nflg && !sflg && !pflg && !zflg)
-    result =
+    err =
       emu3_process_bank (file, ext_mode, preset_num, rt_controls, pbr, level,
 			 cutoff, q, filter);
 
 close:
-  if (sflg || pflg || zflg || modflg)
+  if ((sflg || pflg || zflg || modflg) && !err)
     emu3_write_file (file);
   emu3_close_file (file);
-  exit (result);
+  exit (err);
 }
