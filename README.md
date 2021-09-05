@@ -1,6 +1,8 @@
 # emu3bm
 
-emu3bm is an EMU3 bank manager. It allows to create banks, add and extract mono or stereo samples and edit some preset parameters.
+emu3bm is an E-Mu EIII bank manager. It allows to create banks, add and extract mono or stereo samples and edit some preset parameters.
+
+Although Emulator samplers from series EIII and EIV use the same filesystem, the bank format is very different and only banks for the EIII series are supported.
 
 Due to the reverse engineering nature of the project, there might be errors. Note that this has only be tested on an EMU ESI-2000.
 
@@ -45,7 +47,7 @@ $ emu3bm -p BassDrum bank
 
 Add a primary layer to preset 0 from sample 001 with original key F#2 from C2 to C3.
 ```
-$ emu3bm -e 0 -z 1,pri,F#2,C2,C3 bank
+$ emu3bm -e 0 -z 1,pri,f#2,c2,c3 bank
 ```
 
 The same thing can be acomplished by using key numbers.
@@ -94,4 +96,4 @@ $ emu3bm -r 1,4,8,9,2,10,0,0 bank
 
 ## Related project
 
-[emu3fs](https://github.com/dagargo/emu3fs) is a Linux kernel module that allows to read from and write to disks formatted in an E-MU emu3 sampler family filesystem.
+[emu3fs](https://github.com/dagargo/emu3fs) is a Linux kernel module that allows to read from and write to block devices formatted as E-Mu EIII filesystem.
