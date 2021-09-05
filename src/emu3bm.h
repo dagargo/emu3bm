@@ -214,31 +214,7 @@ void emu3_close_file (struct emu3_file *);
 
 void emu3_write_file (struct emu3_file *);
 
-char *emu3_emu3name_to_filename (const char *);
-
-char *emu3_emu3name_to_wav_filename (const char *, int, int);
-
-char *emu3_wav_filename_to_emu3name (const char *);
-
-char *emu3_str_to_emu3name (const char *);
-
-void emu3_cpystr (char *, const char *);
-
 int emu3_add_sample (struct emu3_file *, char *, int);
-
-int emu3_get_max_samples (struct emu3_bank *);
-
-int emu3_get_max_presets (struct emu3_bank *);
-
-unsigned int emu3_get_sample_start_address (struct emu3_bank *);
-
-unsigned int *emu3_get_preset_addresses (struct emu3_bank *);
-
-unsigned int *emu3_get_sample_addresses (struct emu3_bank *);
-
-unsigned int emu3_get_next_sample_address (struct emu3_bank *);
-
-unsigned int emu3_get_preset_address (struct emu3_bank *, int);
 
 int emu3_add_preset (struct emu3_file *, char *);
 
@@ -250,32 +226,6 @@ int emu3_extract_samples (struct emu3_file *);
 int emu3_process_bank (struct emu3_file *, int, int, char *, int, int, int,
 		       int, int);
 
-void emu3_print_sample_info (struct emu3_sample *, sf_count_t);
-
-void emu3_print_preset_info (struct emu3_preset *);
-
-int emu3_get_sample_channels (struct emu3_sample *);
-
-void emu3_extract_sample_file (struct emu3_sample *, sf_count_t);
-
 int emu3_create_bank (const char *, const char *);
-
-void emu3_init_sample_descriptor (struct emu3_sample_descriptor *,
-				  struct emu3_sample *, int);
-
-void emu3_write_frame (struct emu3_sample_descriptor *, short int[]);
-
-void emu3_set_preset_rt_controls (struct emu3_preset *, char *);
-
-void emu3_set_preset_pbr (struct emu3_preset *, int);
-
-void emu3_set_preset_zone_level (struct emu3_preset_zone *, int);
-
-void emu3_set_preset_zone_cutoff (struct emu3_preset_zone *, int);
-
-void emu3_set_preset_zone_q (struct emu3_file *, struct emu3_preset_zone *,
-			     int);
-
-void emu3_set_preset_zone_filter (struct emu3_preset_zone *, int);
 
 int emu3_reverse_note_search (char *);
