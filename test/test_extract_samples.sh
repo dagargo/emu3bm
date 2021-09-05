@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+. $srcdir/test_common.sh
+
 function cleanUp() {
   cd -
   rm -rf $EXT_DIR
@@ -12,34 +14,34 @@ rm -rf $EXT_DIR
 mkdir $EXT_DIR
 cd $EXT_DIR
 
-$srcdir/../../src/emu3bm -x ../data/test_add_sample_4
-[ $? -ne 0 ] && cleanUp && exit -1
+logAndRun '$srcdir/../../src/emu3bm -x ../data/test_add_sample_4'
+test
 
-diff s1.wav ../data/s1.wav
-[ $? -ne 0 ] && cleanUp && exit -1
+logAndRun 'diff s1.wav ../data/s1.wav'
+test
 
-diff s1.wav ../data/s1.wav
-[ $? -ne 0 ] && cleanUp && exit -1
+logAndRun 'diff s1.wav ../data/s1.wav'
+test
 
-diff s2.wav ../data/s2.wav
-[ $? -ne 0 ] && cleanUp && exit -1
+logAndRun 'diff s2.wav ../data/s2.wav'
+test
 
-diff s2.wav ../data/s2.wav
-[ $? -ne 0 ] && cleanUp && exit -1
+logAndRun 'diff s2.wav ../data/s2.wav'
+test
 
-$srcdir/../../src/emu3bm -X ../data/test_add_sample_4
-[ $? -ne 0 ] && cleanUp && exit -1
+logAndRun '$srcdir/../../src/emu3bm -X ../data/test_add_sample_4'
+test
 
-diff 001-s1.wav ../data/s1.wav
-[ $? -ne 0 ] && cleanUp && exit -1
+logAndRun 'diff 001-s1.wav ../data/s1.wav'
+test
 
-diff 002-s1.wav ../data/s1.wav
-[ $? -ne 0 ] && cleanUp && exit -1
+logAndRun 'diff 002-s1.wav ../data/s1.wav'
+test
 
-diff 003-s2.wav ../data/s2.wav
-[ $? -ne 0 ] && cleanUp && exit -1
+logAndRun 'diff 003-s2.wav ../data/s2.wav'
+test
 
-diff 004-s2.wav ../data/s2.wav
-[ $? -ne 0 ] && cleanUp && exit -1
+logAndRun 'diff 004-s2.wav ../data/s2.wav'
+test
 
 cleanUp
