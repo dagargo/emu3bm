@@ -160,18 +160,10 @@ emu3_emu3name_to_wav_filename (const char *emu3name, int num, int ext_mode)
 char *
 emu3_wav_filename_to_filename (const char *wav_file)
 {
-  char *filename = malloc (strlen (wav_file) + 1);
-
-  strcpy (filename, wav_file);
-  char *ext = strrchr (wav_file, '.');
+  char *filename = strdup(wav_file);
+  char *ext = strrchr (filename, '.');
   if (strcasecmp (ext, SAMPLE_EXT) == 0)
-    {
-      free (filename);
-      size_t len_wo_ext = strlen (wav_file) - strlen (SAMPLE_EXT);
-      filename = malloc (len_wo_ext + 1);
-      strncpy (filename, wav_file, len_wo_ext);
-      filename[len_wo_ext] = '\0';
-    }
+      *ext = '\0';
   return filename;
 }
 
@@ -182,9 +174,7 @@ emu3_str_to_emu3name (const char *src)
   if (len > NAME_SIZE)
     len = NAME_SIZE;
 
-  char *emu3name = malloc (len + 1);
-  strncpy (emu3name, src, len);
-  emu3name[len] = '\0';
+  char *emu3name = strndup(src, len);
 
   char *c = emu3name;
   for (int i = 0; i < len; i++, c++)
