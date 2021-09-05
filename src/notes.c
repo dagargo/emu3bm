@@ -116,7 +116,7 @@ int
 emu3_reverse_note_search (char *note_name)
 {
   for (int i = 0; i < NOTES; i++)
-    if (strcmp (note_names[i], note_name) == 0)
+    if (strcasecmp (note_names[i], note_name) == 0)
       return i;
 
   return -1;
