@@ -76,7 +76,7 @@ get_positive_int (char *str)
 
   if (errno || endstr == str || *endstr != '\0')
     {
-      fprintf (stderr, "Value %s not valid\n", str);
+      emu3_error ("Value %s not valid\n", str);
       value = -1;
     }
   return value;
@@ -96,7 +96,7 @@ parse_zone_params (char *zone_params, int *sample_num,
   *sample_num = strtol (sample_str, &endtoken, 10);
   if (*endtoken != '\0' || sample_num <= 0)
     {
-      fprintf (stderr, "Illegal sample %d.\n", sample_num);
+      emu3_error ("Illegal sample %d.\n", sample_num);
       return EXIT_FAILURE;
     }
 
@@ -107,7 +107,7 @@ parse_zone_params (char *zone_params, int *sample_num,
     orig_key_int = emu3_reverse_note_search (original_key);
   if (orig_key_int == -1 || orig_key_int < 0 || orig_key_int >= NOTES)
     {
-      fprintf (stderr, "Illegal original key %s.\n", original_key);
+      emu3_error ("Illegal original key %s.\n", original_key);
       return EXIT_FAILURE;
     }
   zone_range->original_key = orig_key_int;
@@ -119,7 +119,7 @@ parse_zone_params (char *zone_params, int *sample_num,
     lower_key_int = emu3_reverse_note_search (lower_key);
   if (lower_key_int == -1 || lower_key_int < 0 || lower_key_int >= NOTES)
     {
-      fprintf (stderr, "Illegal lower key %s.\n", lower_key);
+      emu3_error ("Illegal lower key %s.\n", lower_key);
       return EXIT_FAILURE;
     }
   zone_range->lower_key = lower_key_int;
@@ -131,7 +131,7 @@ parse_zone_params (char *zone_params, int *sample_num,
     higher_key_int = emu3_reverse_note_search (higher_key);
   if (higher_key_int == -1 || higher_key_int < 0 || higher_key_int >= NOTES)
     {
-      fprintf (stderr, "Illegal higher key %s.\n", higher_key);
+      emu3_error ("Illegal higher key %s.\n", higher_key);
       return EXIT_FAILURE;
     }
   zone_range->higher_key = higher_key_int;
@@ -142,7 +142,7 @@ parse_zone_params (char *zone_params, int *sample_num,
     zone_range->layer = 2;
   else
     {
-      fprintf (stderr, "Invalid layer %s.\n", layer);
+      emu3_error ("Invalid layer %s.\n", layer);
       return EXIT_FAILURE;
     }
 
@@ -254,7 +254,7 @@ main (int argc, char *argv[])
 	  zflg++;
 	  break;
 	case '?':
-	  fprintf (stderr, "Unrecognized option: -%c\n", optopt);
+	  emu3_error ("Unrecognized option: -%c\n", optopt);
 	  errflg++;
 	}
     }
@@ -295,9 +295,9 @@ main (int argc, char *argv[])
 
   if (errflg > 0)
     {
-      fprintf (stderr, "%s\n", PACKAGE_STRING);
+      emu3_error ("%s\n", PACKAGE_STRING);
       char *runnable = basename (argv[0]);
-      fprintf (stderr, "Usage: %s [OPTIONS] bank_file.\n", runnable);
+      emu3_error ("Usage: %s [OPTIONS] bank_file.\n", runnable);
       exit (EXIT_FAILURE);
     }
 
@@ -337,13 +337,13 @@ main (int argc, char *argv[])
 end:
   if (err)
     {
-      fprintf (stderr, "%s\n", emu3_get_err (err));
+      emu3_error ("%s\n", emu3_get_err (err));
       goto close;
     }
 
   if (sflg || pflg || zflg || modflg)
     if (emu3_write_file (file))
-      fprintf (stderr, "%s\n", emu3_get_err (err));
+      emu3_error ("%s\n", emu3_get_err (err));
 
 close:
   emu3_close_file (file);

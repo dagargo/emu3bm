@@ -371,15 +371,16 @@ static void
 emu3_print_sample_info (struct emu3_sample *sample, sf_count_t nframes)
 {
   for (int i = 0; i < SAMPLE_PARAMETERS; i++)
-    emu3_log (2, 1, "0x%08x ", sample->parameters[i]);
-  emu3_log (2, 1, "\n");
-  emu3_log (2, 1, "Sample format: 0x%08x\n", sample->format);
-  emu3_log (1, 1, "Channels: %d\n", emu3_get_sample_channels (sample));
-  emu3_log (1, 1, "Frames: %" PRId64 "\n", nframes);
-  emu3_log (1, 1, "Sample rate: %dHz\n", sample->sample_rate);
-  emu3_log (1, 1, "Loop enabled: %s\n", sample->format & LOOP ? "on" : "off");
-  emu3_log (1, 1, "Loop in release: %s\n",
-	    sample->format & LOOP_RELEASE ? "on" : "off");
+    emu3_print (2, 1, "0x%08x ", sample->parameters[i]);
+  emu3_print (2, 1, "\n");
+  emu3_print (2, 1, "Sample format: 0x%08x\n", sample->format);
+  emu3_print (1, 1, "Channels: %d\n", emu3_get_sample_channels (sample));
+  emu3_print (1, 1, "Frames: %" PRId64 "\n", nframes);
+  emu3_print (1, 1, "Sample rate: %dHz\n", sample->sample_rate);
+  emu3_print (1, 1, "Loop enabled: %s\n",
+	      sample->format & LOOP ? "on" : "off");
+  emu3_print (1, 1, "Loop in release: %s\n",
+	      sample->format & LOOP_RELEASE ? "on" : "off");
 }
 
 //Level: [0, 0x7f] -> [0, 100]
@@ -400,29 +401,29 @@ static void
 emu3_print_preset_zone_info (struct emu3_file *file,
 			     struct emu3_preset_zone *zone)
 {
-  emu3_log (1, 3, "Sample: %d\n",
-	    (zone->sample_id_msb << 8) + zone->sample_id_lsb);
-  emu3_log (1, 3, "Original note: %s\n", note_names[zone->root_note]);
-  emu3_log (1, 3, "VCA level: %d\n",
-	    emu3_get_percent_value (zone->vca_level));
-  emu3_log (1, 3, "VCA pan: %d\n", emu3_get_vca_pan (zone->vca_pan));
+  emu3_print (1, 3, "Sample: %d\n",
+	      (zone->sample_id_msb << 8) + zone->sample_id_lsb);
+  emu3_print (1, 3, "Original note: %s\n", note_names[zone->root_note]);
+  emu3_print (1, 3, "VCA level: %d\n",
+	      emu3_get_percent_value (zone->vca_level));
+  emu3_print (1, 3, "VCA pan: %d\n", emu3_get_vca_pan (zone->vca_pan));
 
-  emu3_log (1, 3,
-	    "VCA envelope: attack: %d, hold: %d, decay: %d, sustain: %d\%, release: %d.\n",
-	    zone->vca_envelope.attack, zone->vca_envelope.hold,
-	    zone->vca_envelope.decay,
-	    emu3_get_percent_value (zone->vca_envelope.sustain),
-	    zone->vca_envelope.release);
+  emu3_print (1, 3,
+	      "VCA envelope: attack: %d, hold: %d, decay: %d, sustain: %d\%, release: %d.\n",
+	      zone->vca_envelope.attack, zone->vca_envelope.hold,
+	      zone->vca_envelope.decay,
+	      emu3_get_percent_value (zone->vca_envelope.sustain),
+	      zone->vca_envelope.release);
 
   //Filter type might only work with ESI banks
   int vcf_type = zone->vcf_type_lfo_shape >> 3;
   if (vcf_type > VCF_TYPE_SIZE - 1)
     vcf_type = VCF_TYPE_SIZE - 1;
-  emu3_log (1, 3, "VCF type: %s\n", VCF_TYPE[vcf_type]);
+  emu3_print (1, 3, "VCF type: %s\n", VCF_TYPE[vcf_type]);
 
   //Cutoff: [0, 255] -> [26, 74040]
   int cutoff = zone->vcf_cutoff;
-  emu3_log (1, 3, "VCF cutoff: %d\n", cutoff);
+  emu3_print (1, 3, "VCF cutoff: %d\n", cutoff);
 
   //Filter Q might only work with ESI banks
   //ESI Q: [0x80, 0xff] -> [0, 100]
@@ -432,51 +433,51 @@ emu3_print_preset_zone_info (struct emu3_file *file,
     q = q - 0x80;
   q = q * 100 / 127;
 
-  emu3_log (1, 3, "VCF Q: %d\n", q);
+  emu3_print (1, 3, "VCF Q: %d\n", q);
 
-  emu3_log (1, 3, "VCF envelope amount: %d\n",
-	    emu3_get_percent_value (zone->vcf_envelope_amount));
+  emu3_print (1, 3, "VCF envelope amount: %d\n",
+	      emu3_get_percent_value (zone->vcf_envelope_amount));
 
-  emu3_log (1, 3,
-	    "VCF envelope: attack: %d, hold: %d, decay: %d, sustain: %d\%, release: %d.\n",
-	    zone->vcf_envelope.attack, zone->vcf_envelope.hold,
-	    zone->vcf_envelope.decay,
-	    emu3_get_percent_value (zone->vcf_envelope.sustain),
-	    zone->vcf_envelope.release);
+  emu3_print (1, 3,
+	      "VCF envelope: attack: %d, hold: %d, decay: %d, sustain: %d\%, release: %d.\n",
+	      zone->vcf_envelope.attack, zone->vcf_envelope.hold,
+	      zone->vcf_envelope.decay,
+	      emu3_get_percent_value (zone->vcf_envelope.sustain),
+	      zone->vcf_envelope.release);
 
-  emu3_log (1, 3, "Auxiliary envelope amount: %d\n",
-	    emu3_get_percent_value (zone->aux_envelope_amount));
+  emu3_print (1, 3, "Auxiliary envelope amount: %d\n",
+	      emu3_get_percent_value (zone->aux_envelope_amount));
 
-  emu3_log (1, 3,
-	    "Auxiliary envelope: attack: %d, hold: %d, decay: %d, sustain: %d\%, release: %d.\n",
-	    zone->aux_envelope.attack, zone->aux_envelope.hold,
-	    zone->aux_envelope.decay,
-	    emu3_get_percent_value (zone->aux_envelope.sustain),
-	    zone->aux_envelope.release);
+  emu3_print (1, 3,
+	      "Auxiliary envelope: attack: %d, hold: %d, decay: %d, sustain: %d\%, release: %d.\n",
+	      zone->aux_envelope.attack, zone->aux_envelope.hold,
+	      zone->aux_envelope.decay,
+	      emu3_get_percent_value (zone->aux_envelope.sustain),
+	      zone->aux_envelope.release);
 
-  emu3_log (1, 3, "Velocity to Pitch: %d\n", zone->vel_to_pitch);
-  emu3_log (1, 3, "Velocity to VCA Level: %d\n",
-	    emu3_get_percent_value (zone->vel_to_vca_level));
-  emu3_log (1, 3, "Velocity to VCA Attack: %d\n", zone->vel_to_vca_attack);
-  emu3_log (1, 3, "Velocity to VCF Cutoff: %d\n", zone->vel_to_vcf_cutoff);
-  emu3_log (1, 3, "Velocity to VCF Q: %d\n", zone->vel_to_vcf_q);
-  emu3_log (1, 3, "Velocity to VCF Attack: %d\n", zone->vel_to_vcf_attack);
-  emu3_log (1, 3, "Velocity to Pan: %d\n",
-	    emu3_get_percent_value (zone->vel_to_vca_pan));
-  emu3_log (1, 3, "Velocity to Sample Start: %d\n",
-	    zone->vel_to_sample_start);
-  emu3_log (1, 3, "Velocity to Auxiliary Env: %d\n", zone->vel_to_aux_env);
+  emu3_print (1, 3, "Velocity to Pitch: %d\n", zone->vel_to_pitch);
+  emu3_print (1, 3, "Velocity to VCA Level: %d\n",
+	      emu3_get_percent_value (zone->vel_to_vca_level));
+  emu3_print (1, 3, "Velocity to VCA Attack: %d\n", zone->vel_to_vca_attack);
+  emu3_print (1, 3, "Velocity to VCF Cutoff: %d\n", zone->vel_to_vcf_cutoff);
+  emu3_print (1, 3, "Velocity to VCF Q: %d\n", zone->vel_to_vcf_q);
+  emu3_print (1, 3, "Velocity to VCF Attack: %d\n", zone->vel_to_vcf_attack);
+  emu3_print (1, 3, "Velocity to Pan: %d\n",
+	      emu3_get_percent_value (zone->vel_to_vca_pan));
+  emu3_print (1, 3, "Velocity to Sample Start: %d\n",
+	      zone->vel_to_sample_start);
+  emu3_print (1, 3, "Velocity to Auxiliary Env: %d\n", zone->vel_to_aux_env);
 
-  emu3_log (1, 3, "LFO shape: %s\n",
-	    LFO_SHAPE[zone->vcf_type_lfo_shape & 0x3]);
-  emu3_log (1, 3, "LFO->Pitch: %d\n",
-	    emu3_get_percent_value (zone->lfo_to_pitch));
-  emu3_log (1, 3, "LFO->Cutoff: %d\n",
-	    emu3_get_percent_value (zone->lfo_to_cutoff));
-  emu3_log (1, 3, "LFO->VCA: %d\n",
-	    emu3_get_percent_value (zone->lfo_to_vca));
-  emu3_log (1, 3, "LFO->Pan: %d\n",
-	    emu3_get_percent_value (zone->lfo_to_pan));
+  emu3_print (1, 3, "LFO shape: %s\n",
+	      LFO_SHAPE[zone->vcf_type_lfo_shape & 0x3]);
+  emu3_print (1, 3, "LFO->Pitch: %d\n",
+	      emu3_get_percent_value (zone->lfo_to_pitch));
+  emu3_print (1, 3, "LFO->Cutoff: %d\n",
+	      emu3_get_percent_value (zone->lfo_to_cutoff));
+  emu3_print (1, 3, "LFO->VCA: %d\n",
+	      emu3_get_percent_value (zone->lfo_to_vca));
+  emu3_print (1, 3, "LFO->Pan: %d\n",
+	      emu3_get_percent_value (zone->lfo_to_pan));
 }
 
 static void
@@ -493,19 +494,19 @@ emu3_print_preset_info (struct emu3_preset *preset)
 	      break;
 	    }
 	}
-      emu3_log (1, 1, "Mapping: %s - %s\n", RT_CONTROLS_SRC[i],
-		RT_CONTROLS_DST[dst]);
+      emu3_print (1, 1, "Mapping: %s - %s\n", RT_CONTROLS_SRC[i],
+		  RT_CONTROLS_DST[dst]);
     }
   for (int i = 0; i < RT_CONTROLS_FS_SIZE; i++)
     {
-      emu3_log (1, 1, "Mapping: %s - %s\n",
-		RT_CONTROLS_FS_SRC[i],
-		RT_CONTROLS_FS_DST[preset->rt_controls
-				   [RT_CONTROLS_SIZE + i]]);
+      emu3_print (1, 1, "Mapping: %s - %s\n",
+		  RT_CONTROLS_FS_SRC[i],
+		  RT_CONTROLS_FS_DST[preset->rt_controls
+				     [RT_CONTROLS_SIZE + i]]);
     }
   for (int i = 0; i < PRESET_UNKNOWN_0_SIZE; i++)
-    emu3_log (2, 1, "Unknown_0 %d: %d\n", i, preset->unknown_0[i]);
-  emu3_log (1, 1, "Pitch Bend Range: %d\n", preset->pitch_bend_range);
+    emu3_print (2, 1, "Unknown_0 %d: %d\n", i, preset->unknown_0[i]);
+  emu3_print (1, 1, "Pitch Bend Range: %d\n", preset->pitch_bend_range);
 }
 
 static void
@@ -513,8 +514,8 @@ emu3_set_preset_rt_control (struct emu3_preset *preset, int src, int dst)
 {
   if (dst >= 0 && dst < RT_CONTROLS_DST_SIZE)
     {
-      emu3_log (0, 1, "Setting controller %s to %s...\n",
-		RT_CONTROLS_SRC[src], RT_CONTROLS_DST[dst]);
+      emu3_debug (1, "Setting controller %s to %s...\n",
+		  RT_CONTROLS_SRC[src], RT_CONTROLS_DST[dst]);
       if (dst >= 0)
 	{
 	  for (int i = 0; i < RT_CONTROLS_SIZE; i++)
@@ -525,8 +526,7 @@ emu3_set_preset_rt_control (struct emu3_preset *preset, int src, int dst)
 	}
     }
   else
-    fprintf (stderr, "Invalid destination %d for %s\n", dst,
-	     RT_CONTROLS_SRC[src]);
+    emu3_error ("Invalid destination %d for %s\n", dst, RT_CONTROLS_SRC[src]);
 }
 
 static void
@@ -534,23 +534,23 @@ emu3_set_preset_rt_control_fs (struct emu3_preset *preset, int src, int dst)
 {
   if (dst >= 0 && dst < RT_CONTROLS_FS_DST_SIZE)
     {
-      emu3_log (0, 1, "Setting controller %s to %s...\n",
-		RT_CONTROLS_FS_SRC[src], RT_CONTROLS_FS_DST[dst]);
+      emu3_debug (1, "Setting controller %s to %s...\n",
+		  RT_CONTROLS_FS_SRC[src], RT_CONTROLS_FS_DST[dst]);
       preset->rt_controls[src + RT_CONTROLS_FS_DST_SIZE] = dst;
     }
   else
-    fprintf (stderr, "Invalid destination %d for %s\n", dst,
-	     RT_CONTROLS_FS_SRC[src]);
+    emu3_error ("Invalid destination %d for %s\n", dst,
+		RT_CONTROLS_FS_SRC[src]);
 }
 
 static void
 emu3_set_preset_zone_level (struct emu3_preset_zone *zone, int level)
 {
   if (level < 0 || level > 100)
-    fprintf (stderr, "Value %d for level not in range [0, 100]\n", level);
+    emu3_error ("Value %d for level not in range [0, 100]\n", level);
   else
     {
-      emu3_log (0, 1, "Setting level to %d...\n", level);
+      emu3_debug (1, "Setting level to %d...\n", level);
       zone->vca_level = (unsigned char) (level * 127 / 100);
     }
 }
@@ -559,10 +559,10 @@ static void
 emu3_set_preset_zone_cutoff (struct emu3_preset_zone *zone, int cutoff)
 {
   if (cutoff < 0 || cutoff > 255)
-    fprintf (stderr, "Value for cutoff %d not in range [0, 255]\n", cutoff);
+    emu3_error ("Value for cutoff %d not in range [0, 255]\n", cutoff);
   else
     {
-      emu3_log (0, 1, "Setting cutoff to %d...\n", cutoff);
+      emu3_debug (1, "Setting cutoff to %d...\n", cutoff);
       zone->vcf_cutoff = (unsigned char) cutoff;
     }
 }
@@ -572,10 +572,10 @@ emu3_set_preset_zone_q (struct emu3_file *file, struct emu3_preset_zone *zone,
 			int q)
 {
   if (q < 0 || q > 100)
-    fprintf (stderr, "Value %d for Q not in range [0, 100]\n", q);
+    emu3_error ("Value %d for Q not in range [0, 100]\n", q);
   else
     {
-      emu3_log (0, 1, "Setting Q to %d...\n", q);
+      emu3_debug (1, "Setting Q to %d...\n", q);
       zone->vcf_q = (unsigned char) (q * 127 / 100);
       if (strcmp (ESI_32_V3_DEF, file->bank->format) == 0)
 	zone->vcf_q += 0x80;
@@ -586,11 +586,11 @@ static void
 emu3_set_preset_zone_filter (struct emu3_preset_zone *zone, int filter)
 {
   if (filter < 0 || filter > VCF_TYPE_SIZE - 2)
-    fprintf (stderr, "Value %d for filter not in range [0, %d]\n",
-	     filter, VCF_TYPE_SIZE - 2);
+    emu3_error ("Value %d for filter not in range [0, %d]\n",
+		filter, VCF_TYPE_SIZE - 2);
   else
     {
-      emu3_log (0, 1, "Setting filter to %s...\n", VCF_TYPE[filter]);
+      emu3_debug (1, "Setting filter to %s...\n", VCF_TYPE[filter]);
       zone->vcf_type_lfo_shape =
 	((unsigned char) filter) << 3 | zone->vcf_type_lfo_shape & 0x3;
     }
@@ -607,12 +607,12 @@ emu3_set_preset_rt_controls (struct emu3_preset *preset, char *rt_controls)
   if (rt_controls == NULL)
     return;
 
-  emu3_log (0, 1, "Setting realtime controls...\n");
+  emu3_debug (1, "Setting realtime controls...\n");
   i = 0;
   while (i < RT_CONTROLS_SIZE && (token = strsep (&rt_controls, ",")) != NULL)
     {
       if (*token == '\0')
-	fprintf (stderr, "Empty value\n");
+	emu3_error ("Empty value\n");
       else
 	{
 	  controller = strtol (token, &endtoken, 10);
@@ -627,10 +627,10 @@ emu3_set_preset_rt_controls (struct emu3_preset *preset, char *rt_controls)
 						 controller);
 		}
 	      else
-		fprintf (stderr, "Too many controls\n");
+		emu3_error ("Too many controls\n");
 	    }
 	  else
-	    fprintf (stderr, "'%s' not a number\n", token);
+	    emu3_error ("'%s' not a number\n", token);
 	}
       i++;
     }
@@ -640,11 +640,10 @@ static void
 emu3_set_preset_pbr (struct emu3_preset *preset, int pbr)
 {
   if (pbr < 0 || pbr > 36)
-    fprintf (stderr, "Value for pitch bend range %d not in range [0, 36]\n",
-	     pbr);
+    emu3_error ("Value for pitch bend range %d not in range [0, 36]\n", pbr);
   else
     {
-      emu3_log (0, 1, "Setting pitch bend range to %d...\n", pbr);
+      emu3_debug (1, "Setting pitch bend range to %d...\n", pbr);
       preset->pitch_bend_range = pbr;
     }
 }
@@ -714,10 +713,10 @@ emu3_append_sample (struct emu3_file *file, char *path,
 
   char *basec = strdup (path);
   filename = basename (basec);
-  emu3_log (1, 0,
-	    "Appending sample %s... (%" PRId64
-	    " frames, %d channels)\n", filename, sfinfo.frames,
-	    sfinfo.channels);
+  emu3_print (1, 0,
+	      "Appending sample %s... (%" PRId64
+	      " frames, %d channels)\n", filename, sfinfo.frames,
+	      sfinfo.channels);
   //Sample header initialization
   char *name = emu3_wav_filename_to_filename (filename);
   char *emu3name = emu3_str_to_emu3name (name);
@@ -784,7 +783,7 @@ emu3_append_sample (struct emu3_file *file, char *path,
   emu3_write_frame (&sd, zero);
   emu3_write_frame (&sd, zero);
 
-  emu3_log (1, 1, "Appended %dB (0x%08x).\n", size, size);
+  emu3_print (1, 1, "Appended %dB (0x%08x).\n", size, size);
 
 close:
   sf_close (input);
@@ -811,7 +810,7 @@ emu3_extract_sample (struct emu3_sample *sample, int num, sf_count_t nframes,
 
   wav_file = emu3_emu3name_to_wav_filename (sample->name, num, ext_mode);
   schannels = channels == 1 ? "mono" : "stereo";
-  emu3_log (0, 1, "Extracting %s sample %s...\n", schannels, wav_file);
+  emu3_debug (1, "Extracting %s sample %s...\n", schannels, wav_file);
 
   output = sf_open (wav_file, SFM_WRITE, &sfinfo);
   l_channel = sample->frames + 2;
@@ -828,7 +827,7 @@ emu3_extract_sample (struct emu3_sample *sample, int num, sf_count_t nframes,
 	}
       if (!sf_writef_short (output, frame, 1))
 	{
-	  fprintf (stderr, "Error: %s\n", sf_strerror (output));
+	  emu3_error ("Error: %s\n", sf_strerror (output));
 	  break;
 	}
     }
@@ -960,7 +959,7 @@ emu3_open_file (const char *filename)
 
   if (!fd)
     {
-      fprintf (stderr, "Error while opening %s for input\n", filename);
+      emu3_error ("Error while opening %s for input\n", filename);
       return NULL;
     }
 
@@ -973,39 +972,40 @@ emu3_open_file (const char *filename)
 
   if (!emu3_check_bank_format (file->bank))
     {
-      fprintf (stderr, "Bank format not supported.\n");
+      emu3_error ("Bank format not supported.\n");
       emu3_close_file (file);
       return NULL;
     }
 
-  emu3_log (0, 0, "Bank name: %.*s\n", NAME_SIZE, file->bank->name);
-  emu3_log (1, 0, "Bank fsize: %zuB\n", file->fsize);
-  emu3_log (1, 0, "Bank format: %s\n", file->bank->format);
+  emu3_print (1, 0, "Bank name: %.*s\n", NAME_SIZE, file->bank->name);
+  emu3_print (1, 0, "Bank fsize: %zuB\n", file->fsize);
+  emu3_print (1, 0, "Bank format: %s\n", file->bank->format);
 
-  emu3_log (2, 1, "Geometry:\n");
-  emu3_log (2, 1, "Objects: %d\n", file->bank->objects + 1);
-  emu3_log (2, 1, "Next sample: 0x%08x\n", file->bank->next_sample);
+  emu3_print (2, 1, "Geometry:\n");
+  emu3_print (2, 1, "Objects: %d\n", file->bank->objects + 1);
+  emu3_print (2, 1, "Next sample: 0x%08x\n", file->bank->next_sample);
 
   for (int i = 0; i < BANK_PARAMETERS; i++)
-    emu3_log (2, 1, "Parameter %2d: 0x%08x (%d)\n", i,
-	      file->bank->parameters[i], file->bank->parameters[i]);
+    emu3_print (2, 1, "Parameter %2d: 0x%08x (%d)\n", i,
+		file->bank->parameters[i], file->bank->parameters[i]);
 
   if (file->bank->parameters[1] + file->bank->parameters[2] !=
       file->bank->parameters[4])
-    emu3_log (2, 1, "Kind of checksum error.\n");
+    emu3_print (2, 1, "Kind of checksum error.\n");
 
   if (strncmp (file->bank->name, file->bank->name_copy, NAME_SIZE))
-    emu3_log (2, 1, "Bank name is different than previously found.\n");
+    emu3_print (2, 1, "Bank name is different than previously found.\n");
 
-  emu3_log (2, 1, "Selected preset: %d\n", file->bank->selected_preset);
+  emu3_print (2, 1, "Selected preset: %d\n", file->bank->selected_preset);
 
-  emu3_log (2, 1, "More geometry:\n");
+  emu3_print (2, 1, "More geometry:\n");
   for (int i = 0; i < MORE_BANK_PARAMETERS; i++)
-    emu3_log (2, 1, "Parameter %d: 0x%08x (%d)\n", i,
-	      file->bank->more_parameters[i], file->bank->more_parameters[i]);
+    emu3_print (2, 1, "Parameter %d: 0x%08x (%d)\n", i,
+		file->bank->more_parameters[i],
+		file->bank->more_parameters[i]);
 
-  emu3_log (2, 1, "Current preset: %d\n", file->bank->more_parameters[0]);
-  emu3_log (2, 1, "Current sample: %d\n", file->bank->more_parameters[1]);
+  emu3_print (2, 1, "Current preset: %d\n", file->bank->more_parameters[0]);
+  emu3_print (2, 1, "Current sample: %d\n", file->bank->more_parameters[1]);
 
   return file;
 }
@@ -1033,14 +1033,14 @@ emu3_process_note_zone (struct emu3_file *file,
   //If the zone is for pri, sec layer or both
   if (note_zone->pri_zone != 0xff)
     {
-      emu3_log (1, 2, "pri\n");
+      emu3_print (1, 2, "pri\n");
       struct emu3_preset_zone *zone = &zones[note_zone->pri_zone];
       emu3_process_zone (file, zone, level, cutoff, q, filter);
       emu3_print_preset_zone_info (file, zone);
     }
   if (note_zone->sec_zone != 0xff)
     {
-      emu3_log (1, 2, "sec\n");
+      emu3_print (1, 2, "sec\n");
       struct emu3_preset_zone *zone = &zones[note_zone->sec_zone];
       emu3_process_zone (file, zone, level, cutoff, q, filter);
       emu3_print_preset_zone_info (file, zone);
@@ -1057,9 +1057,9 @@ emu3_process_preset (struct emu3_file *file, int preset_num,
   struct emu3_preset_zone *zones;
   struct emu3_preset_note_zone *note_zones;
 
-  emu3_log (0, 0, "Preset %3d, %.*s", preset_num, NAME_SIZE, preset->name);
-  emu3_log (1, 0, " @ 0x%08x", address);
-  emu3_log (0, 0, "\n");
+  emu3_print (0, 0, "Preset %3d, %.*s", preset_num, NAME_SIZE, preset->name);
+  emu3_print (1, 0, " @ 0x%08x", address);
+  emu3_print (0, 0, "\n");
 
   if (rt_controls)
     {
@@ -1084,18 +1084,18 @@ emu3_process_preset (struct emu3_file *file, int preset_num,
 					   sizeof (struct
 						   emu3_preset_note_zone)
 					   * preset->note_zones];
-  emu3_log (1, 1, "Note mappings:\n");
+  emu3_print (1, 1, "Note mappings:\n");
   for (int j = 0; j < NOTES; j++)
     {
       if (preset->note_zone_mappings[j] != 0xff)
-	emu3_log (1, 2, "%s: %d\n", note_names[j],
-		  preset->note_zone_mappings[j]);
+	emu3_print (1, 2, "%s: %d\n", note_names[j],
+		    preset->note_zone_mappings[j]);
     }
 
-  emu3_log (1, 1, "Zones: %d\n", preset->note_zones);
+  emu3_print (1, 1, "Zones: %d\n", preset->note_zones);
   for (int j = 0; j < preset->note_zones; j++)
     {
-      emu3_log (1, 1, "Zone %d\n", j);
+      emu3_print (1, 1, "Zone %d\n", j);
       emu3_process_note_zone (file, zones, note_zones, level, cutoff, q,
 			      filter);
       note_zones++;
@@ -1142,15 +1142,15 @@ emu3_process_bank (struct emu3_file *file, int ext_mode, int edit_preset,
     }
 
   sample_start_addr = emu3_get_sample_start_address (file->bank);
-  emu3_log (1, 0, "Sample start: 0x%08x\n", sample_start_addr);
+  emu3_print (1, 0, "Sample start: 0x%08x\n", sample_start_addr);
 
   max_samples = emu3_get_max_samples (file->bank);
   addresses = emu3_get_sample_addresses (file->bank);
-  emu3_log (1, 0, "Start with offset: 0x%08x\n", addresses[0]);
-  emu3_log (1, 0, "Next with offset: 0x%08x\n", addresses[max_samples]);
+  emu3_print (1, 0, "Start with offset: 0x%08x\n", addresses[0]);
+  emu3_print (1, 0, "Next with offset: 0x%08x\n", addresses[max_samples]);
   next_sample_addr = emu3_get_next_sample_address (file->bank);
-  emu3_log (1, 0, "Next sample: 0x%08x (equals bank size)\n",
-	    next_sample_addr);
+  emu3_print (1, 0, "Next sample: 0x%08x (equals bank size)\n",
+	      next_sample_addr);
 
   i = 0;
   while (addresses[i] != 0 && i < max_samples)
@@ -1166,10 +1166,10 @@ emu3_process_bank (struct emu3_file *file, int ext_mode, int edit_preset,
       sf_count_t nframes =
 	(size - sizeof (struct emu3_sample) -
 	 (8 * channels)) / (2 * channels);
-      emu3_log (0, 0, "Sample %3d, %.*s", i + 1, NAME_SIZE, sample->name);
-      emu3_log (1, 0, " @ 0x%08x (size %dB, frames %" PRId64 ")", address,
-		size, nframes);
-      emu3_log (0, 0, "\n");
+      emu3_print (0, 0, "Sample %3d, %.*s", i + 1, NAME_SIZE, sample->name);
+      emu3_print (1, 0, " @ 0x%08x (size %dB, frames %" PRId64 ")", address,
+		  size, nframes);
+      emu3_print (0, 0, "\n");
       emu3_print_sample_info (sample, nframes);
 
       if (ext_mode)
@@ -1236,7 +1236,7 @@ emu3_add_sample (struct emu3_file *file, char *sample_filename, int loop)
       return ERR_SAMPLE_LIMIT;
     }
 
-  fprintf (stderr, "Adding sample %d...\n", total_samples + 1);	//Sample number is 1 based
+  emu3_debug (1, "Adding sample %d...\n", total_samples + 1);	//Sample number is 1 based
   int size = emu3_append_sample (file, sample_filename, sample, loop);
 
   if (size < 0)
@@ -1342,8 +1342,8 @@ emu3_add_zones (struct emu3_file *file, int preset_num, int zone_num,
   next_sample_addr = emu3_get_next_sample_address (file->bank);
   size = next_sample_addr - next_preset_addr;
 
-  emu3_log (2, 0, "Moving %dB from 0x%08x to 0x%08x...\n", size,
-	    next_preset_addr, dst_addr);
+  emu3_debug (3, "Moving %dB from 0x%08x to 0x%08x...\n", size,
+	      next_preset_addr, dst_addr);
 
   src = &file->raw[next_preset_addr];
   dst = &file->raw[dst_addr];
@@ -1364,8 +1364,8 @@ emu3_add_zones (struct emu3_file *file, int preset_num, int zone_num,
 	{
 	  size = next_preset_addr - zone_addr;
 
-	  emu3_log (2, 0, "Moving %dB from from 0x%08x to 0x%08x...\n", size,
-		    zone_addr, zone_addr_dst);
+	  emu3_debug (3, "Moving %dB from from 0x%08x to 0x%08x...\n", size,
+		      zone_addr, zone_addr_dst);
 
 	  memmove (zone_dst, zone_src, size);
 	}
@@ -1407,17 +1407,17 @@ emu3_add_preset_zone (struct emu3_file *file, int preset_num, int sample_num,
 
   if (preset_num < 0 || preset_num >= total_presets)
     {
-      fprintf (stderr, "Illegal preset number: %d\n", preset_num);
+      emu3_error ("Illegal preset number: %d\n", preset_num);
       return EXIT_FAILURE;
     }
 
-  emu3_log (1, 0,
-	    "Adding sample %d to layer %d with original key %s (%d) from %s (%d) to %s (%d) to preset %d...\n",
-	    sample_num, zone_range->layer,
-	    note_names[zone_range->original_key], zone_range->original_key,
-	    note_names[zone_range->lower_key], zone_range->lower_key,
-	    note_names[zone_range->higher_key], zone_range->higher_key,
-	    preset_num);
+  emu3_debug (2,
+	      "Adding sample %d to layer %d with original key %s (%d) from %s (%d) to %s (%d) to preset %d...\n",
+	      sample_num, zone_range->layer,
+	      note_names[zone_range->original_key], zone_range->original_key,
+	      note_names[zone_range->lower_key], zone_range->lower_key,
+	      note_names[zone_range->higher_key], zone_range->higher_key,
+	      preset_num);
 
   preset = emu3_get_preset (file, preset_num);
 
@@ -1429,7 +1429,7 @@ emu3_add_preset_zone (struct emu3_file *file, int preset_num, int sample_num,
 	  assigned = 1;
       if (assigned == 1)
 	{
-	  fprintf (stderr, "Zone already assigned to notes.\n");
+	  emu3_error ("Zone already assigned to notes.\n");
 	  return EXIT_FAILURE;
 	}
 
@@ -1450,7 +1450,7 @@ emu3_add_preset_zone (struct emu3_file *file, int preset_num, int sample_num,
 	  several = 1;
       if (several == 1)
 	{
-	  fprintf (stderr, "Note range in several zones.\n");
+	  emu3_error ("Note range in several zones.\n");
 	  return EXIT_FAILURE;
 	}
 
@@ -1527,7 +1527,7 @@ emu3_add_preset (struct emu3_file *file, char *preset_name)
       return ERR_PRESET_LIMIT;
     }
 
-  fprintf (stderr, "Adding preset %d...\n", i);
+  emu3_debug (1, "Adding preset %d...\n", i);
 
   objects += i;
 
@@ -1550,7 +1550,7 @@ emu3_add_preset (struct emu3_file *file, char *preset_name)
   if (file->fsize + size > MEM_SIZE)
     return ERR_BANK_FULL;
 
-  emu3_log (1, 0, "Moving %dB...\n", size);
+  emu3_debug (2, "Moving %dB...\n", size);
 
   memmove (dst, src, size);
 
@@ -1584,7 +1584,7 @@ emu3_write_file (struct emu3_file *file)
 
   if (fwrite (file->raw, file->fsize, 1, fd) != 1)
     {
-      fprintf (stderr, "Unexpected written bytes amount.\n");
+      emu3_error ("Unexpected written bytes amount.\n");
       err = ERR_WRITE_BANK;
     }
 
@@ -1612,7 +1612,7 @@ emu3_create_bank (const char *path, const char *type)
 
   if (ret < 0)
     {
-      fprintf (stderr, "Error while creating src path");
+      emu3_error ("Error while creating src path");
       rvalue = EXIT_FAILURE;
       goto out1;
     }
@@ -1622,7 +1622,7 @@ emu3_create_bank (const char *path, const char *type)
 
   if (ret < 0)
     {
-      fprintf (stderr, "Error while creating dst path");
+      emu3_error ("Error while creating dst path");
       rvalue = EXIT_FAILURE;
       goto out2;
     }
@@ -1630,7 +1630,7 @@ emu3_create_bank (const char *path, const char *type)
   FILE *src = fopen (src_path, "rb");
   if (!src)
     {
-      fprintf (stderr, "Error while opening %s for input\n", src_path);
+      emu3_error ("Error while opening %s for input\n", src_path);
       rvalue = EXIT_FAILURE;
       goto out3;
     }
@@ -1638,7 +1638,7 @@ emu3_create_bank (const char *path, const char *type)
   FILE *dst = fopen (dst_path, "w+b");
   if (!dst)
     {
-      fprintf (stderr, "Error while opening %s for output\n", dst_path);
+      emu3_error ("Error while opening %s for output\n", dst_path);
       rvalue = EXIT_FAILURE;
       goto out4;
     }
@@ -1659,7 +1659,7 @@ emu3_create_bank (const char *path, const char *type)
       fwrite (&bank, sizeof (struct emu3_bank), 1, dst);
     }
 
-  fprintf (stderr, "File created in %s\n", dst_path);
+  emu3_debug (2, "File created in %s\n", dst_path);
 
   rvalue = EXIT_SUCCESS;
 
