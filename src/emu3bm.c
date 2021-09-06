@@ -20,7 +20,6 @@
 
 #include "emu3bm.h"
 
-
 #define MEM_SIZE 0x08000000
 #define FORMAT_SIZE 16
 #define NAME_SIZE 16
@@ -162,13 +161,20 @@ struct emu3_sample_descriptor
   struct emu3_sample *sample;
 };
 
-enum emu3bm_error
+enum emu3_error
 {
-  ERR_NO_MEM
+  ERR_BANK_FULL = 1,
+  ERR_BAD_SAMPLE_CHANS,
+  ERR_CANT_OPEN_SAMPLE,
+  ERR_SAMPLE_LIMIT,
+  ERR_PRESET_LIMIT
 };
 
-static const char *EMU3BM_ERROR_STR[] = {
-  "Not enough memory"
+static const char *EMU3_ERROR_STR[] = {
+  NULL, "Bank is full", "Sample neither mono nor stereo",
+  "Error while opening sample for input",
+  "No more samples allowed",
+  "No more presetc allowed",
 };
 
 static const char DEFAULT_RT_CONTROLS[RT_CONTROLS_SIZE +
@@ -262,6 +268,12 @@ static const int VCF_TYPE_SIZE = sizeof (VCF_TYPE) / sizeof (char *);
 
 int verbosity;
 
+const char *
+emu3_get_err (int error)
+{
+  return EMU3_ERROR_STR[error];
+}
+
 static char *
 emu3_emu3name_to_filename (const char *objname)
 {
@@ -302,10 +314,10 @@ emu3_emu3name_to_wav_filename (const char *emu3name, int num, int ext_mode)
 static char *
 emu3_wav_filename_to_filename (const char *wav_file)
 {
-  char *filename = strdup(wav_file);
+  char *filename = strdup (wav_file);
   char *ext = strrchr (filename, '.');
   if (strcasecmp (ext, SAMPLE_EXT) == 0)
-      *ext = '\0';
+    *ext = '\0';
   return filename;
 }
 
@@ -316,7 +328,7 @@ emu3_str_to_emu3name (const char *src)
   if (len > NAME_SIZE)
     len = NAME_SIZE;
 
-  char *emu3name = strndup(src, len);
+  char *emu3name = strndup (src, len);
 
   char *c = emu3name;
   for (int i = 0; i < len; i++, c++)
@@ -657,8 +669,9 @@ emu3_write_frame (struct emu3_sample_descriptor *sd, short int frame[])
 }
 
 //returns the sample size in bytes that the the sample takes in the bank
-int
-emu3_append_sample (char *path, struct emu3_sample *sample, int loop)
+static int
+emu3_append_sample (struct emu3_file *file, char *path,
+		    struct emu3_sample *sample, int loop)
 {
   SF_INFO sfinfo;
   SNDFILE *input;
@@ -670,13 +683,26 @@ emu3_append_sample (char *path, struct emu3_sample *sample, int loop)
   const char *filename;
   struct emu3_sample_descriptor sd;
 
-  size = 0;
+  if (access (path, R_OK) != 0)
+    return -ERR_CANT_OPEN_SAMPLE;
+
+  size = -1;
   sfinfo.format = 0;
   input = sf_open (path, SFM_READ, &sfinfo);
 
   if (sfinfo.channels > 2)
     {
-      fprintf (stderr, "Sample neither mono nor stereo. Skipping...\n");
+      size = -ERR_BAD_SAMPLE_CHANS;
+      goto close;
+    }
+
+  data_size = sizeof (short int) * (sfinfo.frames + 4);
+  mono_size = sizeof (struct emu3_sample) + data_size;
+  size = mono_size + (sfinfo.channels == 1 ? 0 : data_size);
+
+  if (file->fsize + size > MEM_SIZE)
+    {
+      size = -ERR_BANK_FULL;
       goto close;
     }
 
@@ -695,9 +721,6 @@ emu3_append_sample (char *path, struct emu3_sample *sample, int loop)
   free (name);
   free (emu3name);
 
-  data_size = sizeof (short int) * (sfinfo.frames + 4);
-  mono_size = sizeof (struct emu3_sample) + data_size;
-  size = mono_size + (sfinfo.channels == 1 ? 0 : data_size);
   sample->parameters[0] = 0;
   //Start of left channel
   sample->parameters[1] = sizeof (struct emu3_sample);
@@ -1202,25 +1225,17 @@ emu3_add_sample (struct emu3_file *file, char *sample_filename, int loop)
   struct emu3_sample *sample =
     (struct emu3_sample *) &file->raw[next_sample_addr];
 
-  if (access (sample_filename, R_OK) != 0)
-    {
-      fprintf (stderr, "Error while opening %s for input\n", sample_filename);
-      return EXIT_FAILURE;
-    }
-
   if (total_samples == max_samples)
     {
-      fprintf (stderr, "No more samples could be added.\n");
-      return EXIT_FAILURE;
+      return ERR_SAMPLE_LIMIT;
     }
 
-  printf ("Adding sample %d...\n", total_samples + 1);	//Sample number is 1 based
-  unsigned int size = emu3_append_sample (sample_filename, sample, loop);
+  fprintf (stderr, "Adding sample %d...\n", total_samples + 1);	//Sample number is 1 based
+  int size = emu3_append_sample (file, sample_filename, sample, loop);
 
-  if (!size)
+  if (size < 0)
     {
-      fprintf (stderr, "Error while adding sample.\n");
-      return EXIT_FAILURE;
+      return -size;
     }
 
   file->bank->objects++;
@@ -1228,6 +1243,7 @@ emu3_add_sample (struct emu3_file *file, char *sample_filename, int loop)
   saddresses[total_samples] = saddresses[max_samples];
   saddresses[max_samples] = file->bank->next_sample + SAMPLE_OFFSET;
   file->fsize += size;
+
   return EXIT_SUCCESS;
 }
 
@@ -1416,7 +1432,7 @@ emu3_add_preset_zone (struct emu3_file *file, int preset_num, int sample_num,
 
       inc_size = emu3_add_zones (file, preset_num, -1, &zone);
       if (inc_size < 0)
-	return ERR_NO_MEM;
+	return ERR_BANK_FULL;
     }
   else if (zone_range->layer == 2)
     {
@@ -1434,7 +1450,7 @@ emu3_add_preset_zone (struct emu3_file *file, int preset_num, int sample_num,
 
       inc_size = emu3_add_zones (file, preset_num, sec_zone_id, &zone);
       if (inc_size < 0)
-	return ERR_NO_MEM;
+	return ERR_BANK_FULL;
     }
 
   zone->root_note = zone_range->original_key;
@@ -1500,15 +1516,14 @@ emu3_add_preset (struct emu3_file *file, char *preset_name)
       paddresses++;
     }
 
-  objects += i;
-
-  printf ("Adding preset %d...\n", i);
-
-  if (i == max_presets)
+    if (i == max_presets)
     {
-      fprintf (stderr, "No more presets could be added.\n");
-      return EXIT_FAILURE;
+            return ERR_PRESET_LIMIT;
     }
+
+    fprintf (stderr, "Adding preset %d...\n", i);
+
+  objects += i;
 
   copy_start_addr = emu3_get_preset_address (file->bank, i);
 
@@ -1527,7 +1542,7 @@ emu3_add_preset (struct emu3_file *file, char *preset_name)
   size_t size = next_sample_addr - copy_start_addr;
 
   if (file->fsize + size > MEM_SIZE)
-    return ERR_NO_MEM;
+    return ERR_BANK_FULL;
 
   emu3_log (1, 0, "Moving %dB...\n", size);
 
@@ -1632,7 +1647,7 @@ emu3_create_bank (const char *path, const char *type)
       fwrite (&bank, sizeof (struct emu3_bank), 1, dst);
     }
 
-  printf ("File created in %s\n", dst_path);
+  fprintf (stderr, "File created in %s\n", dst_path);
 
   rvalue = EXIT_SUCCESS;
 

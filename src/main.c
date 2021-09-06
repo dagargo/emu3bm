@@ -315,29 +315,36 @@ main (int argc, char *argv[])
   if (sflg)
     {
       err = emu3_add_sample (file, sample_filename, loop);
-      goto close;
+      goto end;
     }
 
   if (pflg)
     {
       err = emu3_add_preset (file, preset_name);
-      goto close;
+      goto end;
     }
 
   if (zflg)
     {
       err = emu3_add_preset_zone (file, preset_num, sample_num, &zone_range);
+      goto end;
+    }
+
+  err =
+    emu3_process_bank (file, ext_mode, preset_num, rt_controls, pbr, level,
+		       cutoff, q, filter);
+
+end:
+  if (err)
+    {
+      fprintf (stderr, "%s\n", emu3_get_err (err));
       goto close;
     }
 
-  if (!nflg && !sflg && !pflg && !zflg)
-    err =
-      emu3_process_bank (file, ext_mode, preset_num, rt_controls, pbr, level,
-			 cutoff, q, filter);
+  if (sflg || pflg || zflg || modflg)
+    emu3_write_file (file);
 
 close:
-  if ((sflg || pflg || zflg || modflg) && !err)
-    emu3_write_file (file);
   emu3_close_file (file);
   exit (err);
 }

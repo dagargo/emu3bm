@@ -88,3 +88,5 @@ int emu3_process_bank (struct emu3_file *, int, int, char *, int, int, int,
 int emu3_create_bank (const char *, const char *);
 
 int emu3_reverse_note_search (char *);
+
+const char *emu3_get_err (int error);
