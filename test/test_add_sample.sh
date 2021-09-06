@@ -32,4 +32,13 @@ test
 logAndRun 'diff $TEST_BANK_NAME data/test_add_sample_4'
 test
 
+logAndRun '$srcdir/../src/emu3bm -n $TEST_BANK_NAME'
+test
+for s in $(seq 1 999); do
+	logAndRun '$srcdir/../src/emu3bm -s data/s1.wav $TEST_BANK_NAME'
+	test
+done
+logAndRun '$srcdir/../src/emu3bm -s data/s1.wav $TEST_BANK_NAME'
+testError
+
 cleanUp
