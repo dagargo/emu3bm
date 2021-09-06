@@ -29,55 +29,12 @@
 #include <inttypes.h>
 #include <stdarg.h>
 #include <libgen.h>
-
 #include "../config.h"
-
-#define MEM_SIZE 0x08000000
-#define FORMAT_SIZE 16
-#define NAME_SIZE 16
-#define BANK_PARAMETERS 5
-#define MORE_BANK_PARAMETERS 3
-#define SAMPLE_ADDR_START_EMU_3X 0x1bd2
-#define SAMPLE_ADDR_START_EMU_THREE 0x204
-#define PRESET_OFFSET_EMU_THREE 0x1a6fe
-#define PRESET_START_EMU_3X 0x2b72
-#define PRESET_START_EMU_THREE 0x74a
-#define SAMPLE_OFFSET 0x400000	//This is also the max sample length in bytes
-#define MAX_SAMPLES_EMU_3X 999
-#define MAX_SAMPLES_EMU_THREE 99
-#define PRESET_SIZE_ADDR_START_EMU_3X 0x17ca
-#define PRESET_SIZE_ADDR_START_EMU_THREE 0x6c
-#define MAX_PRESETS_EMU_3X 0x100
-#define MAX_PRESETS_EMU_THREE 100
-#define SAMPLE_PARAMETERS 9
-#define MORE_SAMPLE_PARAMETERS 8
-#define DEFAULT_SAMPLING_FREQ 44100
-
-#define LOOP 0x00010000
-#define LOOP_RELEASE 0x00080000
-
-#define MONO_SAMPLE 0x00300001
-#define MONO_SAMPLE_2 0x00500000
-#define STEREO_SAMPLE 0x00700001
-#define STEREO_SAMPLE_2 0x00700000
-#define MONO_SAMPLE_3X 0x0030fe02
-
-#define RT_CONTROLS_SIZE 10
-#define RT_CONTROLS_FS_SIZE 2
-#define PRESET_UNKNOWN_0_SIZE 16
-#define PRESET_UNKNOWN_1_SIZE 8
-#define NOTES 88		// 0x58
-
-#define ESI_32_V3_DEF      "EMU SI-32 v3   "
-#define EMULATOR_3X_DEF    "EMULATOR 3X    "
-#define EMULATOR_THREE_DEF "EMULATOR THREE "
-
-#define SAMPLE_EXT ".wav"
-
-#define EMPTY_BANK_TEMPLATE "res/empty_bank_"
 
 #define DEVICE_ESI2000 "esi2000"
 #define DEVICE_EMU3X "emu3x"
+
+#define NOTES 88		// 0x58
 
 extern int verbosity;
 
@@ -100,104 +57,6 @@ struct emu3_file
     struct emu3_bank *bank;
   };
   size_t fsize;
-};
-
-struct emu3_bank
-{
-  char format[FORMAT_SIZE];
-  char name[NAME_SIZE];
-  unsigned int objects;
-  unsigned int padding[3];
-  unsigned int next_preset;
-  unsigned int next_sample;
-  unsigned int parameters[BANK_PARAMETERS];
-  char name_copy[NAME_SIZE];
-  unsigned int selected_preset;
-  unsigned int more_parameters[MORE_BANK_PARAMETERS];
-};
-
-struct emu3_sample
-{
-  char name[NAME_SIZE];
-  unsigned int parameters[SAMPLE_PARAMETERS];
-  unsigned int sample_rate;
-  unsigned int format;
-  unsigned int more_parameters[MORE_SAMPLE_PARAMETERS];
-  short int frames[];
-};
-
-struct emu3_envelope
-{
-  unsigned char attack;
-  unsigned char hold;
-  unsigned char decay;
-  unsigned char sustain;
-  unsigned char release;
-};
-
-struct emu3_preset_note_zone
-{
-  unsigned char unknown_1;
-  unsigned char unknown_2;
-  unsigned char pri_zone;
-  unsigned char sec_zone;
-};
-
-struct emu3_preset_zone
-{
-  char root_note;
-  unsigned char sample_id_lsb;
-  unsigned char sample_id_msb;
-  char parameter_a;
-  struct emu3_envelope vca_envelope;
-  char parameters_a2[2];
-  unsigned char lfo_variation;
-  unsigned char vcf_cutoff;
-  unsigned char vcf_q;
-  unsigned char vcf_envelope_amount;
-  struct emu3_envelope vcf_envelope;
-  struct emu3_envelope aux_envelope;
-  char aux_envelope_amount;
-  unsigned char aux_envelope_dest;
-  char vel_to_vca_level;
-  char vel_to_vca_attack;
-  char vel_to_vcf_cutoff;
-  char vel_to_pitch;
-  char vel_to_aux_env;
-  char vel_to_vcf_q;
-  char vel_to_vcf_attack;
-  char vel_to_sample_start;
-  char vel_to_vca_pan;
-  char lfo_to_pitch;
-  char lfo_to_vca;
-  char lfo_to_cutoff;
-  char lfo_to_pan;
-  char vca_level;
-  char unknown_1;
-  char unknown_2;
-  char unknown_3;
-  char vca_pan;
-  unsigned char vcf_type_lfo_shape;
-  unsigned char end1;		//0xff
-  unsigned char end2;		//0x01
-};
-
-struct emu3_preset
-{
-  char name[NAME_SIZE];
-  char rt_controls[RT_CONTROLS_SIZE + RT_CONTROLS_FS_SIZE];
-  char unknown_0[PRESET_UNKNOWN_0_SIZE];
-  char pitch_bend_range;
-  char unknown_1[PRESET_UNKNOWN_1_SIZE];
-  char note_zones;
-  unsigned char note_zone_mappings[NOTES];
-};
-
-struct emu3_sample_descriptor
-{
-  short int *l_channel;
-  short int *r_channel;
-  struct emu3_sample *sample;
 };
 
 struct emu3_zone_range
