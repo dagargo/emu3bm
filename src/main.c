@@ -342,7 +342,8 @@ end:
     }
 
   if (sflg || pflg || zflg || modflg)
-    emu3_write_file (file);
+    if (emu3_write_file (file))
+      fprintf (stderr, "%s\n", emu3_get_err (err));
 
 close:
   emu3_close_file (file);

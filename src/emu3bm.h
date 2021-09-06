@@ -71,7 +71,7 @@ struct emu3_file *emu3_open_file (const char *);
 
 void emu3_close_file (struct emu3_file *);
 
-void emu3_write_file (struct emu3_file *);
+int emu3_write_file (struct emu3_file *);
 
 int emu3_add_sample (struct emu3_file *, char *, int);
 

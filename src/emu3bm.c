@@ -63,6 +63,8 @@
 
 #define EMPTY_BANK_TEMPLATE "res/empty_bank_"
 
+#define WRITE_BUFLEN 4096
+
 struct emu3_bank
 {
   char format[FORMAT_SIZE];
@@ -167,14 +169,18 @@ enum emu3_error
   ERR_BAD_SAMPLE_CHANS,
   ERR_CANT_OPEN_SAMPLE,
   ERR_SAMPLE_LIMIT,
-  ERR_PRESET_LIMIT
+  ERR_PRESET_LIMIT,
+  ERR_OPEN_BANK,
+  ERR_WRITE_BANK
 };
 
 static const char *EMU3_ERROR_STR[] = {
   NULL, "Bank is full", "Sample neither mono nor stereo",
-  "Error while opening sample for input",
+  "Error while opening sample file",
   "No more samples allowed",
   "No more presetc allowed",
+  "Error while opening bank file",
+  "Error while writing bank file",
 };
 
 static const char DEFAULT_RT_CONTROLS[RT_CONTROLS_SIZE +
@@ -1516,12 +1522,12 @@ emu3_add_preset (struct emu3_file *file, char *preset_name)
       paddresses++;
     }
 
-    if (i == max_presets)
+  if (i == max_presets)
     {
-            return ERR_PRESET_LIMIT;
+      return ERR_PRESET_LIMIT;
     }
 
-    fprintf (stderr, "Adding preset %d...\n", i);
+  fprintf (stderr, "Adding preset %d...\n", i);
 
   objects += i;
 
@@ -1566,18 +1572,24 @@ emu3_add_preset (struct emu3_file *file, char *preset_name)
   return EXIT_SUCCESS;
 }
 
-void
+int
 emu3_write_file (struct emu3_file *file)
 {
+  int err = 0;
   FILE *fd = fopen (file->filename, "w");
-  if (fd)
+  if (!fd)
     {
-      if (fwrite (file->raw, 1, file->fsize, fd) != file->fsize)
-	fprintf (stderr, "Unexpected written bytes amount.\n");
-      fclose (fd);
+      return ERR_OPEN_BANK;
     }
-  else
-    fprintf (stderr, "Error while opening file for writing.\n");
+
+  if (fwrite (file->raw, file->fsize, 1, fd) != 1)
+    {
+      fprintf (stderr, "Unexpected written bytes amount.\n");
+      err = ERR_WRITE_BANK;
+    }
+
+  fclose (fd);
+  return err;
 }
 
 int
