@@ -81,8 +81,10 @@ int emu3_add_sample (struct emu3_file *, char *, int);
 
 int emu3_add_preset (struct emu3_file *, char *);
 
-int emu3_add_preset_zone (struct emu3_file *, int preset_num, int sample_num,
+int emu3_add_preset_zone (struct emu3_file *, int, int,
 			  struct emu3_zone_range *);
+
+int emu3_del_preset_zone (struct emu3_file *, int, int);
 
 int emu3_extract_samples (struct emu3_file *);
 
@@ -93,4 +95,4 @@ int emu3_create_bank (const char *, const char *);
 
 int emu3_reverse_note_search (char *);
 
-const char *emu3_get_err (int error);
+const char *emu3_get_err (int);

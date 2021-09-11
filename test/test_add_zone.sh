@@ -67,4 +67,11 @@ test
 logAndRun 'diff $TEST_BANK_NAME data/test_add_zone_5'
 test
 
+logAndRun '$srcdir/../src/emu3bm -vvv -e 0 --delete-zone 0 $TEST_BANK_NAME'
+test
+logAndRun '$srcdir/../src/emu3bm -vvv -e 0 --delete-zone 0 $TEST_BANK_NAME'
+test
+logAndRun 'diff $TEST_BANK_NAME data/test_add_zone_2'
+test
+
 cleanUp

@@ -28,6 +28,7 @@ static const struct option options[] = {
   {"add-preset", 1, NULL, 'p'},
   {"add-zone", 1, NULL, 'z'},
   {"add-zone-with-num", 1, NULL, 'Z'},
+  {"delete-zone", 1, NULL, 'y'},
   {"preset-to-edit", 1, NULL, 'e'},
   {"filter-cutoff", 1, NULL, 'c'},
   {"filter-type", 1, NULL, 'f'},
@@ -96,7 +97,7 @@ parse_zone_params (char *zone_params, int *sample_num,
   *sample_num = strtol (sample_str, &endtoken, 10);
   if (*endtoken != '\0' || sample_num <= 0)
     {
-      emu3_error ("Illegal sample %d.\n", sample_num);
+      emu3_error ("Invalid sample %d.\n", sample_num);
       return EXIT_FAILURE;
     }
 
@@ -107,7 +108,7 @@ parse_zone_params (char *zone_params, int *sample_num,
     orig_key_int = emu3_reverse_note_search (original_key);
   if (orig_key_int == -1 || orig_key_int < 0 || orig_key_int >= NOTES)
     {
-      emu3_error ("Illegal original key %s.\n", original_key);
+      emu3_error ("Invalid original key %s.\n", original_key);
       return EXIT_FAILURE;
     }
   zone_range->original_key = orig_key_int;
@@ -119,7 +120,7 @@ parse_zone_params (char *zone_params, int *sample_num,
     lower_key_int = emu3_reverse_note_search (lower_key);
   if (lower_key_int == -1 || lower_key_int < 0 || lower_key_int >= NOTES)
     {
-      emu3_error ("Illegal lower key %s.\n", lower_key);
+      emu3_error ("Invalid lower key %s.\n", lower_key);
       return EXIT_FAILURE;
     }
   zone_range->lower_key = lower_key_int;
@@ -131,7 +132,7 @@ parse_zone_params (char *zone_params, int *sample_num,
     higher_key_int = emu3_reverse_note_search (higher_key);
   if (higher_key_int == -1 || higher_key_int < 0 || higher_key_int >= NOTES)
     {
-      emu3_error ("Illegal higher key %s.\n", higher_key);
+      emu3_error ("Invalid higher key %s.\n", higher_key);
       return EXIT_FAILURE;
     }
   zone_range->higher_key = higher_key_int;
@@ -155,7 +156,7 @@ main (int argc, char *argv[])
   int opt;
   int long_index = 0;
   int xflg = 0, dflg = 0, sflg = 0, nflg = 0, errflg = 0, modflg = 0, pflg =
-    0, zflg = 0, ext_mode = 0;
+    0, zflg = 0, yflg = 0, ext_mode = 0;
   char *device = NULL;
   char *bank_filename;
   char *sample_filename;
@@ -175,10 +176,11 @@ main (int argc, char *argv[])
   int loop;
   int sample_num;
   struct emu3_zone_range zone_range;
+  int zone_num;
 
   while ((opt =
-	  getopt_long (argc, argv, "hvd:ns:S:xXr:l:c:q:f:b:e:p:z:Z:", options,
-		       &long_index)) != -1)
+	  getopt_long (argc, argv, "hvd:ns:S:xXr:l:c:q:f:b:e:p:z:Z:y",
+		       options, &long_index)) != -1)
     {
       switch (opt)
 	{
@@ -253,6 +255,10 @@ main (int argc, char *argv[])
 	    exit (err);
 	  zflg++;
 	  break;
+	case 'y':
+	  zone_num = get_positive_int (optarg);
+	  yflg++;
+	  break;
 	case '?':
 	  emu3_error ("Unrecognized option: -%c\n", optopt);
 	  errflg++;
@@ -287,10 +293,13 @@ main (int argc, char *argv[])
   if (zflg > 1)
     errflg++;
 
-  if (nflg + sflg + pflg + zflg > 1)
+  if (yflg > 1)
     errflg++;
 
-  if ((nflg || sflg || pflg || zflg) && modflg)
+  if (nflg + sflg + pflg + zflg + yflg > 1)
+    errflg++;
+
+  if ((nflg || sflg || pflg || zflg || yflg) && modflg)
     errflg++;
 
   if (errflg > 0)
@@ -330,6 +339,12 @@ main (int argc, char *argv[])
       goto end;
     }
 
+  if (yflg)
+    {
+      err = emu3_del_preset_zone (file, preset_num, zone_num);
+      goto end;
+    }
+
   err =
     emu3_process_bank (file, ext_mode, preset_num, rt_controls, pbr, level,
 		       cutoff, q, filter);
@@ -341,7 +356,7 @@ end:
       goto close;
     }
 
-  if (sflg || pflg || zflg || modflg)
+  if (sflg || pflg || zflg || yflg || modflg)
     if (emu3_write_file (file))
       emu3_error ("%s\n", emu3_get_err (err));
 
