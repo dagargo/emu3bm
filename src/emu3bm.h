@@ -21,7 +21,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
-#include <sndfile.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <libgen.h>
@@ -29,6 +28,7 @@
 #include <inttypes.h>
 #include <stdarg.h>
 #include <libgen.h>
+#include "sample.h"
 #include "../config.h"
 
 #define DEVICE_ESI2000 "esi2000"
@@ -36,21 +36,7 @@
 
 #define NOTES 88		// 0x58
 
-extern int verbosity;
-
 extern const char *note_names[];
-
-#define emu3_print(level, indent, ...) {\
-		if (level <= verbosity) { \
-			for (int i = 0; i < indent; i++) \
-				printf("  "); \
-			printf(__VA_ARGS__); \
-		}\
-	}
-
-#define emu3_debug(level, format, ...) if (level <= verbosity) fprintf(stderr, "DEBUG:" __FILE__ ":%d:(%s): " format, __LINE__, __FUNCTION__, ## __VA_ARGS__)
-
-#define emu3_error(format, ...) fprintf(stderr, "\x1b[31mERROR:" __FILE__ ":%d:(%s): " format "\x1b[m", __LINE__, __FUNCTION__, ## __VA_ARGS__)
 
 struct emu3_file
 {

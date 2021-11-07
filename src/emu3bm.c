@@ -19,10 +19,10 @@
  */
 
 #include "emu3bm.h"
+#include "utils.h"
 
 #define MEM_SIZE 0x08000000
 #define FORMAT_SIZE 16
-#define NAME_SIZE 16
 #define BANK_PARAMETERS 5
 #define MORE_BANK_PARAMETERS 3
 #define SAMPLE_ADDR_START_EMU_3X 0x1bd2
@@ -37,18 +37,6 @@
 #define PRESET_SIZE_ADDR_START_EMU_THREE 0x6c
 #define MAX_PRESETS_EMU_3X 0x100
 #define MAX_PRESETS_EMU_THREE 100
-#define SAMPLE_PARAMETERS 9
-#define MORE_SAMPLE_PARAMETERS 8
-#define DEFAULT_SAMPLING_FREQ 44100
-
-#define LOOP 0x00010000
-#define LOOP_RELEASE 0x00080000
-
-#define MONO_SAMPLE 0x00300001
-#define MONO_SAMPLE_2 0x00500000
-#define STEREO_SAMPLE 0x00700001
-#define STEREO_SAMPLE_2 0x00700000
-#define MONO_SAMPLE_3X 0x0030fe02
 
 #define RT_CONTROLS_SIZE 10
 #define RT_CONTROLS_FS_SIZE 2
@@ -58,8 +46,6 @@
 #define ESI_32_V3_DEF      "EMU SI-32 v3   "
 #define EMULATOR_3X_DEF    "EMULATOR 3X    "
 #define EMULATOR_THREE_DEF "EMULATOR THREE "
-
-#define SAMPLE_EXT ".wav"
 
 #define EMPTY_BANK_TEMPLATE "res/empty_bank_"
 
@@ -77,16 +63,6 @@ struct emu3_bank
   char name_copy[NAME_SIZE];
   unsigned int selected_preset;
   unsigned int more_parameters[MORE_BANK_PARAMETERS];
-};
-
-struct emu3_sample
-{
-  char name[NAME_SIZE];
-  unsigned int parameters[SAMPLE_PARAMETERS];
-  unsigned int sample_rate;
-  unsigned int format;
-  unsigned int more_parameters[MORE_SAMPLE_PARAMETERS];
-  short int frames[];
 };
 
 struct emu3_envelope
@@ -272,49 +248,10 @@ static const char *VCF_TYPE[] = {
 
 static const int VCF_TYPE_SIZE = sizeof (VCF_TYPE) / sizeof (char *);
 
-int verbosity;
-
 const char *
 emu3_get_err (int error)
 {
   return EMU3_ERROR_STR[error];
-}
-
-static char *
-emu3_emu3name_to_filename (const char *objname)
-{
-  int i, size;
-  const char *index = &objname[NAME_SIZE - 1];
-  char *fname;
-
-  for (size = NAME_SIZE; size > 0; size--)
-    {
-      if (*index != ' ')
-	break;
-      index--;
-    }
-  fname = (char *) malloc (size + 1);
-  strncpy (fname, objname, size);
-  fname[size] = '\0';
-  for (i = 0; i < size; i++)
-    if (fname[i] == '/' || fname[i] == 127)
-      fname[i] = '?';
-
-  return fname;
-}
-
-static char *
-emu3_emu3name_to_wav_filename (const char *emu3name, int num, int ext_mode)
-{
-  char *fname = emu3_emu3name_to_filename (emu3name);
-  char *wname = malloc (strlen (fname) + 9);
-
-  if (ext_mode == 1)
-    sprintf (wname, "%s%s", fname, SAMPLE_EXT);
-  else
-    sprintf (wname, "%03d-%s%s", num, fname, SAMPLE_EXT);
-
-  return wname;
 }
 
 static char *
@@ -351,20 +288,6 @@ emu3_cpystr (char *dst, const char *src)
 
   memcpy (dst, src, NAME_SIZE);
   memset (&dst[len], ' ', NAME_SIZE - len);
-}
-
-static int
-emu3_get_sample_channels (struct emu3_sample *sample)
-{
-  if ((sample->format & STEREO_SAMPLE) == STEREO_SAMPLE
-      || (sample->format & STEREO_SAMPLE_2) == STEREO_SAMPLE_2)
-    return 2;
-  else if ((sample->format & MONO_SAMPLE) == MONO_SAMPLE
-	   || (sample->format & MONO_SAMPLE_2) == MONO_SAMPLE_2
-	   || (sample->format & MONO_SAMPLE_3X) == MONO_SAMPLE_3X)
-    return 1;
-  else
-    return 1;
 }
 
 static void
@@ -789,51 +712,6 @@ close:
   sf_close (input);
 
   return size;
-}
-
-static void
-emu3_extract_sample (struct emu3_sample *sample, int num, sf_count_t nframes,
-		     int ext_mode)
-{
-  SF_INFO sfinfo;
-  SNDFILE *output;
-  char *wav_file;
-  short *l_channel, *r_channel;
-  short frame[2];
-  char *schannels;
-  int channels = emu3_get_sample_channels (sample);
-
-  sfinfo.frames = nframes;
-  sfinfo.samplerate = sample->sample_rate;
-  sfinfo.channels = channels;
-  sfinfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
-
-  wav_file = emu3_emu3name_to_wav_filename (sample->name, num, ext_mode);
-  schannels = channels == 1 ? "mono" : "stereo";
-  emu3_debug (1, "Extracting %s sample %s...\n", schannels, wav_file);
-
-  output = sf_open (wav_file, SFM_WRITE, &sfinfo);
-  l_channel = sample->frames + 2;
-  if (channels == 2)
-    r_channel = sample->frames + nframes + 6;
-  for (int i = 0; i < nframes; i++)
-    {
-      frame[0] = *l_channel;
-      l_channel++;
-      if (channels == 2)
-	{
-	  frame[1] = *r_channel;
-	  r_channel++;
-	}
-      if (!sf_writef_short (output, frame, 1))
-	{
-	  emu3_error ("Error: %s\n", sf_strerror (output));
-	  break;
-	}
-    }
-
-  free (wav_file);
-  sf_close (output);
 }
 
 static unsigned int *

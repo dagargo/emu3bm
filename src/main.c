@@ -21,6 +21,9 @@
 #define _GNU_SOURCE
 #include <getopt.h>
 #include "emu3bm.h"
+#include "utils.h"
+
+int verbosity = 0;
 
 static const struct option options[] = {
   {"add-sample", 1, NULL, 's'},
@@ -53,7 +56,7 @@ print_help (char *executable_path)
 
   fprintf (stderr, "%s\n", PACKAGE_STRING);
   exec_name = basename (executable_path);
-  fprintf (stderr, "Usage: %s [options]\n", exec_name);
+  fprintf (stderr, "Usage: %s [options] bank\n", exec_name);
   fprintf (stderr, "Options:\n");
   option = options;
   while (option->name)
@@ -260,7 +263,6 @@ main (int argc, char *argv[])
 	  yflg++;
 	  break;
 	case '?':
-	  emu3_error ("Unrecognized option: -%c\n", optopt);
 	  errflg++;
 	}
     }
@@ -304,9 +306,7 @@ main (int argc, char *argv[])
 
   if (errflg > 0)
     {
-      emu3_error ("%s\n", PACKAGE_STRING);
-      char *runnable = basename (argv[0]);
-      emu3_error ("Usage: %s [OPTIONS] bank_file.\n", runnable);
+      print_help (argv[0]);
       exit (EXIT_FAILURE);
     }
 
