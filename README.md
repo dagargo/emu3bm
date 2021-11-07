@@ -1,10 +1,10 @@
 # emu3bm
 
-emu3bm is an E-Mu EIII bank manager. It allows to create banks, add and extract mono or stereo samples and edit some preset parameters.
+emu3bm is an E-Mu EIII and EIV bank manager. It allows to create banks, add and extract mono or stereo samples and edit some preset parameters.
 
 Although Emulator samplers from series EIII and EIV use the same filesystem, the bank format is very different and only banks for the EIII series are supported.
 
-Due to the reverse engineering nature of the project, there might be errors. Note that this has only be tested on an EMU ESI-2000.
+On EIV banks, only sample is possible.
 
 ## Installation
 

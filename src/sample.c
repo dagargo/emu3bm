@@ -19,23 +19,9 @@
  */
 
 #include <stdlib.h>
+#include <inttypes.h>
 #include <string.h>
 #include "sample.h"
-#include "utils.h"
-
-int
-emu3_get_sample_channels (struct emu3_sample *sample)
-{
-  if ((sample->format & STEREO_SAMPLE) == STEREO_SAMPLE
-      || (sample->format & STEREO_SAMPLE_2) == STEREO_SAMPLE_2)
-    return 2;
-  else if ((sample->format & MONO_SAMPLE) == MONO_SAMPLE
-	   || (sample->format & MONO_SAMPLE_2) == MONO_SAMPLE_2
-	   || (sample->format & MONO_SAMPLE_3X) == MONO_SAMPLE_3X)
-    return 1;
-  else
-    return 1;
-}
 
 static char *
 emu3_emu3name_to_filename (const char *objname)
@@ -74,6 +60,20 @@ emu3_emu3name_to_wav_filename (const char *emu3name, int num, int ext_mode)
   return wname;
 }
 
+int
+emu3_get_sample_channels (struct emu3_sample *sample)
+{
+  if ((sample->format & STEREO_SAMPLE) == STEREO_SAMPLE
+      || (sample->format & STEREO_SAMPLE_2) == STEREO_SAMPLE_2)
+    return 2;
+  else if ((sample->format & MONO_SAMPLE) == MONO_SAMPLE
+	   || (sample->format & MONO_SAMPLE_2) == MONO_SAMPLE_2
+	   || (sample->format & MONO_SAMPLE_3X) == MONO_SAMPLE_3X)
+    return 1;
+  else
+    return 1;
+}
+
 void
 emu3_extract_sample (struct emu3_sample *sample, int num, sf_count_t nframes,
 		     int ext_mode)
@@ -93,7 +93,7 @@ emu3_extract_sample (struct emu3_sample *sample, int num, sf_count_t nframes,
 
   wav_file = emu3_emu3name_to_wav_filename (sample->name, num, ext_mode);
   schannels = channels == 1 ? "mono" : "stereo";
-  emu3_debug (1, "Extracting %s sample %s...\n", schannels, wav_file);
+  emu_debug (1, "Extracting %s sample %s...\n", schannels, wav_file);
 
   output = sf_open (wav_file, SFM_WRITE, &sfinfo);
   l_channel = sample->frames + 2;
@@ -110,11 +110,27 @@ emu3_extract_sample (struct emu3_sample *sample, int num, sf_count_t nframes,
 	}
       if (!sf_writef_short (output, frame, 1))
 	{
-	  emu3_error ("Error: %s\n", sf_strerror (output));
+	  emu_error ("Error: %s\n", sf_strerror (output));
 	  break;
 	}
     }
 
   free (wav_file);
   sf_close (output);
+}
+
+void
+emu3_print_sample_info (struct emu3_sample *sample, sf_count_t nframes)
+{
+  for (int i = 0; i < SAMPLE_PARAMETERS; i++)
+    emu_print (2, 1, "0x%08x ", sample->parameters[i]);
+  emu_print (2, 1, "\n");
+  emu_print (2, 1, "Sample format: 0x%08x\n", sample->format);
+  emu_print (1, 1, "Channels: %d\n", emu3_get_sample_channels (sample));
+  emu_print (1, 1, "Frames: %" PRId64 "\n", nframes);
+  emu_print (1, 1, "Sample rate: %dHz\n", sample->sample_rate);
+  emu_print (1, 1, "Loop enabled: %s\n",
+	      sample->format & LOOP ? "on" : "off");
+  emu_print (1, 1, "Loop in release: %s\n",
+	      sample->format & LOOP_RELEASE ? "on" : "off");
 }

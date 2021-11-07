@@ -21,18 +21,53 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#define emu3_print(level, indent, ...) {\
+#define MEM_SIZE 0x08000000	//128 MiB
+#define NAME_SIZE 16
+#define SAMPLE_EXT ".wav"
+#define NOTES 88		// 0x58
+
+enum emu_error
+{
+  ERR_BANK_FULL = 1,
+  ERR_BAD_SAMPLE_CHANS,
+  ERR_CANT_OPEN_SAMPLE,
+  ERR_SAMPLE_LIMIT,
+  ERR_PRESET_LIMIT,
+  ERR_OPEN_BANK,
+  ERR_WRITE_BANK
+};
+
+struct emu_file
+{
+  const char *filename;
+  char *raw;
+  size_t fsize;
+};
+
+#define emu_print(level, indent, ...) {\
 		if (level <= verbosity) { \
 			for (int i = 0; i < indent; i++) \
-				printf("  "); \
-			printf(__VA_ARGS__); \
+				fprintf(stdout, "  "); \
+			fprintf(stdout, __VA_ARGS__); \
 		}\
 	}
 
-#define emu3_debug(level, format, ...) if (level <= verbosity) fprintf(stderr, "DEBUG:" __FILE__ ":%d:(%s): " format, __LINE__, __FUNCTION__, ## __VA_ARGS__)
+#define emu_debug(level, format, ...) if (level <= verbosity) fprintf(stderr, "DEBUG:" __FILE__ ":%d:(%s): " format, __LINE__, __FUNCTION__, ## __VA_ARGS__)
 
-#define emu3_error(format, ...) fprintf(stderr, "\x1b[31mERROR:" __FILE__ ":%d:(%s): " format "\x1b[m", __LINE__, __FUNCTION__, ## __VA_ARGS__)
+#define emu_error(format, ...) fprintf(stderr, "\x1b[31mERROR:" __FILE__ ":%d:(%s): " format "\x1b[m", __LINE__, __FUNCTION__, ## __VA_ARGS__)
+
+extern const char *NOTE_NAMES[];
 
 extern int verbosity;
+
+const char *emu_get_err (int);
+
+struct emu_file *emu_open_file (const char *);
+
+void emu_close_file (struct emu_file *);
+
+int emu_write_file (struct emu_file *);
+
+int emu_reverse_note_search (char *);
 
 #endif

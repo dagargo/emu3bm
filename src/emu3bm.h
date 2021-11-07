@@ -29,25 +29,11 @@
 #include <stdarg.h>
 #include <libgen.h>
 #include "sample.h"
+#include "utils.h"
 #include "../config.h"
 
 #define DEVICE_ESI2000 "esi2000"
 #define DEVICE_EMU3X "emu3x"
-
-#define NOTES 88		// 0x58
-
-extern const char *note_names[];
-
-struct emu3_file
-{
-  const char *filename;
-  union
-  {
-    char *raw;
-    struct emu3_bank *bank;
-  };
-  size_t fsize;
-};
 
 struct emu3_zone_range
 {
@@ -57,28 +43,18 @@ struct emu3_zone_range
   int higher_key;
 };
 
-struct emu3_file *emu3_open_file (const char *);
+int emu3_add_sample (struct emu_file *, char *, int);
 
-void emu3_close_file (struct emu3_file *);
+int emu3_add_preset (struct emu_file *, char *);
 
-int emu3_write_file (struct emu3_file *);
-
-int emu3_add_sample (struct emu3_file *, char *, int);
-
-int emu3_add_preset (struct emu3_file *, char *);
-
-int emu3_add_preset_zone (struct emu3_file *, int, int,
+int emu3_add_preset_zone (struct emu_file *, int, int,
 			  struct emu3_zone_range *);
 
-int emu3_del_preset_zone (struct emu3_file *, int, int);
+int emu3_del_preset_zone (struct emu_file *, int, int);
 
-int emu3_extract_samples (struct emu3_file *);
-
-int emu3_process_bank (struct emu3_file *, int, int, char *, int, int, int,
+int emu3_process_bank (struct emu_file *, int, int, char *, int, int, int,
 		       int, int);
 
 int emu3_create_bank (const char *, const char *);
-
-int emu3_reverse_note_search (char *);
 
 const char *emu3_get_err (int);

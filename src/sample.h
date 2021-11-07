@@ -19,11 +19,10 @@
  */
 
 #include <sndfile.h>
+#include "utils.h"
 
 #ifndef SAMPLE_H
 #define SAMPLE_H
-
-#define NAME_SIZE 16
 
 #define SAMPLE_PARAMETERS 9
 #define MORE_SAMPLE_PARAMETERS 8
@@ -38,8 +37,6 @@
 #define STEREO_SAMPLE_2 0x00700000
 #define MONO_SAMPLE_3X 0x0030fe02
 
-#define SAMPLE_EXT ".wav"
-
 struct emu3_sample
 {
   char name[NAME_SIZE];
@@ -53,5 +50,7 @@ struct emu3_sample
 int emu3_get_sample_channels (struct emu3_sample *);
 
 void emu3_extract_sample (struct emu3_sample *, int, sf_count_t, int);
+
+void emu3_print_sample_info (struct emu3_sample *, sf_count_t);
 
 #endif
