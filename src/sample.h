@@ -49,7 +49,7 @@ struct emu3_sample
 
 int emu3_get_sample_channels (struct emu3_sample *);
 
-void emu3_extract_sample (struct emu3_sample *, int, sf_count_t, int);
+void emu3_extract_sample (struct emu3_sample *, int, unsigned int, int);
 
 void emu3_print_sample_info (struct emu3_sample *, sf_count_t);
 

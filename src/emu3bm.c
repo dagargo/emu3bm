@@ -285,18 +285,18 @@ emu3_print_preset_zone_info (struct emu_file *file,
   struct emu3_bank *bank = EMU3_BANK (file);
 
   emu_print (1, 3, "Sample: %d\n",
-	      (zone->sample_id_msb << 8) + zone->sample_id_lsb);
+	     (zone->sample_id_msb << 8) + zone->sample_id_lsb);
   emu_print (1, 3, "Original note: %s\n", NOTE_NAMES[zone->root_note]);
   emu_print (1, 3, "VCA level: %d\n",
-	      emu3_get_percent_value (zone->vca_level));
+	     emu3_get_percent_value (zone->vca_level));
   emu_print (1, 3, "VCA pan: %d\n", emu3_get_vca_pan (zone->vca_pan));
 
   emu_print (1, 3,
-	      "VCA envelope: attack: %d, hold: %d, decay: %d, sustain: %d\%, release: %d.\n",
-	      zone->vca_envelope.attack, zone->vca_envelope.hold,
-	      zone->vca_envelope.decay,
-	      emu3_get_percent_value (zone->vca_envelope.sustain),
-	      zone->vca_envelope.release);
+	     "VCA envelope: attack: %d, hold: %d, decay: %d, sustain: %d\%, release: %d.\n",
+	     zone->vca_envelope.attack, zone->vca_envelope.hold,
+	     zone->vca_envelope.decay,
+	     emu3_get_percent_value (zone->vca_envelope.sustain),
+	     zone->vca_envelope.release);
 
   //Filter type might only work with ESI banks
   int vcf_type = zone->vcf_type_lfo_shape >> 3;
@@ -319,48 +319,48 @@ emu3_print_preset_zone_info (struct emu_file *file,
   emu_print (1, 3, "VCF Q: %d\n", q);
 
   emu_print (1, 3, "VCF envelope amount: %d\n",
-	      emu3_get_percent_value (zone->vcf_envelope_amount));
+	     emu3_get_percent_value (zone->vcf_envelope_amount));
 
   emu_print (1, 3,
-	      "VCF envelope: attack: %d, hold: %d, decay: %d, sustain: %d\%, release: %d.\n",
-	      zone->vcf_envelope.attack, zone->vcf_envelope.hold,
-	      zone->vcf_envelope.decay,
-	      emu3_get_percent_value (zone->vcf_envelope.sustain),
-	      zone->vcf_envelope.release);
+	     "VCF envelope: attack: %d, hold: %d, decay: %d, sustain: %d\%, release: %d.\n",
+	     zone->vcf_envelope.attack, zone->vcf_envelope.hold,
+	     zone->vcf_envelope.decay,
+	     emu3_get_percent_value (zone->vcf_envelope.sustain),
+	     zone->vcf_envelope.release);
 
   emu_print (1, 3, "Auxiliary envelope amount: %d\n",
-	      emu3_get_percent_value (zone->aux_envelope_amount));
+	     emu3_get_percent_value (zone->aux_envelope_amount));
 
   emu_print (1, 3,
-	      "Auxiliary envelope: attack: %d, hold: %d, decay: %d, sustain: %d\%, release: %d.\n",
-	      zone->aux_envelope.attack, zone->aux_envelope.hold,
-	      zone->aux_envelope.decay,
-	      emu3_get_percent_value (zone->aux_envelope.sustain),
-	      zone->aux_envelope.release);
+	     "Auxiliary envelope: attack: %d, hold: %d, decay: %d, sustain: %d\%, release: %d.\n",
+	     zone->aux_envelope.attack, zone->aux_envelope.hold,
+	     zone->aux_envelope.decay,
+	     emu3_get_percent_value (zone->aux_envelope.sustain),
+	     zone->aux_envelope.release);
 
   emu_print (1, 3, "Velocity to Pitch: %d\n", zone->vel_to_pitch);
   emu_print (1, 3, "Velocity to VCA Level: %d\n",
-	      emu3_get_percent_value (zone->vel_to_vca_level));
+	     emu3_get_percent_value (zone->vel_to_vca_level));
   emu_print (1, 3, "Velocity to VCA Attack: %d\n", zone->vel_to_vca_attack);
   emu_print (1, 3, "Velocity to VCF Cutoff: %d\n", zone->vel_to_vcf_cutoff);
   emu_print (1, 3, "Velocity to VCF Q: %d\n", zone->vel_to_vcf_q);
   emu_print (1, 3, "Velocity to VCF Attack: %d\n", zone->vel_to_vcf_attack);
   emu_print (1, 3, "Velocity to Pan: %d\n",
-	      emu3_get_percent_value (zone->vel_to_vca_pan));
+	     emu3_get_percent_value (zone->vel_to_vca_pan));
   emu_print (1, 3, "Velocity to Sample Start: %d\n",
-	      zone->vel_to_sample_start);
+	     zone->vel_to_sample_start);
   emu_print (1, 3, "Velocity to Auxiliary Env: %d\n", zone->vel_to_aux_env);
 
   emu_print (1, 3, "LFO shape: %s\n",
-	      LFO_SHAPE[zone->vcf_type_lfo_shape & 0x3]);
+	     LFO_SHAPE[zone->vcf_type_lfo_shape & 0x3]);
   emu_print (1, 3, "LFO->Pitch: %d\n",
-	      emu3_get_percent_value (zone->lfo_to_pitch));
+	     emu3_get_percent_value (zone->lfo_to_pitch));
   emu_print (1, 3, "LFO->Cutoff: %d\n",
-	      emu3_get_percent_value (zone->lfo_to_cutoff));
+	     emu3_get_percent_value (zone->lfo_to_cutoff));
   emu_print (1, 3, "LFO->VCA: %d\n",
-	      emu3_get_percent_value (zone->lfo_to_vca));
+	     emu3_get_percent_value (zone->lfo_to_vca));
   emu_print (1, 3, "LFO->Pan: %d\n",
-	      emu3_get_percent_value (zone->lfo_to_pan));
+	     emu3_get_percent_value (zone->lfo_to_pan));
 }
 
 static void
@@ -378,14 +378,14 @@ emu3_print_preset_info (struct emu3_preset *preset)
 	    }
 	}
       emu_print (1, 1, "Mapping: %s - %s\n", RT_CONTROLS_SRC[i],
-		  RT_CONTROLS_DST[dst]);
+		 RT_CONTROLS_DST[dst]);
     }
   for (int i = 0; i < RT_CONTROLS_FS_SIZE; i++)
     {
       emu_print (1, 1, "Mapping: %s - %s\n",
-		  RT_CONTROLS_FS_SRC[i],
-		  RT_CONTROLS_FS_DST[preset->rt_controls
-				     [RT_CONTROLS_SIZE + i]]);
+		 RT_CONTROLS_FS_SRC[i],
+		 RT_CONTROLS_FS_DST[preset->rt_controls
+				    [RT_CONTROLS_SIZE + i]]);
     }
   for (int i = 0; i < PRESET_UNKNOWN_0_SIZE; i++)
     emu_print (2, 1, "Unknown_0 %d: %d\n", i, preset->unknown_0[i]);
@@ -598,9 +598,9 @@ emu3_append_sample (struct emu_file *file, char *path,
   char *basec = strdup (path);
   filename = basename (basec);
   emu_print (1, 0,
-	      "Appending sample %s... (%" PRId64
-	      " frames, %d channels)\n", filename, sfinfo.frames,
-	      sfinfo.channels);
+	     "Appending sample %s... (%" PRId64
+	     " frames, %d channels)\n", filename, sfinfo.frames,
+	     sfinfo.channels);
   //Sample header initialization
   char *name = emu3_wav_filename_to_filename (filename);
   char *emu3name = emu3_str_to_emu3name (name);
@@ -813,7 +813,7 @@ emu3_open_file (const char *filename)
 
   for (int i = 0; i < BANK_PARAMETERS; i++)
     emu_print (2, 1, "Parameter %2d: 0x%08x (%d)\n", i,
-		bank->parameters[i], bank->parameters[i]);
+	       bank->parameters[i], bank->parameters[i]);
 
   if (bank->parameters[1] + bank->parameters[2] != bank->parameters[4])
     emu_print (2, 1, "Kind of checksum error.\n");
@@ -826,7 +826,7 @@ emu3_open_file (const char *filename)
   emu_print (2, 1, "More geometry:\n");
   for (int i = 0; i < MORE_BANK_PARAMETERS; i++)
     emu_print (2, 1, "Parameter %d: 0x%08x (%d)\n", i,
-		bank->more_parameters[i], bank->more_parameters[i]);
+	       bank->more_parameters[i], bank->more_parameters[i]);
 
   emu_print (2, 1, "Current preset: %d\n", bank->more_parameters[0]);
   emu_print (2, 1, "Current sample: %d\n", bank->more_parameters[1]);
@@ -916,7 +916,7 @@ emu3_process_preset (struct emu_file *file, int preset_num,
     {
       if (preset->note_zone_mappings[j] != 0xff)
 	emu_print (1, 2, "%s: %d\n", NOTE_NAMES[j],
-		    preset->note_zone_mappings[j]);
+		   preset->note_zone_mappings[j]);
     }
 
   emu_print (1, 1, "Zones: %d\n", preset->note_zones);
@@ -977,30 +977,19 @@ emu3_process_bank (struct emu_file *file, int ext_mode, int edit_preset,
   emu_print (1, 0, "Next with offset: 0x%08x\n", addresses[max_samples]);
   next_sample_addr = emu3_get_next_sample_address (bank);
   emu_print (1, 0, "Next sample: 0x%08x (equals bank size)\n",
-	      next_sample_addr);
+	     next_sample_addr);
 
   i = 0;
   while (addresses[i] != 0 && i < max_samples)
     {
       address = sample_start_addr + addresses[i] - SAMPLE_OFFSET;
-
       size = emu3_get_sample_size (next_sample_addr, &addresses[i], address);
 
-      sample = (struct emu3_sample *) &file->raw[address];
-      channels = emu3_get_sample_channels (sample);
-      //We divide between the bytes per frame (number of channels * 2 bytes)
-      //The 16 or 8 bytes are the 4 or 8 short int used for padding.
-      sf_count_t nframes =
-	(size - sizeof (struct emu3_sample) -
-	 (8 * channels)) / (2 * channels);
-      emu_print (0, 0, "Sample %3d, %.*s", i + 1, NAME_SIZE, sample->name);
-      emu_print (1, 0, " @ 0x%08x (size %dB, frames %" PRId64 ")", address,
-		  size, nframes);
-      emu_print (0, 0, "\n");
-      emu3_print_sample_info (sample, nframes);
-
       if (ext_mode)
-	emu3_extract_sample (sample, i + 1, nframes, ext_mode);
+	{
+	  sample = (struct emu3_sample *) &file->raw[address];
+	  emu3_extract_sample (sample, i + 1, size, ext_mode);
+	}
 
       i++;
     }
@@ -1349,7 +1338,7 @@ emu3_del_preset_zone (struct emu_file *file, int preset_num, int zone_num)
   if (preset_num < 0 || preset_num >= total_presets)
     {
       emu_error ("Invalid preset number: %d\n", preset_num);
-      return EXIT_FAILURE; //TODO: add error messages
+      return EXIT_FAILURE;	//TODO: add error messages
     }
 
   zones = emu3_get_preset_zones (file, preset_num);

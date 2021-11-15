@@ -32,6 +32,7 @@ stamp-h1
 *.gcno
 *.gcda
 src/emu3bm
+src/emu4bm
 src/*~
 test/*.log
 test/*.trs

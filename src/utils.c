@@ -134,7 +134,7 @@ emu_get_err (int error)
 struct emu_file *
 emu_open_file (const char *filename)
 {
-  struct emu_file * file;
+  struct emu_file *file;
   FILE *fd = fopen (filename, "r");
 
   if (!fd)

@@ -75,7 +75,7 @@ emu3_get_sample_channels (struct emu3_sample *sample)
 }
 
 void
-emu3_extract_sample (struct emu3_sample *sample, int num, sf_count_t nframes,
+emu3_extract_sample (struct emu3_sample *sample, int num, unsigned int len,
 		     int ext_mode)
 {
   SF_INFO sfinfo;
@@ -86,6 +86,11 @@ emu3_extract_sample (struct emu3_sample *sample, int num, sf_count_t nframes,
   char *schannels;
   int channels = emu3_get_sample_channels (sample);
 
+  //We divide between the bytes per frame (number of channels * 2 bytes)
+  //The 16 or 8 bytes are the 4 or 8 short int used for padding.
+  sf_count_t nframes =
+    (len - sizeof (struct emu3_sample) - (8 * channels)) / (2 * channels);
+
   sfinfo.frames = nframes;
   sfinfo.samplerate = sample->sample_rate;
   sfinfo.channels = channels;
@@ -93,7 +98,8 @@ emu3_extract_sample (struct emu3_sample *sample, int num, sf_count_t nframes,
 
   wav_file = emu3_emu3name_to_wav_filename (sample->name, num, ext_mode);
   schannels = channels == 1 ? "mono" : "stereo";
-  emu_debug (1, "Extracting %s sample %s...\n", schannels, wav_file);
+  emu_debug (1, "Sample size: %d; frames: %d; channels: %s\n", len, nframes, schannels);
+  emu_debug (1, "Extracting sample '%s'...\n", wav_file);
 
   output = sf_open (wav_file, SFM_WRITE, &sfinfo);
   l_channel = sample->frames + 2;
@@ -130,7 +136,7 @@ emu3_print_sample_info (struct emu3_sample *sample, sf_count_t nframes)
   emu_print (1, 1, "Frames: %" PRId64 "\n", nframes);
   emu_print (1, 1, "Sample rate: %dHz\n", sample->sample_rate);
   emu_print (1, 1, "Loop enabled: %s\n",
-	      sample->format & LOOP ? "on" : "off");
+	     sample->format & LOOP ? "on" : "off");
   emu_print (1, 1, "Loop in release: %s\n",
-	      sample->format & LOOP_RELEASE ? "on" : "off");
+	     sample->format & LOOP_RELEASE ? "on" : "off");
 }

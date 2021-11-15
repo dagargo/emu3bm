@@ -1,5 +1,5 @@
 /*
- *   main.c
+ *   main_emu3bm.c
  *   Copyright (C) 2018 David García Goñi <dagargo@gmail.com>
  *
  *   This file is part of emu3bm.
@@ -314,7 +314,6 @@ main (int argc, char *argv[])
     }
 
   struct emu_file *file = emu_open_file (bank_filename);
-
   if (!file)
     exit (EXIT_FAILURE);
 
