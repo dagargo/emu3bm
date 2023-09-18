@@ -63,12 +63,10 @@ emu3_emu3name_to_wav_filename (const char *emu3name, int num, int ext_mode)
 int
 emu3_get_sample_channels (struct emu3_sample *sample)
 {
-  if ((sample->format & STEREO_SAMPLE) == STEREO_SAMPLE
-      || (sample->format & STEREO_SAMPLE_2) == STEREO_SAMPLE_2)
+  if ((sample->format & STEREO_SAMPLE) == STEREO_SAMPLE)
     return 2;
   else if ((sample->format & MONO_SAMPLE) == MONO_SAMPLE
-	   || (sample->format & MONO_SAMPLE_2) == MONO_SAMPLE_2
-	   || (sample->format & MONO_SAMPLE_3X) == MONO_SAMPLE_3X)
+	   || (sample->format & MONO_SAMPLE_2) == MONO_SAMPLE_2)
     return 1;
   else
     return 1;
