@@ -37,3 +37,4 @@ src/*~
 test/*.log
 test/*.trs
 
+.vs/
