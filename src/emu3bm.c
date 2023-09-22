@@ -643,7 +643,7 @@ emu3_append_sample (struct emu_file *file, char *path,
 
   sample->sample_rate = sfinfo.samplerate;
 
-  sample->format = sfinfo.channels == 1 ? MONO_SAMPLE : STEREO_SAMPLE;
+  sample->format = sfinfo.channels == 1 ? MONO_SAMPLE_L : STEREO_SAMPLE;
 
   if (loop)
     sample->format = sample->format | LOOP | LOOP_RELEASE;
