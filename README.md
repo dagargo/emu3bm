@@ -4,7 +4,7 @@ emu3bm is an E-Mu EIII and EIV bank manager. It allows to create banks, add and 
 
 Although Emulator samplers from series EIII and EIV use the same filesystem, the bank format is very different and only banks for the EIII series are supported.
 
-On EIV banks, only sample is possible.
+On EIV banks, only sample extraction is possible.
 
 ## Installation
 
@@ -94,6 +94,7 @@ Set all presets realtime controllers. In this case, we are setting:
 $ emu3bm -r 1,4,8,9,2,10,0,0 bank
 ```
 
-## Related project
+## Related projects
 
-[emu3fs](https://github.com/dagargo/emu3fs) is a Linux kernel module that allows to read from and write to block devices formatted as E-Mu EIII filesystem.
+* [emu3fs](https://github.com/dagargo/emu3fs) is a Linux kernel module that allows to read from and write to block devices formatted as E-Mu EIII filesystem.
+* [Elektroid](https://github.com/dagargo/elektroid) is a sample and MIDI device manager with support for MIDI SDS.
