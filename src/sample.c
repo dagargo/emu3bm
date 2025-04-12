@@ -117,7 +117,8 @@ emu3_extract_sample (struct emu3_sample *sample, int num, unsigned int len,
 
   wav_file = emu3_emu3name_to_wav_filename (sample->name, num, ext_mode);
   schannels = channels == 1 ? "mono" : "stereo";
-  emu_debug (1, "Sample size: %d; frames: %d; channels: %s\n", len, nframes, schannels);
+  emu_debug (1, "Sample size: %d; frames: %d; channels: %s\n", len, nframes,
+	     schannels);
   emu3_print_sample_info (sample, nframes);
   emu_debug (1, "Extracting sample '%s'...\n", wav_file);
 
