@@ -4,7 +4,7 @@ emu3bm is an E-Mu EIII and EIV bank manager. It allows to create banks, add and 
 
 Although Emulator samplers from series EIII and EIV use the same filesystem, the bank format is very different and only banks for the EIII series are supported.
 
-On EIV banks, only sample extraction is possible.
+On EIV banks, only sample extraction is possible by using the `emu4bm` binary included in this project.
 
 ## Installation
 
@@ -23,6 +23,12 @@ sudo make install
 * Set the pitch bend range beyond the 12 semitones limit.
 
 ## Examples
+
+Extract samples from existing bank.
+```
+$ emu3bm -x bank
+$ emu4bm -x bank
+```
 
 Create a new bank.
 ```
