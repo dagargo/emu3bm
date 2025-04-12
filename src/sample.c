@@ -57,6 +57,8 @@ emu3_emu3name_to_wav_filename (const char *emu3name, int num, int ext_mode)
   else
     sprintf (wname, "%03d-%s%s", num, fname, SAMPLE_EXT);
 
+  free (fname);
+
   return wname;
 }
 
