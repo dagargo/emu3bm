@@ -75,6 +75,25 @@ emu3_get_sample_channels (struct emu3_sample *sample)
 }
 
 void
+emu3_print_sample_info (struct emu3_sample *sample, sf_count_t nframes)
+{
+  for (int i = 0; i < SAMPLE_PARAMETERS; i++)
+    emu_print (2, 1, "0x%08x ", sample->parameters[i]);
+  emu_print (2, 1, "\n");
+  emu_print (2, 1, "Sample format: 0x%08x\n", sample->format);
+  emu_print (1, 1, "Channels: %d\n", emu3_get_sample_channels (sample));
+  emu_print (1, 1, "Frames: %" PRId64 "\n", nframes);
+  emu_print (1, 1, "Sample rate: %dHz\n", sample->sample_rate);
+  emu_print (1, 1, "Loop enabled: %s\n",
+	     sample->format & LOOP ? "on" : "off");
+  emu_print (1, 1, "Loop in release: %s\n",
+	     sample->format & LOOP_RELEASE ? "on" : "off");
+  for (int i = 0; i < MORE_SAMPLE_PARAMETERS; i++)
+    emu_print (2, 1, "0x%08x ", sample->more_parameters[i]);
+  emu_print (2, 1, "\n");
+}
+
+void
 emu3_extract_sample (struct emu3_sample *sample, int num, unsigned int len,
 		     int ext_mode)
 {
@@ -99,6 +118,7 @@ emu3_extract_sample (struct emu3_sample *sample, int num, unsigned int len,
   wav_file = emu3_emu3name_to_wav_filename (sample->name, num, ext_mode);
   schannels = channels == 1 ? "mono" : "stereo";
   emu_debug (1, "Sample size: %d; frames: %d; channels: %s\n", len, nframes, schannels);
+  emu3_print_sample_info (sample, nframes);
   emu_debug (1, "Extracting sample '%s'...\n", wav_file);
 
   output = sf_open (wav_file, SFM_WRITE, &sfinfo);
@@ -123,20 +143,4 @@ emu3_extract_sample (struct emu3_sample *sample, int num, unsigned int len,
 
   free (wav_file);
   sf_close (output);
-}
-
-void
-emu3_print_sample_info (struct emu3_sample *sample, sf_count_t nframes)
-{
-  for (int i = 0; i < SAMPLE_PARAMETERS; i++)
-    emu_print (2, 1, "0x%08x ", sample->parameters[i]);
-  emu_print (2, 1, "\n");
-  emu_print (2, 1, "Sample format: 0x%08x\n", sample->format);
-  emu_print (1, 1, "Channels: %d\n", emu3_get_sample_channels (sample));
-  emu_print (1, 1, "Frames: %" PRId64 "\n", nframes);
-  emu_print (1, 1, "Sample rate: %dHz\n", sample->sample_rate);
-  emu_print (1, 1, "Loop enabled: %s\n",
-	     sample->format & LOOP ? "on" : "off");
-  emu_print (1, 1, "Loop in release: %s\n",
-	     sample->format & LOOP_RELEASE ? "on" : "off");
 }
