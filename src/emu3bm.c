@@ -89,7 +89,8 @@ struct emu3_preset_zone
   unsigned char sample_id_msb;
   char parameter_a;
   struct emu3_envelope vca_envelope;
-  char parameters_a2[2];
+  unsigned char lfo_rate;
+  unsigned char lfo_delay;
   unsigned char lfo_variation;
   unsigned char vcf_cutoff;
   unsigned char vcf_q;
@@ -113,7 +114,7 @@ struct emu3_preset_zone
   char lfo_to_pan;
   char vca_level;
   char unknown_1;
-  char unknown_2;
+  char vcf_tracking;
   char unknown_3;
   char vca_pan;
   unsigned char vcf_type_lfo_shape;
@@ -228,6 +229,136 @@ static const char *VCF_TYPE[] = {
 
 static const int VCF_TYPE_SIZE = sizeof (VCF_TYPE) / sizeof (char *);
 
+// Percentage -100..100 from 0x00 to 0x7F
+const int TABLE_PERCENTAGE_SIGNED[] = {
+    -100, -99, -97, -96, -94, -93, -91, -90, -88, -86, -85, -83, -82, -80, -79,
+    -77,  -75, -74, -72, -71, -69, -68, -66, -65, -63, -61, -60, -58, -57, -55,
+    -54,  -52, -50, -49, -47, -46, -44, -43, -41, -40, -38, -36, -35, -33, -32,
+    -30,  -29, -27, -25, -24, -22, -21, -19, -18, -16, -15, -13, -11, -10, -8,
+    -7,   -5,  -4,  -2,  0,   1,   3,   4,   6,   7,   9,   11,  12,  14,  15,
+    17,   19,  20,  22,  23,  25,  26,  28,  30,  31,  33,  34,  36,  38,  39,
+    41,   42,  44,  46,  47,  49,  50,  52,  53,  55,  57,  58,  60,  61,  63,
+    65,   66,  68,  69,  71,  73,  74,  76,  77,  79,  80,  82,  84,  85,  87,
+    88,   90,  92,  93,  95,  96,  98,  100
+};
+
+// LFO rate table.
+static const float TABLE_LFO_RATE_FLOAT[] = {
+    0.08f,  0.11f,  0.15f,  0.18f,  0.21f,  0.25f,  0.28f,  0.32f,  0.35f,
+    0.39f,  0.42f,  0.46f,  0.50f,  0.54f,  0.58f,  0.63f,  0.67f,  0.71f,
+    0.76f,  0.80f,  0.85f,  0.90f,  0.94f,  0.99f,  1.04f,  1.10f,  1.15f,
+    1.20f,  1.25f,  1.31f,  1.37f,  1.42f,  1.48f,  1.54f,  1.60f,  1.67f,
+    1.73f,  1.79f,  1.86f,  1.93f,  2.00f,  2.07f,  2.14f,  2.21f,  2.29f,
+    2.36f,  2.44f,  2.52f,  2.60f,  2.68f,  2.77f,  2.85f,  2.94f,  3.03f,
+    3.12f,  3.21f,  3.31f,  3.40f,  3.50f,  3.60f,  3.70f,  3.81f,  3.91f,
+    4.02f,  4.13f,  4.25f,  4.36f,  4.48f,  4.60f,  4.72f,  4.84f,  4.97f,
+    5.10f,  5.23f,  5.37f,  5.51f,  5.65f,  5.79f,  5.94f,  6.08f,  6.24f,
+    6.39f,  6.55f,  6.71f,  6.88f,  7.04f,  7.21f,  7.39f,  7.57f,  7.75f,
+    7.93f,  8.12f,  8.32f,  8.51f,  8.71f,  8.92f,  9.13f,  9.34f,  9.56f,
+    9.78f,  10.00f, 10.23f, 10.47f, 10.71f, 10.95f, 11.20f, 11.46f, 11.71f,
+    11.98f, 12.25f, 12.52f, 12.80f, 13.09f, 13.38f, 13.68f, 13.99f, 14.30f,
+    14.61f, 14.93f, 15.26f, 15.60f, 15.94f, 16.29f, 16.65f, 17.01f, 17.38f,
+    17.76f, 18.14f
+};
+
+// VCF cutoff frequency table.
+static const int TABLE_VCF_CUTOFF_FREQUENCY[] = {
+    26,    26,    27,    28,    29,    30,    31,    32,    33,    34,    35,
+    36,    37,    39,    40,    41,    42,    44,    45,    47,    48,    50,
+    51,    53,    55,    56,    58,    60,    62,    64,    66,    68,    70,
+    72,    75,    77,    80,    82,    85,    87,    90,    93,    96,    99,
+    102,   106,   109,   112,   116,   120,   124,   128,   132,   136,   140,
+    145,   149,   154,   159,   164,   169,   175,   180,   186,   192,   198,
+    204,   211,   217,   224,   231,   239,   246,   254,   262,   271,   279,
+    288,   297,   307,   316,   327,   337,   348,   359,   370,   382,   394,
+    407,   419,   433,   447,   461,   475,   491,   506,   522,   539,   556,
+    574,   592,   611,   630,   650,   671,   692,   714,   737,   760,   784,
+    809,   835,   861,   889,   917,   946,   976,   1007,  1039,  1072,  1106,
+    1141,  1178,  1215,  1254,  1294,  1335,  1377,  1421,  1466,  1512,  1560,
+    1610,  1661,  1714,  1768,  1825,  1882,  1942,  2004,  2068,  2133,  2201,
+    2271,  2343,  2417,  2494,  2573,  2655,  2739,  2826,  2916,  3009,  3104,
+    3203,  3304,  3409,  3518,  3629,  3744,  3863,  3986,  4112,  4243,  4378,
+    4517,  4660,  4808,  4960,  5118,  5280,  5448,  5621,  5799,  5983,  6173,
+    6368,  6570,  6779,  6994,  7216,  7444,  7680,  7924,  8175,  8434,  8702,
+    8978,  9262,  9556,  9859,  10171, 10493, 10826, 11169, 11522, 11887, 12264,
+    12652, 13053, 13466, 13892, 14332, 14785, 15253, 15736, 16233, 16747, 17276,
+    17823, 18386, 18967, 19566, 20185, 20822, 21480, 22158, 22858, 23580, 24324,
+    25091, 25883, 26699, 27541, 28409, 29305, 30228, 31181, 32163, 33176, 34220,
+    35297, 36407, 37553, 38734, 39951, 41207, 42502, 43836, 45213, 46632, 48095,
+    49604, 51160, 52763, 54417, 56121, 57879, 59691, 61559, 63484, 65469, 67515,
+    69625, 71799, 74040
+};
+
+// 0..21.69
+float TABLE_TIME_21_69_FLOAT[] = {
+    0.00f,  0.01f,  0.02f,  0.03f,  0.04f,  0.05f,  0.06f,  0.07f,  0.08f,
+    0.09f,  0.10f,  0.11f,  0.12f,  0.13f,  0.14f,  0.15f,  0.16f,  0.17f,
+    0.18f,  0.19f,  0.20f,  0.21f,  0.22f,  0.23f,  0.24f,  0.25f,  0.26f,
+    0.28f,  0.30f,  0.32f,  0.34f,  0.36f,  0.38f,  0.40f,  0.42f,  0.44f,
+    0.47f,  0.49f,  0.52f,  0.54f,  0.57f,  0.60f,  0.63f,  0.66f,  0.69f,
+    0.73f,  0.76f,  0.80f,  0.84f,  0.87f,  0.92f,  0.96f,  1.00f,  1.05f,
+    1.10f,  1.15f,  1.20f,  1.25f,  1.31f,  1.37f,  1.43f,  1.49f,  1.56f,
+    1.63f,  1.70f,  1.77f,  1.84f,  1.92f,  2.01f,  2.09f,  2.18f,  2.27f,
+    2.37f,  2.47f,  2.58f,  2.69f,  2.80f,  2.92f,  3.04f,  3.17f,  3.30f,
+    3.44f,  3.59f,  3.73f,  3.89f,  4.05f,  4.22f,  4.40f,  4.58f,  4.77f,
+    4.96f,  5.17f,  5.38f,  5.60f,  5.83f,  6.07f,  6.32f,  6.58f,  6.85f,
+    7.13f,  7.42f,  7.72f,  8.04f,  8.37f,  8.71f,  9.06f,  9.43f,  9.81f,
+    10.21f, 10.63f, 11.06f, 11.51f, 11.97f, 12.46f, 12.96f, 13.49f, 14.03f,
+    14.60f, 15.19f, 15.81f, 16.44f, 17.11f, 17.80f, 18.52f, 19.26f, 20.04f,
+    20.85f, 21.69f
+};
+
+// 0..163.69
+float TABLE_TIME_163_69_FLOAT[] = {
+    0.00f,   0.01f,   0.02f,  0.03f,  0.04f,  0.05f,  0.06f,   0.07f,   0.08f,
+    0.09f,   0.10f,   0.11f,  0.12f,  0.13f,  0.14f,  0.15f,   0.16f,   0.17f,
+    0.18f,   0.19f,   0.20f,  0.21f,  0.22f,  0.23f,  0.25f,   0.26f,   0.28f,
+    0.29f,   0.32f,   0.34f,  0.36f,  0.38f,  0.41f,  0.43f,   0.46f,   0.49f,
+    0.52f,   0.55f,   0.58f,  0.62f,  0.65f,  0.70f,  0.74f,   0.79f,   0.83f,
+    0.88f,   0.93f,   0.98f,  1.04f,  1.10f,  1.17f,  1.24f,   1.31f,   1.39f,
+    1.47f,   1.56f,   1.65f,  1.74f,  1.84f,  1.95f,  2.06f,   2.18f,   2.31f,
+    2.44f,   2.59f,   2.73f,  2.89f,  3.06f,  3.23f,  3.42f,   3.62f,   3.82f,
+    4.04f,   4.28f,   4.52f,  4.78f,  5.05f,  5.34f,  5.64f,   5.97f,   6.32f,
+    6.67f,   7.06f,   7.46f,  7.90f,  8.35f,  8.83f,  9.34f,   9.87f,   10.45f,
+    11.06f,  11.70f,  12.38f, 13.11f, 13.88f, 14.70f, 15.56f,  16.49f,  17.48f,
+    18.53f,  19.65f,  20.85f, 22.13f, 23.50f, 24.97f, 26.54f,  28.24f,  30.06f,
+    32.02f,  34.15f,  36.44f, 38.93f, 41.64f, 44.60f, 47.84f,  51.41f,  55.34f,
+    59.70f,  64.56f,  70.03f, 76.22f, 83.28f, 91.40f, 100.87f, 112.09f, 125.65f,
+    142.36f, 163.69f
+};
+
+
+static int emu3_get_vcf_cutoff_frequency( const unsigned char value )
+{
+  return TABLE_VCF_CUTOFF_FREQUENCY[ value ];
+}
+
+static float emu3_get_lfo_rate( const char value )
+{
+  if (value >= 0 && value <= 127)
+    return TABLE_LFO_RATE_FLOAT[value];
+
+  return TABLE_LFO_RATE_FLOAT[0];
+}
+
+float
+emu3_get_time_163_69( unsigned char index )
+{
+  if (index <= 127)
+    return TABLE_TIME_163_69_FLOAT[ index ];
+
+  return 0.0f;
+}
+
+float
+emu3_get_time_21_69( unsigned char index )
+{
+  if (index <= 127)
+    return TABLE_TIME_21_69_FLOAT[ index ];
+
+  return 0.0f;
+}
+
 static char *
 emu3_wav_filename_to_filename (const char *wav_file)
 {
@@ -266,9 +397,33 @@ emu3_cpystr (char *dst, const char *src)
 
 //Level: [0, 0x7f] -> [0, 100]
 static int
-emu3_get_percent_value (char value)
+emu3_get_percent_value(const char value)
 {
-  return (int) (value * 100 / 127.0);
+ // return (int) ((value) * 100 / 127.0) ;
+  const double percentage = (value * 100 / 127.0);
+  if (percentage < 0.0) return (int)(percentage - 0.5);
+  return (int)(percentage + 0.5);
+}
+
+// Level: [0x00, 0x40, 0x7f] -> [-100, 0, +100]
+int
+emu3_get_percent_value_signed( const char value )
+{
+  if (value < 128)
+    return TABLE_PERCENTAGE_SIGNED[value];
+  return 0;
+}
+
+// [-127, 0, 127] to [-2.0, 0, 2.0]
+float 
+emu3_get_vcf_tracking( const char value )
+{
+  static const float range = 4.0f / 254.0f;
+  static const float out_min = -2.0f;
+  static const float in_min = -127.0f;
+  const double as_double = 100 * (out_min + ((float)value - in_min) * range);
+  const int as_int = (int)as_double;
+  return (float)as_int / 100.0f;
 }
 
 //Pan: [0, 0x80] -> [-100, +100]
@@ -277,6 +432,7 @@ emu3_get_vca_pan (char vca_pan)
 {
   return (int) ((vca_pan - 0x40) * 1.5625);
 }
+
 
 static void
 emu3_print_preset_zone_info (struct emu_file *file,
@@ -289,7 +445,7 @@ emu3_print_preset_zone_info (struct emu_file *file,
   emu_print (1, 3, "Original note: %s\n", NOTE_NAMES[zone->root_note]);
   emu_print (1, 3, "VCA level: %d\n",
 	     emu3_get_percent_value (zone->vca_level));
-  emu_print (1, 3, "VCA pan: %d\n", emu3_get_vca_pan (zone->vca_pan));
+  emu_print (1, 3, "VCA pan: %d\n", emu3_get_percent_value_signed (zone->vca_pan));
 
   emu_print (1, 3,
 	     "VCA envelope: attack: %d, hold: %d, decay: %d, sustain: %d\%, release: %d.\n",
@@ -306,15 +462,14 @@ emu3_print_preset_zone_info (struct emu_file *file,
 
   //Cutoff: [0, 255] -> [26, 74040]
   int cutoff = zone->vcf_cutoff;
-  emu_print (1, 3, "VCF cutoff: %d\n", cutoff);
-
+  emu_print (1, 3, "VCF cutoff: %dHz\n", emu3_get_vcf_cutoff_frequency(cutoff) );
+  emu_print (1, 3, "VCF tracking: %.2f\n", emu3_get_vcf_tracking(zone->vcf_tracking) );
   //Filter Q might only work with ESI banks
   //ESI Q: [0x80, 0xff] -> [0, 100]
   //Other formats: [0, 0x7f]
   int q = zone->vcf_q;
   if (strcmp (ESI_32_V3_DEF, bank->format) == 0)
     q = q - 0x80;
-  q = q * 100 / 127;
 
   emu_print (1, 3, "VCF Q: %d\n", q);
 
@@ -343,13 +498,16 @@ emu3_print_preset_zone_info (struct emu_file *file,
 	     emu3_get_percent_value (zone->vel_to_vca_level));
   emu_print (1, 3, "Velocity to VCA Attack: %d\n", zone->vel_to_vca_attack);
   emu_print (1, 3, "Velocity to VCF Cutoff: %d\n", zone->vel_to_vcf_cutoff);
-  emu_print (1, 3, "Velocity to VCF Q: %d\n", zone->vel_to_vcf_q);
+  emu_print (1, 3, "Velocity to VCF Q: %d\n", emu3_get_percent_value(zone->vel_to_vcf_q));
   emu_print (1, 3, "Velocity to VCF Attack: %d\n", zone->vel_to_vcf_attack);
   emu_print (1, 3, "Velocity to Pan: %d\n",
 	     emu3_get_percent_value (zone->vel_to_vca_pan));
   emu_print (1, 3, "Velocity to Sample Start: %d\n",
 	     zone->vel_to_sample_start);
   emu_print (1, 3, "Velocity to Auxiliary Env: %d\n", zone->vel_to_aux_env);
+
+  emu_print (1, 3, "LFO rate: %.2fHz\n", emu3_get_lfo_rate( zone->lfo_rate ) );
+  emu_print (1, 3, "LFO delay: %.2fs\n", emu3_get_time_21_69( zone->lfo_delay ) );
 
   emu_print (1, 3, "LFO shape: %s\n",
 	     LFO_SHAPE[zone->vcf_type_lfo_shape & 0x3]);
@@ -1286,8 +1444,8 @@ emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
   zone->sample_id_msb = sample_num / 256;
   zone->parameter_a = 0x1f;
   emu3_reset_envelope (&zone->vca_envelope);
-  zone->parameters_a2[0] = 0x41;
-  zone->parameters_a2[1] = 0x00;
+  zone->lfo_rate = 0x41;
+  zone->lfo_delay = 0x00;
   zone->lfo_variation = 0;
   zone->vcf_cutoff = 0xef;
   zone->vcf_q = strcmp (ESI_32_V3_DEF, bank->format) == 0 ? 0x80 : 0;
@@ -1311,7 +1469,7 @@ emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
   zone->lfo_to_pan = 0;
   zone->vca_level = 0x7f;
   zone->unknown_1 = 0;
-  zone->unknown_2 = 0x40;
+  zone->vcf_tracking = 0x40;
   zone->unknown_3 = 0;
   zone->vca_pan = 0x40;
   zone->vcf_type_lfo_shape = 0x8;
