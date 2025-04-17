@@ -119,7 +119,18 @@ struct emu3_preset_zone
   char vca_pan;
   unsigned char vcf_type_lfo_shape;
   unsigned char end1;		//0xff
-  unsigned char end2;		//0x01
+  // The settings 'chorus (off/on)', 'disable loop (off/on)', 'disable side (off/left/right)'
+  // are encoded into a single byte. There unused bits are unknown, they could mean something.
+  //
+  //  1010 0000 = off, disable side right
+  //  1010 1000 = on, disable side right
+  //  0110 1000 = disable side left
+  //  |||  |
+  //  |||  ^chorus on = 1
+  //  ||^disable loop on = 1
+  //  |^disable left = 1
+  //  ^disable right
+  unsigned char chorus_disable_side_loop;
 };
 
 struct emu3_preset
