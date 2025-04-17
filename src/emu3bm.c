@@ -115,7 +115,7 @@ struct emu3_preset_zone
   char vca_level;
   char unknown_1;
   char vcf_tracking;
-  char unknown_3;
+  unsigned char note_on_delay; // 0x00 to 0xFF for 0.00 to 1.53s
   char vca_pan;
   unsigned char vcf_type_lfo_shape;
   unsigned char end1;		//0xff
@@ -370,6 +370,12 @@ emu3_get_time_21_69( unsigned char index )
   return 0.0f;
 }
 
+float
+emu3_get_note_on_delay( const unsigned char value )
+{
+  return (float)value * 0.006f;
+}
+
 static char *
 emu3_wav_filename_to_filename (const char *wav_file)
 {
@@ -454,6 +460,7 @@ emu3_print_preset_zone_info (struct emu_file *file,
   emu_print (1, 3, "Sample: %d\n",
 	     (zone->sample_id_msb << 8) + zone->sample_id_lsb);
   emu_print (1, 3, "Original note: %s\n", NOTE_NAMES[zone->root_note]);
+  emu_print (1, 3, "Note On delay: %.2fs\n", emu3_get_note_on_delay(zone->note_on_delay) );
   emu_print (1, 3, "VCA level: %d\n",
 	     emu3_get_percent_value (zone->vca_level));
   emu_print (1, 3, "VCA pan: %d\n", emu3_get_percent_value_signed (zone->vca_pan));
@@ -1481,11 +1488,11 @@ emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
   zone->vca_level = 0x7f;
   zone->unknown_1 = 0;
   zone->vcf_tracking = 0x40;
-  zone->unknown_3 = 0;
+  zone->note_on_delay = 0;
   zone->vca_pan = 0x40;
   zone->vcf_type_lfo_shape = 0x8;
   zone->end1 = 0xff;
-  zone->end2 = 0x01;
+  zone->chorus_disable_side_loop = 0x01;
 
   bank->next_preset += inc_size;
   file->fsize += inc_size;
