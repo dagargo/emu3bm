@@ -489,7 +489,7 @@ emu3_print_preset_zone_info (struct emu_file *file,
   if (strcmp (ESI_32_V3_DEF, bank->format) == 0)
     q = q - 0x80;
 
-  emu_print (1, 3, "VCF Q: %d\n", q);
+  emu_print (1, 3, "VCF Q: %d\n", emu3_get_percent_value(q) );
 
   emu_print (1, 3, "VCF envelope amount: %d\n",
 	     emu3_get_percent_value (zone->vcf_envelope_amount));
