@@ -93,7 +93,7 @@ struct emu3_preset_zone
   unsigned char lfo_delay;
   unsigned char lfo_variation;
   unsigned char vcf_cutoff;
-  unsigned char vcf_q;
+  unsigned char vcf_q; // 10000000b/0x80 bit flags that rt-vcf-noteon-q is enabled
   unsigned char vcf_envelope_amount;
   struct emu3_envelope vcf_envelope;
   struct emu3_envelope aux_envelope;
@@ -118,7 +118,22 @@ struct emu3_preset_zone
   unsigned char note_on_delay; // 0x00 to 0xFF for 0.00 to 1.53s
   char vca_pan;
   unsigned char vcf_type_lfo_shape;
-  unsigned char end1;		//0xff
+  
+  // `rt_enable_flags`
+  // The realtime controls can be disabled on the unit (via Dynamic
+  // processing, Realtime enable). These are normally all enabled (0xff)
+  // but can be turned off.
+  //
+  // 0000 0000
+  // |||| |||^pitch       0x01
+  // |||| ||^vcf cutoff   0x02
+  // |||| |^vca level     0x04
+  // |||| ^lfo->pitch     0x08
+  // |||^lfo->vcf cutoff  0x10
+  // ||^lfo->vca          0x20
+  // |^attack             0x40
+  // ^pan                 0x80
+  unsigned char rt_enable_flags; // 0xff
   
   // Various settings are encoded into this last byte of the structure. The
   // bits set the following settings:
@@ -401,32 +416,50 @@ emu3_get_note_tuning( const char value )
   return (float)value * 1.5625f;
 }
 
+// `rt_enable_flags`
+inline int emu3_get_is_rt_pitch_enabled(const unsigned char value) { return (value & 0x01) ? 1 : 0; }
+inline int emu3_get_is_rt_vcf_cutoff_enabled(const unsigned char value) { return (value & 0x02) ? 1 : 0; }
+inline int emu3_get_is_rt_vca_level_enabled(const unsigned char value) { return (value & 0x04) ? 1 : 0; }
+inline int emu3_get_is_rt_lfo_pitch_enabled(const unsigned char value) { return (value & 0x08) ? 1 : 0; }
+inline int emu3_get_is_rt_lfo_vcf_cutoff_enabled(const unsigned char value) { return (value & 0x10) ? 1 : 0; }
+inline int emu3_get_is_rt_lfo_vca_enabled(const unsigned char value) { return (value & 0x20) ? 1 : 0; }
+inline int emu3_get_is_rt_attack_enabled(const unsigned char value) { return (value & 0x40) ? 1 : 0; }
+inline int emu3_get_is_rt_pan_enabled(const unsigned char value) { return (value & 0x80) ? 1 : 0; }
+
+// `zone->vcf_q`
+inline int emu3_get_is_rt_note_on_q_enabled(const unsigned char value) { return (value & 0x80) ? 1 : 0; }
+
+// `zone->flags`
 inline int emu3_get_is_chorus_enabled( const char value )
 {
   return (value & 0x08) ? 1 : 0;
 }
 
+// `zone->flags`
 inline int emu3_get_is_loop_disabled( const char value )
 {
   return (value & 0x20) ? 1 : 0;
 }
 
+// `zone->flags`
 inline int emu3_get_env_mode_trigger( const char value )
 {
   return (value * 0x04) ? 1 : 0;
 }
 
+// `zone->flags`
 inline int emu3_get_is_nontranspose_enabled( const char value )
 {
   return (value & 0x02) ? 1 : 0;
 }
 
+// `zone->flags`
 inline int emu3_get_is_solo_enabled( const char value )
 {
   return (value & 0x10) ? 1 : 0;
 }
 
-// Returns -1 if left disabled, +1 if right disabled, else 0.
+// `zone->flags`, returns -1 if left disabled, +1 if right disabled, else 0.
 inline int emu3_get_is_side_disabled( const char value )
 {
   if (value & 0x80)
@@ -437,7 +470,6 @@ inline int emu3_get_is_side_disabled( const char value )
 
   return 0;
 }
-
 
 
 static char *
@@ -559,8 +591,13 @@ emu3_print_preset_zone_info (struct emu_file *file,
   //ESI Q: [0x80, 0xff] -> [0, 100]
   //Other formats: [0, 0x7f]
   int q = zone->vcf_q;
-  if (strcmp (ESI_32_V3_DEF, bank->format) == 0)
+  if (q & 0x80)
+  {
+    // This means that real time control VCF NoteOn Q is 
+    // enabled. This is a binary flag. It can be disabled
+    // on the unit via Dynamic Processing / Realtime Enable
     q = q - 0x80;
+  }
 
   emu_print (1, 3, "VCF Q: %d\n", emu3_get_percent_value(q) );
 
@@ -610,6 +647,18 @@ emu3_print_preset_zone_info (struct emu_file *file,
 	     emu3_get_percent_value (zone->lfo_to_vca));
   emu_print (1, 3, "LFO->Pan: %d\n",
 	     emu3_get_percent_value (zone->lfo_to_pan));
+  
+  const char * OFF_ON[] = { "Off", "On" };
+  emu_print (1, 3, "Realtime enable Pitch: %s\n", OFF_ON[emu3_get_is_rt_pitch_enabled(zone->rt_enable_flags)] );
+  emu_print (1, 3, "Realtime enable VCF cutoff: %s\n", OFF_ON[emu3_get_is_rt_vcf_cutoff_enabled(zone->rt_enable_flags)] );
+  emu_print (1, 3, "Realtime enable VCF NoteOn Q: %s\n", OFF_ON[emu3_get_is_rt_note_on_q_enabled(zone->vcf_q)] );
+  emu_print (1, 3, "Realtime enable LFO->Pitch: %s\n", OFF_ON[emu3_get_is_rt_lfo_pitch_enabled(zone->rt_enable_flags)] );
+  emu_print (1, 3, "Realtime enable LFO->VCF cutoff: %s\n", OFF_ON[emu3_get_is_rt_lfo_vcf_cutoff_enabled(zone->rt_enable_flags)] );
+  emu_print (1, 3, "Realtime enable LFO->VCA: %s\n", OFF_ON[emu3_get_is_rt_lfo_vca_enabled(zone->rt_enable_flags)] );
+  emu_print (1, 3, "Realtime enable VCA level: %s\n", OFF_ON[emu3_get_is_rt_vca_level_enabled(zone->rt_enable_flags)] );
+  emu_print (1, 3, "Realtime enable Attack: %s\n", OFF_ON[emu3_get_is_rt_attack_enabled(zone->rt_enable_flags)] );
+  emu_print (1, 3, "Realtime enable Pan: %s\n", OFF_ON[emu3_get_is_rt_pan_enabled(zone->rt_enable_flags)] );
+  
 }
 
 static void
@@ -710,8 +759,17 @@ emu3_set_preset_zone_q (struct emu_file *file, struct emu3_preset_zone *zone,
       struct emu3_bank *bank = EMU3_BANK (file);
       emu_debug (1, "Setting Q to %d...\n", q);
       zone->vcf_q = (unsigned char) (q * 127 / 100);
+      
+      // HVG
+      // If this is configured, we might want to assume
+      // that the user wants this enabled. 
+      // The bit 7 / 0x80 controls this setting on ESI32.
+      // I suspect other units might ignore it, so it could
+      // always be enabled perhaps?
+      // zone->vcf_q |= 0x80
+
       if (strcmp (ESI_32_V3_DEF, bank->format) == 0)
-	zone->vcf_q += 0x80;
+        zone->vcf_q += 0x80;
     }
 }
 
@@ -1564,7 +1622,7 @@ emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
   zone->note_on_delay = 0;
   zone->vca_pan = 0x40;
   zone->vcf_type_lfo_shape = 0x8;
-  zone->end1 = 0xff;
+  zone->rt_enable_flags= 0xff;
   zone->flags = 0x01;
 
   bank->next_preset += inc_size;
