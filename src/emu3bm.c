@@ -119,19 +119,37 @@ struct emu3_preset_zone
   char vca_pan;
   unsigned char vcf_type_lfo_shape;
   unsigned char end1;		//0xff
-  // The settings 'chorus (off/on)', 'disable loop (off/on)', 'disable side (off/left/right)'
-  // are encoded into a single byte. There unused bits are unknown, they could mean something.
+  
+  // Various settings are encoded into this last byte of the structure. The
+  // bits set the following settings:
+  // 'chorus (off/on)', 
+  // 'disable loop (off/on)', 
+  // 'disable side (off/left/right)' (2 bits), 
+  // 'keyboard env. mode (gate/trigger)', 
+  // 'solo (off/on)',
+  // 'nontranspose (off/on)'
+  // 
+  // There unused bit 0 is unknown at this point.
   //
   //  1010 0000 = off, disable side right
   //  1010 1000 = on, disable side right
   //  0110 1000 = disable side left
-  //  |||  |
-  //  |||  ^chorus on = 1
+  //  |||| ||^nontranspose = 1  
+  //  |||| |^env mode trigger = 1 (else gate)
+  //  |||| ^chorus on = 1
+  //  |||^ solo on = 1
   //  ||^disable loop on = 1
   //  |^disable left = 1
   //  ^disable right
-  unsigned char chorus_disable_side_loop;
+  unsigned char flags;
 };
+
+
+// 1 0110
+// env mode trigger, solo on, notranspose on
+
+// 1 0010
+// env mode gate, solo on
 
 struct emu3_preset
 {
@@ -383,6 +401,45 @@ emu3_get_note_tuning( const char value )
   return (float)value * 1.5625f;
 }
 
+inline int emu3_get_is_chorus_enabled( const char value )
+{
+  return (value & 0x08) ? 1 : 0;
+}
+
+inline int emu3_get_is_loop_disabled( const char value )
+{
+  return (value & 0x20) ? 1 : 0;
+}
+
+inline int emu3_get_env_mode_trigger( const char value )
+{
+  return (value * 0x04) ? 1 : 0;
+}
+
+inline int emu3_get_is_nontranspose_enabled( const char value )
+{
+  return (value & 0x02) ? 1 : 0;
+}
+
+inline int emu3_get_is_solo_enabled( const char value )
+{
+  return (value & 0x10) ? 1 : 0;
+}
+
+// Returns -1 if left disabled, +1 if right disabled, else 0.
+inline int emu3_get_is_side_disabled( const char value )
+{
+  if (value & 0x80)
+    return 1;
+
+  if (value & 0x40)
+    return -1;
+
+  return 0;
+}
+
+
+
 static char *
 emu3_wav_filename_to_filename (const char *wav_file)
 {
@@ -469,6 +526,14 @@ emu3_print_preset_zone_info (struct emu_file *file,
   emu_print (1, 3, "Original note: %s\n", NOTE_NAMES[zone->root_note]);
   emu_print (1, 3, "Note tuning: %.1fcents\n", emu3_get_note_tuning(zone->note_tuning) );
   emu_print (1, 3, "Note On delay: %.3fs\n", emu3_get_note_on_delay(zone->note_on_delay) );
+  emu_print (1, 3, "Keyb. env mode: %s\n", emu3_get_env_mode_trigger(zone->flags) ? "trigger":"gate" );
+  emu_print (1, 3, "Solo: %s\n", emu3_get_is_solo_enabled(zone->flags) ? "on":"off" );
+  emu_print (1, 3, "Nontranspose: %s\n", emu3_get_is_nontranspose_enabled(zone->flags) ? "on":"off" );
+  emu_print (1, 3, "Chorus: %s\n", emu3_get_is_chorus_enabled(zone->flags) ? "on" : "off" );
+  emu_print (1, 3, "Disable Loop: %s\n", emu3_get_is_loop_disabled(zone->flags) ? "on" : "off" );
+  const char * SIDES_DISABLED[] = { "left", "off", "right" };
+  emu_print (1, 3, "Disable Side: %s\n", SIDES_DISABLED[ 1 + emu3_get_is_side_disabled(zone->flags)] );
+  
   emu_print (1, 3, "VCA level: %d\n",
 	     emu3_get_percent_value (zone->vca_level));
   emu_print (1, 3, "VCA pan: %d\n", emu3_get_percent_value_signed (zone->vca_pan));
@@ -1500,7 +1565,7 @@ emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
   zone->vca_pan = 0x40;
   zone->vcf_type_lfo_shape = 0x8;
   zone->end1 = 0xff;
-  zone->chorus_disable_side_loop = 0x01;
+  zone->flags = 0x01;
 
   bank->next_preset += inc_size;
   file->fsize += inc_size;
