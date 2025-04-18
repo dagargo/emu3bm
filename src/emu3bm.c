@@ -113,7 +113,7 @@ struct emu3_preset_zone
   char lfo_to_cutoff;
   char lfo_to_pan;
   char vca_level;
-  char unknown_1;
+  char note_tuning; // -64 to 64 for -100cents to 100cents
   char vcf_tracking;
   unsigned char note_on_delay; // 0x00 to 0xFF for 0.00 to 1.53s
   char vca_pan;
@@ -376,6 +376,13 @@ emu3_get_note_on_delay( const unsigned char value )
   return (float)value * 0.006f;
 }
 
+// [-64, 0, +64] to -100, 0, 100
+float
+emu3_get_note_tuning( const char value )
+{
+  return (float)value * 1.5625f;
+}
+
 static char *
 emu3_wav_filename_to_filename (const char *wav_file)
 {
@@ -460,7 +467,8 @@ emu3_print_preset_zone_info (struct emu_file *file,
   emu_print (1, 3, "Sample: %d\n",
 	     (zone->sample_id_msb << 8) + zone->sample_id_lsb);
   emu_print (1, 3, "Original note: %s\n", NOTE_NAMES[zone->root_note]);
-  emu_print (1, 3, "Note On delay: %.2fs\n", emu3_get_note_on_delay(zone->note_on_delay) );
+  emu_print (1, 3, "Note tuning: %.1fcents\n", emu3_get_note_tuning(zone->note_tuning) );
+  emu_print (1, 3, "Note On delay: %.3fs\n", emu3_get_note_on_delay(zone->note_on_delay) );
   emu_print (1, 3, "VCA level: %d\n",
 	     emu3_get_percent_value (zone->vca_level));
   emu_print (1, 3, "VCA pan: %d\n", emu3_get_percent_value_signed (zone->vca_pan));
@@ -1486,7 +1494,7 @@ emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
   zone->lfo_to_cutoff = 0;
   zone->lfo_to_pan = 0;
   zone->vca_level = 0x7f;
-  zone->unknown_1 = 0;
+  zone->note_tuning = 0;
   zone->vcf_tracking = 0x40;
   zone->note_on_delay = 0;
   zone->vca_pan = 0x40;
