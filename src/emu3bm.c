@@ -502,7 +502,8 @@ emu3_str_to_emu3name (const char *src)
 static void
 emu3_cpystr (char *dst, const char *src)
 {
-  int len = strlen (src);
+  size_t len = strlen(src);
+  if (len > NAME_SIZE) len = NAME_SIZE;
 
   memcpy (dst, src, NAME_SIZE);
   memset (&dst[len], ' ', NAME_SIZE - len);
