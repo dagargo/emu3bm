@@ -341,9 +341,8 @@ main (int argc, char *argv[])
       goto end;
     }
 
-  err =
-    emu3_process_bank (file, ext_mode, preset_num, rt_controls, pbr, level,
-		       cutoff, q, filter);
+  err = emu3_process_bank (file, ext_mode, preset_num, rt_controls, pbr,
+			   level, cutoff, q, filter);
 
 end:
   if (err)
