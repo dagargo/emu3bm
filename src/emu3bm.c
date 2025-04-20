@@ -600,6 +600,20 @@ emu3_get_vca_pan (char vca_pan)
   return (int) ((vca_pan - 0x40) * 1.5625);
 }
 
+static void
+emu3_print_envelope (const char *name, struct emu3_envelope *envelope)
+{
+  emu_print (1, 3, "%s envelope:\n", name);
+  emu_print (1, 4, "Attack: %.02f s\n",
+	     emu3_get_time_163_69 (envelope->attack));
+  emu_print (1, 4, "Hold: %.02f s\n", emu3_get_time_163_69 (envelope->hold));
+  emu_print (1, 4, "Decay: %.02f s\n",
+	     emu3_get_time_163_69 (envelope->decay));
+  emu_print (1, 4, "Sustain: %3d \%\n",
+	     emu3_get_percent_value (envelope->sustain));
+  emu_print (1, 4, "Release: %.02f s\n",
+	     emu3_get_time_163_69 (envelope->release));
+}
 
 static void
 emu3_print_preset_zone_info (struct emu_file *file,
@@ -633,14 +647,7 @@ emu3_print_preset_zone_info (struct emu_file *file,
   emu_print (1, 3, "VCA pan: %d\n",
 	     emu3_get_percent_value_signed (zone->vca_pan));
 
-  emu_print (1, 3,
-	     "VCA envelope: attack: %.02f s; hold: %.02f s; decay: %.02f s; sustain: %d \%, release: %.02f s.\n",
-	     emu3_get_time_163_69 (zone->vca_envelope.attack),
-	     emu3_get_time_21_69 (zone->vca_envelope.hold),
-	     emu3_get_time_163_69 (zone->vca_envelope.decay),
-	     emu3_get_percent_value (zone->vca_envelope.sustain),
-	     emu3_get_time_163_69 (zone->vca_envelope.release));
-
+  emu3_print_envelope ("VCA", &zone->vca_envelope);
 
   //Filter type might only work with ESI banks
   int vcf_type = zone->vcf_type_lfo_shape >> 3;
@@ -671,26 +678,12 @@ emu3_print_preset_zone_info (struct emu_file *file,
   emu_print (1, 3, "VCF envelope amount: %d\n",
 	     emu3_get_percent_value (zone->vcf_envelope_amount));
 
-  emu_print (1, 3,
-	     "VCF envelope: attack: %.02f s; hold: %.02f s; decay: %.02f s; sustain: %d \%, release: %.02f s.\n",
-	     emu3_get_time_163_69 (zone->vcf_envelope.attack),
-	     emu3_get_time_21_69 (zone->vcf_envelope.hold),
-	     emu3_get_time_163_69 (zone->vcf_envelope.decay),
-	     emu3_get_percent_value (zone->vcf_envelope.sustain),
-	     emu3_get_time_163_69 (zone->vcf_envelope.release));
-
+  emu3_print_envelope ("VCF", &zone->vcf_envelope);
 
   emu_print (1, 3, "Auxiliary envelope amount: %d\n",
 	     emu3_get_percent_value (zone->aux_envelope_amount));
 
-  emu_print (1, 3,
-	     "Auxiliary envelope: attack: %.02f s; hold: %.02f s; decay: %.02f s; sustain: %d \%, release: %.02f s.\n",
-	     emu3_get_time_163_69 (zone->aux_envelope.attack),
-	     emu3_get_time_21_69 (zone->aux_envelope.hold),
-	     emu3_get_time_163_69 (zone->aux_envelope.decay),
-	     emu3_get_percent_value (zone->aux_envelope.sustain),
-	     emu3_get_time_163_69 (zone->aux_envelope.release));
-
+  emu3_print_envelope ("Auxiliary", &zone->aux_envelope);
 
   emu_print (1, 3, "Velocity to Pitch: %d\n", zone->vel_to_pitch);
   emu_print (1, 3, "Velocity to VCA Level: %d\n",
