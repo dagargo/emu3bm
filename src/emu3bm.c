@@ -607,7 +607,7 @@ emu3_print_preset_zone_info (struct emu_file *file,
 {
   struct emu3_bank *bank = EMU3_BANK (file);
 
-  emu_print (1, 3, "Sample: %d\n",
+  emu_print (1, 3, "Sample: %03d\n",
 	     (zone->sample_id_msb << 8) + zone->sample_id_lsb);
   emu_print (1, 3, "Original note: %s\n", NOTE_NAMES[zone->root_note]);
   emu_print (1, 3, "Note tuning: %.1fcents\n",
@@ -1271,7 +1271,7 @@ emu3_process_preset (struct emu_file *file, int preset_num,
   struct emu3_preset_zone *zones;
   struct emu3_preset_note_zone *note_zones;
 
-  emu_print (0, 0, "Preset %3d, %.*s", preset_num, NAME_SIZE, preset->name);
+  emu_print (0, 0, "Preset %03d, %.*s", preset_num, NAME_SIZE, preset->name);
   emu_print (1, 0, " @ 0x%08x", address);
   emu_print (0, 0, "\n");
 
