@@ -706,13 +706,14 @@ emu3_print_preset_zone_info (struct emu_file *file,
 	     zone->vel_to_sample_start);
   emu_print (1, 3, "Velocity to Auxiliary Env: %d\n", zone->vel_to_aux_env);
 
-  emu_print (1, 3, "LFO rate: %.2fHz\n", emu3_get_lfo_rate (zone->lfo_rate));
-  emu_print (1, 3, "LFO delay: %.2fs\n",
-	     emu3_get_time_21_69 (zone->lfo_delay));
-
+  emu_print (1, 3, "LFO rate: %.2f Hz\n", emu3_get_lfo_rate (zone->lfo_rate));
   emu_print (1, 3, "LFO shape: %s\n",
 	     LFO_SHAPE[zone->vcf_type_lfo_shape & 0x3]);
-  emu_print (1, 3, "LFO->Pitch: %d\n",
+  emu_print (1, 3, "LFO delay: %.2f s\n",
+	     emu3_get_time_21_69 (zone->lfo_delay));
+  emu_print (1, 3, "LFO variation: %d \n",
+	     emu3_get_percent_value (zone->lfo_variation));
+  emu_print (1, 3, "LFO->Pitch: %d \n",
 	     emu3_get_percent_value (zone->lfo_to_pitch));
   emu_print (1, 3, "LFO->Cutoff: %d\n",
 	     emu3_get_percent_value (zone->lfo_to_cutoff));
