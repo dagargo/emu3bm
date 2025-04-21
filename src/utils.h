@@ -56,8 +56,6 @@ struct emu_file
 
 #define emu_error(format, ...) fprintf(stderr, "\x1b[31mERROR:" __FILE__ ":%d:(%s): " format "\x1b[m", __LINE__, __FUNCTION__, ## __VA_ARGS__)
 
-extern const char *NOTE_NAMES[];
-
 extern int verbosity;
 
 const char *emu_get_err (int);
@@ -69,5 +67,7 @@ void emu_close_file (struct emu_file *);
 int emu_write_file (struct emu_file *);
 
 int emu_reverse_note_search (char *);
+
+const char *emu_get_note_name (unsigned char);
 
 #endif

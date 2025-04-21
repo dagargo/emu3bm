@@ -32,8 +32,8 @@ static const char *EMU_ERROR_STR[] = {
   "Error while writing bank file",
 };
 
-const char *NOTE_NAMES[] = {
-  "A-1",
+static const char *NOTE_NAMES[] = {
+  "A-1",			//Note 0
   "A#-1",
   "B-1",
   "C0",
@@ -120,7 +120,47 @@ const char *NOTE_NAMES[] = {
   "A6",
   "A#6",
   "B6",
-  "C7"
+  "C7",
+  "C#7",			//The notes from here on appear in some places. The sampler shows their names although it can not set these values to anything higher than C7.
+  "D7",
+  "D#7",
+  "E7",
+  "F7",
+  "F#7",
+  "G7",
+  "G#7",
+  "A7",
+  "A#7",
+  "B7",
+  "C8",
+  "C#8",
+  "D8",
+  "D#8",
+  "E8",
+  "F8",
+  "F#8",
+  "G8",
+  "G#8",
+  "A8",
+  "A#8",
+  "B8",
+  "C9",
+  "C#9",
+  "D9",
+  "D#9",
+  "E9",
+  "F9",
+  "F#9",
+  "G9",
+  "G#9",
+  "A9",
+  "A#9",
+  "B9",
+  "C10",
+  "C#10",
+  "D10",
+  "D#10",
+  "E10"				// Note 127
 };
 
 int verbosity = 0;
@@ -188,4 +228,12 @@ emu_reverse_note_search (char *note_name)
       return i;
 
   return -1;
+}
+
+const char *
+emu_get_note_name (unsigned char note_num)
+{
+  if (note_num > 127)
+    return "?";
+  return NOTE_NAMES[note_num];
 }

@@ -37,10 +37,10 @@
 
 struct emu3_zone_range
 {
-  int layer;
-  int original_key;
-  int lower_key;
-  int higher_key;
+  unsigned char layer;
+  unsigned char original_key;
+  unsigned char lower_key;
+  unsigned char higher_key;
 };
 
 int emu3_add_sample (struct emu_file *, char *, int);
@@ -59,4 +59,4 @@ int emu3_create_bank (const char *, const char *);
 
 const char *emu3_get_err (int);
 
-struct emu_file * emu3_open_file (const char *filename);
+struct emu_file *emu3_open_file (const char *filename);

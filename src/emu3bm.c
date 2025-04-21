@@ -84,7 +84,7 @@ struct emu3_preset_note_zone
 
 struct emu3_preset_zone
 {
-  char root_note;
+  unsigned char root_note;
   unsigned char sample_id_lsb;
   unsigned char sample_id_msb;
   char parameter_a;
@@ -623,7 +623,8 @@ emu3_print_preset_zone_info (struct emu_file *file,
 
   emu_print (1, 3, "Sample: %03d\n",
 	     (zone->sample_id_msb << 8) + zone->sample_id_lsb);
-  emu_print (1, 3, "Original note: %s\n", NOTE_NAMES[zone->root_note]);
+  emu_print (1, 3, "Original note: %s\n",
+	     emu_get_note_name (zone->root_note));
   emu_print (1, 3, "Note tuning: %.1f cents\n",
 	     emu3_get_note_tuning (zone->note_tuning));
   emu_print (1, 3, "Note On delay: %.3f s\n",
@@ -1303,7 +1304,7 @@ emu3_process_preset (struct emu_file *file, int preset_num,
   for (int j = 0; j < NOTES; j++)
     {
       if (preset->note_zone_mappings[j] != 0xff)
-	emu_print (1, 2, "%s: %d\n", NOTE_NAMES[j],
+	emu_print (1, 2, "%s: %d\n", emu_get_note_name (j),
 		   preset->note_zone_mappings[j]);
     }
 
@@ -1624,10 +1625,12 @@ emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
   emu_debug (2,
 	     "Adding sample %d to layer %d with original key %s (%d) from %s (%d) to %s (%d) to preset %d...\n",
 	     sample_num, zone_range->layer,
-	     NOTE_NAMES[zone_range->original_key], zone_range->original_key,
-	     NOTE_NAMES[zone_range->lower_key], zone_range->lower_key,
-	     NOTE_NAMES[zone_range->higher_key], zone_range->higher_key,
-	     preset_num);
+	     emu_get_note_name (zone_range->original_key),
+	     zone_range->original_key,
+	     emu_get_note_name (zone_range->lower_key),
+	     zone_range->lower_key,
+	     emu_get_note_name (zone_range->higher_key),
+	     zone_range->higher_key, preset_num);
 
   preset = emu3_get_preset (file, preset_num);
 
