@@ -1360,10 +1360,13 @@ emu3_process_bank (struct emu_file *file, int ext_mode, int edit_preset,
 
   i = 0;
   addresses = emu3_get_preset_addresses (bank);
-  while (addresses[0] != addresses[1] && i < max_presets)
+  while (i < max_presets)
     {
-      emu3_process_preset (file, i, rt_controls, pbr, level, cutoff, q,
-			   filter);
+      if (addresses[0] != addresses[1])
+	{
+	  emu3_process_preset (file, i, rt_controls, pbr, level, cutoff, q,
+			       filter);
+	}
       addresses++;
       i++;
     }
