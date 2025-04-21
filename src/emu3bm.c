@@ -271,6 +271,17 @@ static const char *VCF_TYPE[] = {
   "Unknown"
 };
 
+static const char *AUX_ENV_DST[] = {
+  "Off",
+  "Pitch",
+  "Pan",
+  "LFO rate",
+  "LFO -> Pitch",
+  "LFO -> VCA",
+  "LFO -> VCF",
+  "LFO -> Pan"
+};
+
 static const int VCF_TYPE_SIZE = sizeof (VCF_TYPE) / sizeof (char *);
 
 // Percentage -100..100 from 0x00 to 0x7F
@@ -679,8 +690,8 @@ emu3_print_preset_zone_info (struct emu_file *file,
 	     emu3_get_percent_value (zone->vcf_envelope_amount));
   emu3_print_envelope ("VCF", &zone->vcf_envelope);
 
-  emu_print (1, 3, "Auxiliary envelope destination: %d\n",
-	     zone->aux_envelope_dest);
+  emu_print (1, 3, "Auxiliary envelope destination: %s\n",
+	     AUX_ENV_DST[zone->aux_envelope_dest]);
   emu_print (1, 3, "Auxiliary envelope amount: %d \%\n",
 	     emu3_get_percent_value (zone->aux_envelope_amount));
   emu3_print_envelope ("Auxiliary", &zone->aux_envelope);
