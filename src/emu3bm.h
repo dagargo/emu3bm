@@ -58,3 +58,5 @@ int emu3_process_bank (struct emu_file *, int, int, char *, int, int, int,
 int emu3_create_bank (const char *, const char *);
 
 const char *emu3_get_err (int);
+
+struct emu_file * emu3_open_file (const char *filename);

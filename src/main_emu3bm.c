@@ -313,7 +313,7 @@ main (int argc, char *argv[])
       exit (err);
     }
 
-  struct emu_file *file = emu_open_file (bank_filename);
+  struct emu_file *file = emu3_open_file (bank_filename);
   if (!file)
     exit (EXIT_FAILURE);
 
