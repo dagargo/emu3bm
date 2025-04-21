@@ -126,12 +126,12 @@ emu4_process_file (struct emu_file *file, int ext_mode)
       printf ("%.4s: %.16s @ 0x%08x, 0x%08x\n", content_chunk->name,
 	      &content_chunk->data[6], sample_start, sample_len);
 
-      if (strcmp (content_chunk->name, EMU4_E3_SAMPLE_TAG) == 0 && ext_mode)
+      if (strcmp (content_chunk->name, EMU4_E3_SAMPLE_TAG) == 0)
 	{
 	  sample_chunk = (struct chunk *) &file->raw[sample_start];
 	  struct emu3_sample *sample =
 	    (struct emu3_sample *) &sample_chunk->data[2];
-	  emu3_extract_sample (sample, sample_index + 1,
+	  emu3_process_sample (sample, sample_index + 1,
 			       be32toh (sample_chunk->len), ext_mode);
 	  sample_index++;
 	}

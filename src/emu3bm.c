@@ -1388,11 +1388,8 @@ emu3_process_bank (struct emu_file *file, int ext_mode, int edit_preset,
       address = sample_start_addr + addresses[i] - SAMPLE_OFFSET;
       size = emu3_get_sample_size (next_sample_addr, &addresses[i], address);
 
-      if (ext_mode)
-	{
-	  sample = (struct emu3_sample *) &file->raw[address];
-	  emu3_extract_sample (sample, i + 1, size, ext_mode);
-	}
+      sample = (struct emu3_sample *) &file->raw[address];
+      emu3_process_sample (sample, i + 1, size, ext_mode);
 
       i++;
     }

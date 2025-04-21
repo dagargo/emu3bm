@@ -74,12 +74,21 @@ emu3_get_sample_channels (struct emu3_sample *sample)
     return 1;
 }
 
-void
-emu3_print_sample_info (struct emu3_sample *sample, sf_count_t nframes)
+static void
+emu3_print_sample_info (struct emu3_sample *sample, int num, unsigned int len,
+			sf_count_t nframes, int channels)
 {
+  char *schannels = channels == 1 ? "mono" : "stereo";
+
+  emu_print (0, 0, "Sample %03d, %.*s\n", num, NAME_SIZE, sample->name);
+  emu_print (1, 1, "Sample size: %d; frames: %d; channels: %s\n", len,
+	     nframes, schannels);
+
+  emu_print (2, 1, "Sample parameters:\n");
   for (int i = 0; i < SAMPLE_PARAMETERS; i++)
-    emu_print (2, 1, "0x%08x ", sample->parameters[i]);
-  emu_print (2, 1, "\n");
+    emu_print (2, 2, "0x%08x (%d)\n", sample->parameters[i],
+	       sample->parameters[i]);
+
   emu_print (2, 1, "Sample format: 0x%08x\n", sample->format);
   emu_print (1, 1, "Channels: %d\n", emu3_get_sample_channels (sample));
   emu_print (1, 1, "Frames: %" PRId64 "\n", nframes);
@@ -88,13 +97,15 @@ emu3_print_sample_info (struct emu3_sample *sample, sf_count_t nframes)
 	     sample->format & LOOP ? "on" : "off");
   emu_print (1, 1, "Loop in release: %s\n",
 	     sample->format & LOOP_RELEASE ? "on" : "off");
+
+  emu_print (2, 1, "More sample parameters:\n");
   for (int i = 0; i < MORE_SAMPLE_PARAMETERS; i++)
-    emu_print (2, 1, "0x%08x ", sample->more_parameters[i]);
-  emu_print (2, 1, "\n");
+    emu_print (2, 2, "0x%08x (%d)\n", sample->more_parameters[i],
+	       sample->more_parameters[i]);
 }
 
 void
-emu3_extract_sample (struct emu3_sample *sample, int num, unsigned int len,
+emu3_process_sample (struct emu3_sample *sample, int num, unsigned int len,
 		     int ext_mode)
 {
   SF_INFO sfinfo;
@@ -102,7 +113,6 @@ emu3_extract_sample (struct emu3_sample *sample, int num, unsigned int len,
   char *wav_file;
   short *l_channel, *r_channel;
   short frame[2];
-  char *schannels;
   int channels = emu3_get_sample_channels (sample);
 
   //We divide between the bytes per frame (number of channels * 2 bytes)
@@ -110,17 +120,19 @@ emu3_extract_sample (struct emu3_sample *sample, int num, unsigned int len,
   sf_count_t nframes =
     (len - sizeof (struct emu3_sample) - (8 * channels)) / (2 * channels);
 
+  emu3_print_sample_info (sample, num, len, nframes, channels);
+
+  if (!ext_mode)
+    return;
+
+  wav_file = emu3_emu3name_to_wav_filename (sample->name, num, ext_mode);
+
+  emu_debug (1, "Extracting sample '%s'...\n", wav_file);
+
   sfinfo.frames = nframes;
   sfinfo.samplerate = sample->sample_rate;
   sfinfo.channels = channels;
   sfinfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
-
-  wav_file = emu3_emu3name_to_wav_filename (sample->name, num, ext_mode);
-  schannels = channels == 1 ? "mono" : "stereo";
-  emu_debug (1, "Sample size: %d; frames: %d; channels: %s\n", len, nframes,
-	     schannels);
-  emu3_print_sample_info (sample, nframes);
-  emu_debug (1, "Extracting sample '%s'...\n", wav_file);
 
   output = sf_open (wav_file, SFM_WRITE, &sfinfo);
   l_channel = sample->frames + 2;
