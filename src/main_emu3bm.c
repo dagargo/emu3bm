@@ -77,7 +77,7 @@ get_positive_int (char *str)
 
   if (errno || endstr == str || *endstr != '\0')
     {
-      emu_error ("Value %s not valid\n", str);
+      emu_error ("Value %s not valid", str);
       value = -1;
     }
   return value;
@@ -97,7 +97,7 @@ parse_zone_params (char *zone_params, int *sample_num,
   *sample_num = strtol (sample_str, &endtoken, 10);
   if (*endtoken != '\0' || sample_num <= 0)
     {
-      emu_error ("Invalid sample %d.\n", sample_num);
+      emu_error ("Invalid sample %d", sample_num);
       return EXIT_FAILURE;
     }
 
@@ -108,7 +108,7 @@ parse_zone_params (char *zone_params, int *sample_num,
     orig_key_int = emu_reverse_note_search (original_key);
   if (orig_key_int == -1 || orig_key_int < 0 || orig_key_int >= NOTES)
     {
-      emu_error ("Invalid original key %s.\n", original_key);
+      emu_error ("Invalid original key %s", original_key);
       return EXIT_FAILURE;
     }
   zone_range->original_key = orig_key_int;
@@ -120,7 +120,7 @@ parse_zone_params (char *zone_params, int *sample_num,
     lower_key_int = emu_reverse_note_search (lower_key);
   if (lower_key_int == -1 || lower_key_int < 0 || lower_key_int >= NOTES)
     {
-      emu_error ("Invalid lower key %s.\n", lower_key);
+      emu_error ("Invalid lower key %s", lower_key);
       return EXIT_FAILURE;
     }
   zone_range->lower_key = lower_key_int;
@@ -132,7 +132,7 @@ parse_zone_params (char *zone_params, int *sample_num,
     higher_key_int = emu_reverse_note_search (higher_key);
   if (higher_key_int == -1 || higher_key_int < 0 || higher_key_int >= NOTES)
     {
-      emu_error ("Invalid higher key %s.\n", higher_key);
+      emu_error ("Invalid higher key %s", higher_key);
       return EXIT_FAILURE;
     }
   zone_range->higher_key = higher_key_int;
@@ -143,7 +143,7 @@ parse_zone_params (char *zone_params, int *sample_num,
     zone_range->layer = 2;
   else
     {
-      emu_error ("Invalid layer %s.\n", layer);
+      emu_error ("Invalid layer %s", layer);
       return EXIT_FAILURE;
     }
 
@@ -347,13 +347,13 @@ main (int argc, char *argv[])
 end:
   if (err)
     {
-      emu_error ("%s\n", emu_get_err (err));
+      emu_error ("%s", emu_get_err (err));
       goto close;
     }
 
   if (sflg || pflg || zflg || yflg || modflg)
     if (emu_write_file (file))
-      emu_error ("%s\n", emu_get_err (err));
+      emu_error ("%s", emu_get_err (err));
 
 close:
   emu_close_file (file);

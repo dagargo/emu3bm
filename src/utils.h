@@ -44,7 +44,7 @@ struct emu_file
   size_t fsize;
 };
 
-#define emu_print(level, indent, ...) {\
+#define emu_print(level, indent, ...) { \
 		if (level <= verbosity) { \
 			for (int i = 0; i < indent; i++) \
 				fprintf(stdout, "  "); \
@@ -52,9 +52,13 @@ struct emu_file
 		}\
 	}
 
-#define emu_debug(level, format, ...) if (level <= verbosity) fprintf(stderr, "DEBUG:" __FILE__ ":%d:(%s): " format, __LINE__, __FUNCTION__, ## __VA_ARGS__)
+#define emu_debug(level, format, ...) { \
+                if (level <= verbosity) { \
+                        fprintf(stderr, "DEBUG:" __FILE__ ":%d:(%s): " format "\n", __LINE__, __FUNCTION__, ## __VA_ARGS__); \
+                } \
+        }
 
-#define emu_error(format, ...) fprintf(stderr, "\x1b[31mERROR:" __FILE__ ":%d:(%s): " format "\x1b[m", __LINE__, __FUNCTION__, ## __VA_ARGS__)
+#define emu_error(format, ...) fprintf(stderr, "\x1b[31mERROR:" __FILE__ ":%d:(%s): " format "\x1b[m\n", __LINE__, __FUNCTION__, ## __VA_ARGS__)
 
 extern int verbosity;
 

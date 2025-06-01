@@ -179,7 +179,7 @@ emu_open_file (const char *filename)
 
   if (!fd)
     {
-      emu_error ("Error while opening %s for input\n", filename);
+      emu_error ("Error while opening %s for input", filename);
       return NULL;
     }
 
@@ -212,7 +212,7 @@ emu_write_file (struct emu_file *file)
 
   if (fwrite (file->raw, file->fsize, 1, fd) != 1)
     {
-      emu_error ("Unexpected written bytes amount.\n");
+      emu_error ("Unexpected written bytes amount.");
       err = ERR_WRITE_BANK;
     }
 

@@ -127,7 +127,7 @@ emu3_process_sample (struct emu3_sample *sample, int num, unsigned int len,
 
   wav_file = emu3_emu3name_to_wav_filename (sample->name, num, ext_mode);
 
-  emu_debug (1, "Extracting sample '%s'...\n", wav_file);
+  emu_debug (1, "Extracting sample '%s'...", wav_file);
 
   sfinfo.frames = nframes;
   sfinfo.samplerate = sample->sample_rate;
@@ -149,7 +149,7 @@ emu3_process_sample (struct emu3_sample *sample, int num, unsigned int len,
 	}
       if (!sf_writef_short (output, frame, 1))
 	{
-	  emu_error ("Error: %s\n", sf_strerror (output));
+	  emu_error ("Error: %s", sf_strerror (output));
 	  break;
 	}
     }
