@@ -99,7 +99,7 @@ emu4_process_file (struct emu_file *file, int ext_mode)
     goto cleanup;
 
   chunk_len = be32toh (chunk->len);
-  printf ("FORM: %ld\n", chunk_len);
+  emu_print (1, 0, "FORM: %ld\n", chunk_len);
 
   if (strncmp (chunk->data, EMU4_E4_FORMAT, strlen (EMU4_E4_FORMAT)))
     {
@@ -112,7 +112,7 @@ emu4_process_file (struct emu_file *file, int ext_mode)
     goto cleanup;
 
   chunk_len = be32toh (chunk->len);
-  printf ("%s: %ld\n", EMU4_TOC_TAG, chunk_len);
+  emu_print (1, 0, "%s: %ld --\n", EMU4_TOC_TAG, chunk_len);
 
   i = 0;
   content_chunk = (struct chunk *) chunk->data;
@@ -123,8 +123,8 @@ emu4_process_file (struct emu_file *file, int ext_mode)
 	be32toh (*(unsigned int *) content_chunk->data);
       unsigned int sample_len =
 	be32toh (content_chunk->len) + EMU4_E3_SAMPLE_OFFSET;
-      printf ("%.4s: %.16s @ 0x%08x, 0x%08x\n", content_chunk->name,
-	      &content_chunk->data[6], sample_start, sample_len);
+      emu_print (1, 0, "%.4s: %.16s @ 0x%08x, 0x%08x\n", content_chunk->name,
+		 &content_chunk->data[6], sample_start, sample_len);
 
       if (strcmp (content_chunk->name, EMU4_E3_SAMPLE_TAG) == 0)
 	{

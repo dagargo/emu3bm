@@ -80,7 +80,7 @@ emu3_print_sample_info (struct emu3_sample *sample, int num, unsigned int len,
 {
   char *schannels = channels == 1 ? "mono" : "stereo";
 
-  emu_print (0, 0, "Sample %03d, %.*s\n", num, NAME_SIZE, sample->name);
+  emu_print (0, 0, "Sample %03d: %.*s\n", num, NAME_SIZE, sample->name);
   emu_print (1, 1, "Sample size: %d; frames: %d; channels: %s\n", len,
 	     nframes, schannels);
 

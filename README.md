@@ -30,28 +30,19 @@ List presets and samples in a bank.
 
 ```
 $ emu3bm Vintage+InstrmtX
-Preset 001, Grand Piano
-Preset 002, Slack Piano
-Preset 003, Tight Piano
+Preset 001: Grand Piano
+Preset 002: Slack Piano
+Preset 003: Tight Piano
 [...]
-Sample 001, puls98c0
-Sample 002, puls96c0
-Sample 003, puls94c0
+Sample 001: puls98c0
+Sample 002: puls96c0
+Sample 003: puls94c0
 [...]
+
 $ emu4bm 619\ Grooved
-FORM: 13997228
-TOC1: 2080
-E4Ma: Multimap @ 0x00000834, 0x0000010a
-E4P1: 619 Grooved      @ 0x0000093e, 0x00002916
-E4P1: 619Grooved Flang @ 0x00003254, 0x00002916
-E4P1: 619 Grooved Dubl @ 0x00005b6a, 0x00002916
-[...]
-Sample 001, 619 Grvd Kick 1
-E3S1: 619 Grvd Kick 2  @ 0x0000c868, 0x000024a6
-Sample 002, 619 Grvd Kick 2
-E3S1: 619 Grvd Snare 1 @ 0x0000ed0e, 0x0000919e
-Sample 003, 619 Grvd Snare 1
-E3S1: 619 Grvd Snare 2 @ 0x00017eac, 0x0000c6ce
+Sample 001: 619 Grvd Kick 1
+Sample 002: 619 Grvd Kick 2
+Sample 003: 619 Grvd Snare 1
 [...]
 ```
 

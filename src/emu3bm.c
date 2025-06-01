@@ -1284,7 +1284,7 @@ emu3_process_preset (struct emu_file *file, int preset_num,
   struct emu3_preset_zone *zones;
   struct emu3_preset_note_zone *note_zones;
 
-  emu_print (0, 0, "Preset %03d, %.*s", preset_num, NAME_SIZE, preset->name);
+  emu_print (0, 0, "Preset %03d: %.*s", preset_num, NAME_SIZE, preset->name);
   emu_print (1, 0, " @ 0x%08x", address);
   emu_print (0, 0, "\n");
 
