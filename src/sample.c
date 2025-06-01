@@ -84,10 +84,20 @@ emu3_print_sample_info (struct emu3_sample *sample, int num, int size,
   emu_print (1, 1, "Sample size: %d; frames: %d; channels: %s\n", size,
 	     nframes, schannels);
 
-  emu_print (2, 1, "Sample parameters:\n");
-  for (int i = 0; i < SAMPLE_PARAMETERS; i++)
-    emu_print (2, 2, "0x%08x (%d)\n", sample->parameters[i],
-	       sample->parameters[i]);
+  if (sample->start_l != sizeof (struct emu3_sample))
+    {
+      emu_debug (1, "Unexpected constant: %d", sample->start_l);
+    }
+
+  emu_print (2, 1, "Sample header: 0x%08x\n", sample->header);
+  emu_print (2, 1, "Start L: %d\n", sample->start_l);
+  emu_print (2, 1, "Start R: %d\n", sample->start_r);
+  emu_print (2, 1, "End   L: %d\n", sample->end_l);
+  emu_print (2, 1, "End:  R: %d\n", sample->end_r);
+  emu_print (2, 1, "Loop start L: %d\n", sample->loop_start_l);
+  emu_print (2, 1, "Loop start R: %d\n", sample->loop_start_r);
+  emu_print (2, 1, "Loop end   L: %d\n", sample->loop_end_l);
+  emu_print (2, 1, "Loop end:  R: %d\n", sample->loop_end_r);
 
   emu_print (2, 1, "Sample format: 0x%08x\n", sample->format);
   emu_print (1, 1, "Channels: %d\n", emu3_get_sample_channels (sample));
@@ -98,10 +108,10 @@ emu3_print_sample_info (struct emu3_sample *sample, int num, int size,
   emu_print (1, 1, "Loop in release: %s\n",
 	     sample->format & LOOP_RELEASE ? "on" : "off");
 
-  emu_print (2, 1, "More sample parameters:\n");
-  for (int i = 0; i < MORE_SAMPLE_PARAMETERS; i++)
-    emu_print (2, 2, "0x%08x (%d)\n", sample->more_parameters[i],
-	       sample->more_parameters[i]);
+  emu_print (2, 1, "Sample parameters 2:\n");
+  for (int i = 0; i < SAMPLE_PARAMETERS; i++)
+    emu_print (2, 2, "0x%08x (%d)\n", sample->parameters[i],
+	       sample->parameters[i]);
 }
 
 void

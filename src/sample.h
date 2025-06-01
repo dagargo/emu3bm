@@ -24,8 +24,7 @@
 #ifndef SAMPLE_H
 #define SAMPLE_H
 
-#define SAMPLE_PARAMETERS 9
-#define MORE_SAMPLE_PARAMETERS 8
+#define SAMPLE_PARAMETERS 8
 #define DEFAULT_SAMPLING_FREQ 44100
 
 #define LOOP 0x00010000
@@ -38,11 +37,19 @@
 struct emu3_sample
 {
   char name[NAME_SIZE];
-  unsigned int parameters[SAMPLE_PARAMETERS];
-  unsigned int sample_rate;
-  unsigned int format;
-  unsigned int more_parameters[MORE_SAMPLE_PARAMETERS];
-  short int frames[];
+  uint32_t header;
+  uint32_t start_l;		//always equals sizeof (struct emu3_sample)
+  uint32_t start_r;
+  uint32_t end_l;
+  uint32_t end_r;
+  uint32_t loop_start_l;
+  uint32_t loop_start_r;
+  uint32_t loop_end_l;
+  uint32_t loop_end_r;
+  uint32_t sample_rate;
+  uint32_t format;
+  uint32_t parameters[SAMPLE_PARAMETERS];
+  int16_t frames[];
 };
 
 int emu3_get_sample_channels (struct emu3_sample *);

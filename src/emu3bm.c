@@ -956,6 +956,53 @@ emu3_write_frame (struct emu3_sample_descriptor *sd, short int frame[])
     }
 }
 
+static int
+emu3_init_sample (struct emu3_sample *sample, int samplerate, int frames,
+		  int mono, int loop)
+{
+  int mono_size, data_size, size;
+
+  data_size = sizeof (short int) * (frames + 4);
+  mono_size = sizeof (struct emu3_sample) + data_size;
+  size = mono_size + (mono ? 0 : data_size);
+
+  sample->header = 0;
+  sample->start_l = sizeof (struct emu3_sample);
+  sample->start_r = mono ? 0 : mono_size;
+  sample->end_l = mono_size - 2;
+  sample->end_r = mono ? 0 : size - 2;
+
+  int loop_start = 4;		//This is a constant
+  //Example (mono and stereo): Loop start @ 9290 sample is stored as ((9290 + 2) * 2) + sizeof (struct emu3_sample)
+  sample->loop_start_l = ((loop_start + 2) * 2) + sizeof (struct emu3_sample);
+  //Example
+  //Mono: Loop start @ 9290 sample is stored as (9290 + 2) * 2
+  //Stereo: Frames * 2 + loop_start_l + 8
+  sample->loop_start_r =
+    mono ? (loop_start + 2) * 2 : frames * 2 + sample->loop_start_l + 8;
+
+  int loop_end = frames - 10;	//This is a constant
+  //Example (mono and stereo): Loop end @ 94008 sample is stored as ((94008 + 1) * 2) + sizeof (struct emu3_sample)
+  sample->loop_end_l = ((loop_end + 1) * 2) + sizeof (struct emu3_sample);
+  //Example
+  //Mono: Loop end @ 94008 sample is stored as ((94008 + 1) * 2)
+  //Stereo: Frames * 2 + loop_end_l + 8
+  sample->loop_end_r =
+    mono ? (loop_end + 1) * 2 : frames * 2 + sample->loop_end_l + 8;
+
+  sample->sample_rate = samplerate;
+
+  sample->format = mono ? MONO_SAMPLE_L : STEREO_SAMPLE;
+
+  if (loop)
+    sample->format = sample->format | LOOP | LOOP_RELEASE;
+
+  for (int i = 0; i < SAMPLE_PARAMETERS; i++)
+    sample->parameters[i] = 0;
+
+  return size;
+}
+
 //returns the sample size in bytes that the the sample takes in the bank
 static int
 emu3_append_sample (struct emu_file *file, char *path,
@@ -964,10 +1011,8 @@ emu3_append_sample (struct emu_file *file, char *path,
   SF_INFO sfinfo;
   SNDFILE *input;
   int size;
-  unsigned int data_size;
   short int frame[2];
   short int zero[] = { 0, 0 };
-  int mono_size;
   const char *filename;
   struct emu3_sample_descriptor sd;
 
@@ -984,9 +1029,8 @@ emu3_append_sample (struct emu_file *file, char *path,
       goto close;
     }
 
-  data_size = sizeof (short int) * (sfinfo.frames + 4);
-  mono_size = sizeof (struct emu3_sample) + data_size;
-  size = mono_size + (sfinfo.channels == 1 ? 0 : data_size);
+  size = emu3_init_sample (sample, sfinfo.samplerate, sfinfo.frames,
+			   sfinfo.channels == 1, loop);
 
   if (file->fsize + size > MEM_SIZE)
     {
@@ -1008,47 +1052,6 @@ emu3_append_sample (struct emu_file *file, char *path,
   free (basec);
   free (name);
   free (emu3name);
-
-  sample->parameters[0] = 0;
-  //Start of left channel
-  sample->parameters[1] = sizeof (struct emu3_sample);
-  //Start of right channel
-  sample->parameters[2] = sfinfo.channels == 1 ? 0 : mono_size;
-  //Last sample of left channel
-  sample->parameters[3] = mono_size - 2;
-  //Last sample of right channel
-  sample->parameters[4] = sfinfo.channels == 1 ? 0 : size - 2;
-
-  int loop_start = 4;		//This is a constant
-  //Example (mono and stereo): Loop start @ 9290 sample is stored as ((9290 + 2) * 2) + sizeof (struct emu3_sample)
-  sample->parameters[5] =
-    ((loop_start + 2) * 2) + sizeof (struct emu3_sample);
-  //Example
-  //Mono: Loop start @ 9290 sample is stored as (9290 + 2) * 2
-  //Stereo: Frames * 2 + parameters[5] + 8
-  sample->parameters[6] =
-    sfinfo.channels ==
-    1 ? (loop_start + 2) * 2 : sfinfo.frames * 2 + sample->parameters[5] + 8;
-
-  int loop_end = sfinfo.frames - 10;	//This is a constant
-  //Example (mono and stereo): Loop end @ 94008 sample is stored as ((94008 + 1) * 2) + sizeof (struct emu3_sample)
-  sample->parameters[7] = ((loop_end + 1) * 2) + sizeof (struct emu3_sample);
-  //Example
-  //Mono: Loop end @ 94008 sample is stored as ((94008 + 1) * 2)
-  //Stereo: Frames * 2 + parameters[7] + 8
-  sample->parameters[8] =
-    sfinfo.channels ==
-    1 ? (loop_end + 1) * 2 : sfinfo.frames * 2 + sample->parameters[7] + 8;
-
-  sample->sample_rate = sfinfo.samplerate;
-
-  sample->format = sfinfo.channels == 1 ? MONO_SAMPLE_L : STEREO_SAMPLE;
-
-  if (loop)
-    sample->format = sample->format | LOOP | LOOP_RELEASE;
-
-  for (int i = 0; i < MORE_SAMPLE_PARAMETERS; i++)
-    sample->more_parameters[i] = 0;
 
   emu3_init_sample_descriptor (&sd, sample, sfinfo.frames);
 
