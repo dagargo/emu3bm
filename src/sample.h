@@ -47,6 +47,6 @@ struct emu3_sample
 
 int emu3_get_sample_channels (struct emu3_sample *);
 
-void emu3_process_sample (struct emu3_sample *, int, unsigned int, int);
+void emu3_process_sample (struct emu3_sample *, int, int, int);
 
 #endif

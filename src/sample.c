@@ -75,13 +75,13 @@ emu3_get_sample_channels (struct emu3_sample *sample)
 }
 
 static void
-emu3_print_sample_info (struct emu3_sample *sample, int num, unsigned int len,
+emu3_print_sample_info (struct emu3_sample *sample, int num, int size,
 			sf_count_t nframes, int channels)
 {
   char *schannels = channels == 1 ? "mono" : "stereo";
 
   emu_print (0, 0, "Sample %03d: %.*s\n", num, NAME_SIZE, sample->name);
-  emu_print (1, 1, "Sample size: %d; frames: %d; channels: %s\n", len,
+  emu_print (1, 1, "Sample size: %d; frames: %d; channels: %s\n", size,
 	     nframes, schannels);
 
   emu_print (2, 1, "Sample parameters:\n");
@@ -92,7 +92,7 @@ emu3_print_sample_info (struct emu3_sample *sample, int num, unsigned int len,
   emu_print (2, 1, "Sample format: 0x%08x\n", sample->format);
   emu_print (1, 1, "Channels: %d\n", emu3_get_sample_channels (sample));
   emu_print (1, 1, "Frames: %" PRId64 "\n", nframes);
-  emu_print (1, 1, "Sample rate: %dHz\n", sample->sample_rate);
+  emu_print (1, 1, "Sample rate: %d Hz\n", sample->sample_rate);
   emu_print (1, 1, "Loop enabled: %s\n",
 	     sample->format & LOOP ? "on" : "off");
   emu_print (1, 1, "Loop in release: %s\n",
@@ -105,7 +105,7 @@ emu3_print_sample_info (struct emu3_sample *sample, int num, unsigned int len,
 }
 
 void
-emu3_process_sample (struct emu3_sample *sample, int num, unsigned int len,
+emu3_process_sample (struct emu3_sample *sample, int num, int size,
 		     int ext_mode)
 {
   SF_INFO sfinfo;
@@ -118,9 +118,15 @@ emu3_process_sample (struct emu3_sample *sample, int num, unsigned int len,
   //We divide between the bytes per frame (number of channels * 2 bytes)
   //The 16 or 8 bytes are the 4 or 8 short int used for padding.
   sf_count_t nframes =
-    (len - sizeof (struct emu3_sample) - (8 * channels)) / (2 * channels);
+    (size - sizeof (struct emu3_sample) - (8 * channels)) / (2 * channels);
 
-  emu3_print_sample_info (sample, num, len, nframes, channels);
+  emu3_print_sample_info (sample, num, size, nframes, channels);
+
+  if (size < 0)
+    {
+      emu_error ("Illegal size: %d", size);
+      return;
+    }
 
   if (!ext_mode)
     return;
@@ -135,6 +141,7 @@ emu3_process_sample (struct emu3_sample *sample, int num, unsigned int len,
   sfinfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
 
   output = sf_open (wav_file, SFM_WRITE, &sfinfo);
+
   l_channel = sample->frames + 2;
   if (channels == 2)
     r_channel = sample->frames + nframes + 6;
@@ -149,7 +156,7 @@ emu3_process_sample (struct emu3_sample *sample, int num, unsigned int len,
 	}
       if (!sf_writef_short (output, frame, 1))
 	{
-	  emu_error ("Error: %s", sf_strerror (output));
+	  emu_error ("%s", sf_strerror (output));
 	  break;
 	}
     }
