@@ -962,33 +962,35 @@ emu3_init_sample (struct emu3_sample *sample, int samplerate, int frames,
 {
   int mono_size, data_size, size;
 
-  data_size = sizeof (short int) * (frames + 4);
+  data_size = sizeof (int16_t) * (frames + 4);	//At the beginning and at the end
   mono_size = sizeof (struct emu3_sample) + data_size;
   size = mono_size + (mono ? 0 : data_size);
 
   sample->header = 0;
   sample->start_l = sizeof (struct emu3_sample);
   sample->start_r = mono ? 0 : mono_size;
-  sample->end_l = mono_size - 2;
-  sample->end_r = mono ? 0 : size - 2;
+  sample->end_l = mono_size - sizeof (int16_t);
+  sample->end_r = mono ? 0 : size - sizeof (int16_t);
 
-  int loop_start = 4;		//This is a constant
+  int loop_start = 2 * sizeof (int16_t);	//This is a constant
   //Example (mono and stereo): Loop start @ 9290 sample is stored as ((9290 + 2) * 2) + sizeof (struct emu3_sample)
-  sample->loop_start_l = ((loop_start + 2) * 2) + sizeof (struct emu3_sample);
+  sample->loop_start_l =
+    ((loop_start + 2) * sizeof (int16_t)) + sizeof (struct emu3_sample);
   //Example
   //Mono: Loop start @ 9290 sample is stored as (9290 + 2) * 2
   //Stereo: Frames * 2 + loop_start_l + 8
-  sample->loop_start_r =
-    mono ? (loop_start + 2) * 2 : frames * 2 + sample->loop_start_l + 8;
+  sample->loop_start_r = mono ? (loop_start + 2) * sizeof (int16_t) :
+    (frames + 4) * sizeof (int16_t) + sample->loop_start_l;
 
   int loop_end = frames - 10;	//This is a constant
   //Example (mono and stereo): Loop end @ 94008 sample is stored as ((94008 + 1) * 2) + sizeof (struct emu3_sample)
-  sample->loop_end_l = ((loop_end + 1) * 2) + sizeof (struct emu3_sample);
+  sample->loop_end_l =
+    ((loop_end + 1) * sizeof (int16_t)) + sizeof (struct emu3_sample);
   //Example
   //Mono: Loop end @ 94008 sample is stored as ((94008 + 1) * 2)
   //Stereo: Frames * 2 + loop_end_l + 8
-  sample->loop_end_r =
-    mono ? (loop_end + 1) * 2 : frames * 2 + sample->loop_end_l + 8;
+  sample->loop_end_r = mono ? (loop_end + 1) * sizeof (int16_t) :
+    (frames + 4) * sizeof (int16_t) + sample->loop_end_l;
 
   sample->sample_rate = samplerate;
 
@@ -1331,26 +1333,12 @@ emu3_process_preset (struct emu_file *file, int preset_num,
     }
 }
 
-static int
-emu3_get_sample_size (int next_sample_addr, unsigned int *addresses,
-		      unsigned int address)
-{
-  int size;
-
-  if (addresses[1] == 0)
-    size = next_sample_addr - address;
-  else
-    size = addresses[1] - addresses[0];
-
-  return size;
-}
-
 int
 emu3_process_bank (struct emu_file *file, int ext_mode, int edit_preset,
 		   char *rt_controls, int pbr, int level, int cutoff, int q,
 		   int filter)
 {
-  int i, size, channels;
+  int i, frames, channels;
   unsigned int *addresses;
   unsigned int address;
   unsigned int sample_start_addr;
@@ -1388,10 +1376,10 @@ emu3_process_bank (struct emu_file *file, int ext_mode, int edit_preset,
   while (addresses[i] != 0 && i < max_samples)
     {
       address = sample_start_addr + addresses[i] - SAMPLE_OFFSET;
-      size = emu3_get_sample_size (next_sample_addr, &addresses[i], address);
-
       sample = (struct emu3_sample *) &file->raw[address];
-      emu3_process_sample (sample, i + 1, size, ext_mode);
+      frames = ((sample->end_l + sizeof (int16_t) -
+		 sizeof (struct emu3_sample)) / sizeof (int16_t)) - 4;
+      emu3_process_sample (sample, i + 1, frames, ext_mode);
 
       i++;
     }

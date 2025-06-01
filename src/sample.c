@@ -75,14 +75,13 @@ emu3_get_sample_channels (struct emu3_sample *sample)
 }
 
 static void
-emu3_print_sample_info (struct emu3_sample *sample, int num, int size,
+emu3_print_sample_info (struct emu3_sample *sample, int num,
 			sf_count_t nframes, int channels)
 {
   char *schannels = channels == 1 ? "mono" : "stereo";
 
   emu_print (0, 0, "Sample %03d: %.*s\n", num, NAME_SIZE, sample->name);
-  emu_print (1, 1, "Sample size: %d; frames: %d; channels: %s\n", size,
-	     nframes, schannels);
+  emu_print (1, 1, "Sample frames: %d (%s)\n", nframes, schannels);
 
   if (sample->start_l != sizeof (struct emu3_sample))
     {
@@ -115,7 +114,7 @@ emu3_print_sample_info (struct emu3_sample *sample, int num, int size,
 }
 
 void
-emu3_process_sample (struct emu3_sample *sample, int num, int size,
+emu3_process_sample (struct emu3_sample *sample, int num, int nframes,
 		     int ext_mode)
 {
   SF_INFO sfinfo;
@@ -125,18 +124,7 @@ emu3_process_sample (struct emu3_sample *sample, int num, int size,
   short frame[2];
   int channels = emu3_get_sample_channels (sample);
 
-  //We divide between the bytes per frame (number of channels * 2 bytes)
-  //The 16 or 8 bytes are the 4 or 8 short int used for padding.
-  sf_count_t nframes =
-    (size - sizeof (struct emu3_sample) - (8 * channels)) / (2 * channels);
-
-  emu3_print_sample_info (sample, num, size, nframes, channels);
-
-  if (size < 0)
-    {
-      emu_error ("Illegal size: %d", size);
-      return;
-    }
+  emu3_print_sample_info (sample, num, nframes, channels);
 
   if (!ext_mode)
     return;
