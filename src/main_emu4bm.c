@@ -81,7 +81,7 @@ check_chunk_name (struct chunk *chunk, const char *name)
 {
   int v = strncmp (chunk->name, name, CHUNK_NAME_LEN);
   if (v)
-    fprintf (stderr, "Unexpected chunk name %s\n", name);
+    emu_error ("Unexpected chunk name %s", name);
   return v;
 }
 
@@ -103,7 +103,7 @@ emu4_process_file (struct emu_file *file, int ext_mode)
 
   if (strncmp (chunk->data, EMU4_E4_FORMAT, strlen (EMU4_E4_FORMAT)))
     {
-      fprintf (stderr, "Unexpected format\n");
+      emu_error ("Unexpected format");
       goto cleanup;
     }
 
