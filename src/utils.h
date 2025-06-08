@@ -21,6 +21,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <unistd.h>
+
 #define MEM_SIZE 0x08000000	//128 MiB
 #define NAME_SIZE 16
 #define SAMPLE_EXT ".wav"
@@ -58,7 +60,12 @@ struct emu_file
                 } \
         }
 
-#define emu_error(format, ...) fprintf(stderr, "\x1b[31mERROR:" __FILE__ ":%d:(%s): " format "\x1b[m\n", __LINE__, __FUNCTION__, ## __VA_ARGS__)
+#define emu_error(format, ...) { \
+                int tty = isatty(fileno(stderr)); \
+                const char * color_start = tty ? "\x1b[31m" : ""; \
+                const char * color_end = tty ? "\x1b[m" : ""; \
+                fprintf(stderr, "%sERROR:" __FILE__ ":%d:(%s): " format "%s\n", color_start, __LINE__, __FUNCTION__, ## __VA_ARGS__, color_end); \
+        }
 
 extern int verbosity;
 

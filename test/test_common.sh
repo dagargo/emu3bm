@@ -16,12 +16,18 @@ function logAndRun() {
 function testCommon() {
   [ $1 -eq 1 ] && ok=$((ok+1))
   total=$((total+1))
-  if [ $1 -eq 1 ]; then
-    printf "\033[0;32m"
-  else
-    printf "\033[0;31m"
+  if [ -t 1 ]; then
+    if [ $1 -eq 1 ]; then
+      printf "\033[0;32m"
+    else
+      printf "\033[0;31m"
+    fi
   fi
-  printf "Results: $ok/$total\033[0m\n\n"
+  printf "Results: $ok/$total"
+  if [ -t 1 ]; then
+    printf "\033[0m"
+  fi
+  printf "\n\n"
   [ $1 -ne 1 ] && cleanUp && exit 1
 }
 

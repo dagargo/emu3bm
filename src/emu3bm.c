@@ -820,7 +820,9 @@ static void
 emu3_set_preset_zone_level (struct emu3_preset_zone *zone, int level)
 {
   if (level < 0 || level > 100)
-    emu_error ("Value %d for level not in range [0, 100]", level);
+    {
+      emu_error ("Value %d for level not in range [0, 100]", level);
+    }
   else
     {
       emu_debug (1, "Setting level to %d...", level);
@@ -832,7 +834,9 @@ static void
 emu3_set_preset_zone_cutoff (struct emu3_preset_zone *zone, int cutoff)
 {
   if (cutoff < 0 || cutoff > 255)
-    emu_error ("Value for cutoff %d not in range [0, 255]", cutoff);
+    {
+      emu_error ("Value for cutoff %d not in range [0, 255]", cutoff);
+    }
   else
     {
       emu_debug (1, "Setting cutoff to %d...", cutoff);
@@ -845,7 +849,9 @@ emu3_set_preset_zone_q (struct emu_file *file, struct emu3_preset_zone *zone,
 			int q)
 {
   if (q < 0 || q > 100)
-    emu_error ("Value %d for Q not in range [0, 100]", q);
+    {
+      emu_error ("Value %d for Q not in range [0, 100]", q);
+    }
   else
     {
       struct emu3_bank *bank = EMU3_BANK (file);
@@ -869,8 +875,10 @@ static void
 emu3_set_preset_zone_filter (struct emu3_preset_zone *zone, int filter)
 {
   if (filter < 0 || filter > VCF_TYPE_SIZE - 2)
-    emu_error ("Value %d for filter not in range [0, %d]",
-	       filter, VCF_TYPE_SIZE - 2);
+    {
+      emu_error ("Value %d for filter not in range [0, %d]",
+		 filter, VCF_TYPE_SIZE - 2);
+    }
   else
     {
       emu_debug (1, "Setting filter to %s...", VCF_TYPE[filter]);
@@ -895,7 +903,9 @@ emu3_set_preset_rt_controls (struct emu3_preset *preset, char *rt_controls)
   while (i < RT_CONTROLS_SIZE && (token = strsep (&rt_controls, ",")) != NULL)
     {
       if (*token == '\0')
-	emu_error ("Empty value");
+	{
+	  emu_error ("Empty value");
+	}
       else
 	{
 	  controller = strtol (token, &endtoken, 10);
@@ -923,7 +933,9 @@ static void
 emu3_set_preset_pbr (struct emu3_preset *preset, int pbr)
 {
   if (pbr < 0 || pbr > 36)
-    emu_error ("Value for pitch bend range %d not in range [0, 36]", pbr);
+    {
+      emu_error ("Value for pitch bend range %d not in range [0, 36]", pbr);
+    }
   else
     {
       emu_debug (1, "Setting pitch bend range to %d...", pbr);
