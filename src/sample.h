@@ -27,12 +27,21 @@
 #define SAMPLE_PARAMETERS 8
 #define DEFAULT_SAMPLING_FREQ 44100
 
-#define LOOP 0x00010000
+#define LOOP         0x00010000
 #define LOOP_RELEASE 0x00080000
 
 #define MONO_SAMPLE_L 0x00200000
 #define MONO_SAMPLE_R 0x00400000
 #define STEREO_SAMPLE 0x00600000
+
+#define EMU3_LOOP_START_FRAMES_TO_INT(loop_start) ((loop_start + 2) * sizeof (int16_t))
+#define EMU3_LOOP_START_INT_TO_FRAMES(loop_start) ((loop_start / sizeof (int16_t)) - 2)
+
+#define EMU3_LOOP_END_FRAMES_TO_INT(loop_end) ((loop_end + 1) * sizeof (int16_t))
+#define EMU3_LOOP_END_INT_TO_FRAMES(loop_end) ((loop_end / sizeof (int16_t)) - 1)
+
+#define EMU3_LOOP_POINT_INT_TO_BIN(x) (sizeof (struct emu3_sample) + x)
+#define EMU3_LOOP_POINT_BIN_TO_INT(x) (x - sizeof (struct emu3_sample))
 
 struct emu3_sample
 {
@@ -59,9 +68,33 @@ typedef enum emu3_ext_mode
   EMU3_EXT_MODE_NAME_NUMBER
 } emu3_ext_mode_t;
 
+struct smpl_chunk_data
+{
+  uint32_t manufacturer;
+  uint32_t product;
+  uint32_t sample_period;
+  uint32_t midi_unity_note;
+  uint32_t midi_pitch_fraction;
+  uint32_t smpte_format;
+  uint32_t smpte_offset;
+  uint32_t num_sampler_loops;
+  uint32_t sampler_data;
+  struct sample_loop
+  {
+    uint32_t cue_point_id;
+    uint32_t type;
+    uint32_t start;
+    uint32_t end;
+    uint32_t fraction;
+    uint32_t play_count;
+  } sample_loop;
+};
+
 int emu3_get_sample_channels (struct emu3_sample *);
 
 void emu3_process_sample (struct emu3_sample *sample, int num, int nframes,
 			  emu3_ext_mode_t ext_mode);
 
+int emu3_sample_get_smpl_chunk (SNDFILE * output,
+				struct smpl_chunk_data *smpl_chunk_data);
 #endif

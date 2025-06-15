@@ -12,11 +12,11 @@ Manage EMU3 banks, add and extract samples, create presets and set some preset a
 .SH OPTIONS
 .TP
 .BR \-s " sample"
-Add the sample in WAV format to the bank without loop enabled.
+Add the sample to the bank, set the loop points as in the file and set the loop enabled as in the file. If the sample has no loop information ("smpl" chunk is missing), the loop points are set to 0 and the last frame and the loop enabled is set to "off".
 
 .TP
 .BR \-S " sample"
-Add the sample in WAV format to the bank with loop enabled.
+Add the sample in WAV format, set the loop points to 0 and the last frame and set loop enabled to "on".
 
 .TP
 .BR \-p " preset_name"
@@ -72,11 +72,11 @@ Increment the verbosity level.
 
 .TP
 .BR \-x
-Extract all the bank samples in the current directory.
+Extract all the bank samples in the current directory. Exporting samples always includes the loop points and the loop enabled ("on", "off") as stored in the bank.
 
 .TP
 .BR \-X
-Extract all the bank samples in the current directory prepending the sample number to the sample name.
+Same as \-x but prepending the sample number to the sample name.
 
 .RE
 Options \fB\-s\fR, \fB\-S\fR, \fB\-p\fR, \fB\-z\fR and \fB\-n\fR can not be used in conjuction with options \fB\-c\fR, \fB\-f\fR, \fB\-l\fR, \fB\-b\fR, \fB\-q\fR, \fB\-r\fR and \fB\-x\fR.

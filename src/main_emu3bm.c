@@ -173,7 +173,7 @@ main (int argc, char *argv[])
   extern char *optarg;
   extern int optind, optopt;
   int err = 0;
-  int loop;
+  int force_loop;
   int sample_num;
   struct emu3_zone_range zone_range;
   int zone_num;
@@ -197,12 +197,12 @@ main (int argc, char *argv[])
 	case 's':
 	  sflg++;
 	  sample_filename = optarg;
-	  loop = 0;
+	  force_loop = 0;
 	  break;
 	case 'S':
 	  sflg++;
 	  sample_filename = optarg;
-	  loop = 1;
+	  force_loop = 1;
 	  break;
 	case 'x':
 	  xflg++;
@@ -319,7 +319,7 @@ main (int argc, char *argv[])
 
   if (sflg)
     {
-      err = emu3_add_sample (file, sample_filename, loop);
+      err = emu3_add_sample (file, sample_filename, force_loop);
       goto end;
     }
 

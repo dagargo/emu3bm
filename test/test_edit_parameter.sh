@@ -14,7 +14,7 @@ test
 logAndRun 'diff $TEST_BANK_NAME data/test_add_zone_1'
 test
 
-logAndRun '$srcdir/../src/emu3bm -S data/s1.wav $TEST_BANK_NAME'
+logAndRun '$srcdir/../src/emu3bm -s data/s1.wav $TEST_BANK_NAME'
 test
 logAndRun 'diff $TEST_BANK_NAME data/test_add_zone_2'
 test

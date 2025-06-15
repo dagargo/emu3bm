@@ -14,34 +14,42 @@ rm -rf $EXT_DIR
 mkdir $EXT_DIR
 cd $EXT_DIR
 
-logAndRun '$srcdir/../../src/emu3bm -x ../data/test_add_sample_4'
+logAndRun '$srcdir/../../src/emu3bm -x ../data/test_add_sample_6'
 test
 
-logAndRun 'diff s1.wav ../data/s1.wav'
+logAndRun 'file s1.wav'
 test
 
-logAndRun 'diff s1.wav ../data/s1.wav'
+logAndRun 'file s2.wav'
 test
 
-logAndRun 'diff s2.wav ../data/s2.wav'
+#Other samples sharing the same names names are being overwritten.
+
+logAndRun 'diff s1_loop.wav ../data/s1_loop.wav'
 test
 
-logAndRun 'diff s2.wav ../data/s2.wav'
+logAndRun 'diff s2_loop.wav ../data/s2_loop.wav'
 test
 
-logAndRun '$srcdir/../../src/emu3bm -X ../data/test_add_sample_4'
+logAndRun '$srcdir/../../src/emu3bm -X ../data/test_add_sample_6'
 test
 
-logAndRun 'diff 001-s1.wav ../data/s1.wav'
+logAndRun 'file 001-s1.wav'
 test
 
-logAndRun 'diff 002-s1.wav ../data/s1.wav'
+logAndRun 'file 002-s1.wav'
 test
 
-logAndRun 'diff 003-s2.wav ../data/s2.wav'
+logAndRun 'file 003-s2.wav'
 test
 
-logAndRun 'diff 004-s2.wav ../data/s2.wav'
+logAndRun 'file 004-s2.wav'
+test
+
+logAndRun 'diff 005-s1_loop.wav ../data/s1_loop.wav'
+test
+
+logAndRun 'diff 006-s2_loop.wav ../data/s2_loop.wav'
 test
 
 cleanUp
