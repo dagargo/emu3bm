@@ -1392,7 +1392,6 @@ emu3_process_bank (struct emu_file *file, int ext_mode, int edit_preset,
       frames = ((sample->end_l + sizeof (int16_t) -
 		 sizeof (struct emu3_sample)) / sizeof (int16_t)) - 4;
       emu3_process_sample (sample, i + 1, frames, ext_mode);
-
       i++;
     }
 

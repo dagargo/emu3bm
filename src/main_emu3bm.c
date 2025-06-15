@@ -156,7 +156,7 @@ main (int argc, char *argv[])
   int opt;
   int long_index = 0;
   int xflg = 0, dflg = 0, sflg = 0, nflg = 0, errflg = 0, modflg = 0, pflg =
-    0, zflg = 0, yflg = 0, ext_mode = 0;
+    0, zflg = 0, yflg = 0, ext_mode = EMU3_EXT_MODE_NONE;
   char *device = NULL;
   char *bank_filename;
   char *sample_filename;
@@ -206,11 +206,11 @@ main (int argc, char *argv[])
 	  break;
 	case 'x':
 	  xflg++;
-	  ext_mode = 1;
+	  ext_mode = EMU3_EXT_MODE_NAME;
 	  break;
 	case 'X':
 	  xflg++;
-	  ext_mode = 2;
+	  ext_mode = EMU3_EXT_MODE_NAME_NUMBER;
 	  break;
 	case 'n':
 	  nflg++;

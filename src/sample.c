@@ -52,10 +52,10 @@ emu3_emu3name_to_wav_filename (const char *emu3name, int num, int ext_mode)
   char *fname = emu3_emu3name_to_filename (emu3name);
   char *wname = malloc (strlen (fname) + 9);
 
-  if (ext_mode == 1)
-    sprintf (wname, "%s%s", fname, SAMPLE_EXT);
-  else
+  if (ext_mode == EMU3_EXT_MODE_NAME_NUMBER)
     sprintf (wname, "%03d-%s%s", num, fname, SAMPLE_EXT);
+  else
+    sprintf (wname, "%s%s", fname, SAMPLE_EXT);
 
   free (fname);
 
@@ -115,7 +115,7 @@ emu3_print_sample_info (struct emu3_sample *sample, int num,
 
 void
 emu3_process_sample (struct emu3_sample *sample, int num, int nframes,
-		     int ext_mode)
+		     emu3_ext_mode_t ext_mode)
 {
   SF_INFO sfinfo;
   SNDFILE *output;

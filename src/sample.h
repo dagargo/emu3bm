@@ -52,8 +52,16 @@ struct emu3_sample
   int16_t frames[];
 };
 
+typedef enum emu3_ext_mode
+{
+  EMU3_EXT_MODE_NONE = 0,
+  EMU3_EXT_MODE_NAME,
+  EMU3_EXT_MODE_NAME_NUMBER
+} emu3_ext_mode_t;
+
 int emu3_get_sample_channels (struct emu3_sample *);
 
-void emu3_process_sample (struct emu3_sample *, int, int, int);
+void emu3_process_sample (struct emu3_sample *sample, int num, int nframes,
+			  emu3_ext_mode_t ext_mode);
 
 #endif
