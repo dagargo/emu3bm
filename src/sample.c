@@ -88,13 +88,10 @@ emu3_get_sample_channels (struct emu3_sample *sample)
 
 static void
 emu3_print_sample_info (struct emu3_sample *sample, int num,
-			sf_count_t nframes, int channels,
-			uint32_t *loop_start, uint32_t *loop_end)
+			sf_count_t nframes, int32_t *loop_start,
+			uint32_t *loop_end)
 {
-  char *schannels = channels == 1 ? "mono" : "stereo";
-
   emu_print (0, 0, "Sample %03d: %.*s\n", num, NAME_SIZE, sample->name);
-  emu_print (1, 1, "Sample frames: %d (%s)\n", nframes, schannels);
 
   if (sample->start_l != sizeof (struct emu3_sample))
     {
@@ -120,7 +117,7 @@ emu3_print_sample_info (struct emu3_sample *sample, int num,
   emu_print (1, 1, "Loop start: %d\n", *loop_start);
   emu_print (1, 1, "Loop end: %d\n", *loop_end);
   emu_print (1, 1, "Channels: %d\n", emu3_get_sample_channels (sample));
-  emu_print (1, 1, "Frames: %" PRId64 "\n", nframes);
+  emu_print (1, 1, "Frames: %d\n", nframes);
   emu_print (1, 1, "Sample rate: %d Hz\n", sample->sample_rate);
   emu_print (1, 1, "Loop enabled: %s\n",
 	     sample->format & EMU3_SAMPLE_OPT_LOOP ? "on" : "off");
@@ -148,8 +145,7 @@ emu3_process_sample (struct emu3_sample *sample, int num, int nframes,
   struct SF_CHUNK_INFO junk_chunk_info;
   struct smpl_chunk_data smpl_chunk_data;
 
-  emu3_print_sample_info (sample, num, nframes, channels, &loop_start,
-			  &loop_end);
+  emu3_print_sample_info (sample, num, nframes, &loop_start, &loop_end);
 
   if (!ext_mode)
     return;
