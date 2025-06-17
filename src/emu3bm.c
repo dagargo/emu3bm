@@ -1364,7 +1364,7 @@ emu3_process_preset (struct emu_file *file, int preset_num,
   for (int j = 0; j < NOTES; j++)
     {
       if (preset->note_zone_mappings[j] != 0xff)
-	emu_print (1, 2, "%s: %d\n", emu_get_note_name (j),
+	emu_print (1, 2, "%-4s: %2d\n", emu_get_note_name (j),
 		   preset->note_zone_mappings[j]);
     }
 
