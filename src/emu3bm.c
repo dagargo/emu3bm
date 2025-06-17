@@ -613,17 +613,17 @@ emu3_get_vca_pan (char vca_pan)
 }
 
 static void
-emu3_print_envelope (const char *name, struct emu3_envelope *envelope)
+emu3_print_envelope (struct emu3_envelope *envelope)
 {
-  emu_print (1, 3, "%s envelope:\n", name);
-  emu_print (1, 4, "Attack: %.02f s\n",
+  emu_print (1, 4, "Envelope\n");
+  emu_print (1, 5, "Attack: %.02f s\n",
 	     emu3_get_time_163_69 (envelope->attack));
-  emu_print (1, 4, "Hold: %.02f s\n", emu3_get_time_163_69 (envelope->hold));
-  emu_print (1, 4, "Decay: %.02f s\n",
+  emu_print (1, 5, "Hold: %.02f s\n", emu3_get_time_163_69 (envelope->hold));
+  emu_print (1, 5, "Decay: %.02f s\n",
 	     emu3_get_time_163_69 (envelope->decay));
-  emu_print (1, 4, "Sustain: %3d \%\n",
+  emu_print (1, 5, "Sustain: %3d \%\n",
 	     emu3_get_percent_value (envelope->sustain));
-  emu_print (1, 4, "Release: %.02f s\n",
+  emu_print (1, 5, "Release: %.02f s\n",
 	     emu3_get_time_163_69 (envelope->release));
 }
 
@@ -633,47 +633,38 @@ emu3_print_preset_zone_info (struct emu_file *file,
 {
   struct emu3_bank *bank = EMU3_BANK (file);
 
-  emu_print (1, 3, "Sample: %03d\n",
-	     (zone->sample_id_msb << 8) + zone->sample_id_lsb);
-  emu_print (1, 3, "Original note: %s\n",
-	     emu_get_note_name (zone->root_note));
-  emu_print (1, 3, "Note tuning: %.1f cents\n",
+  emu_print (1, 3, "Dynamic Setup\n");
+  emu_print (1, 4, "Tuning: %.1f cents\n",
 	     emu3_get_note_tuning (zone->note_tuning));
-  emu_print (1, 3, "Note On delay: %.3f s\n",
+  emu_print (1, 4, "Delay: %.3f s\n",
 	     emu3_get_note_on_delay (zone->note_on_delay));
-  emu_print (1, 3, "Keyboard env mode: %s\n",
-	     emu3_get_env_mode_trigger (zone->flags) ? "trigger" : "gate");
-  emu_print (1, 3, "Solo: %s\n",
-	     emu3_get_is_solo_enabled (zone->flags) ? "on" : "off");
-  emu_print (1, 3, "Nontranspose: %s\n",
-	     emu3_get_is_nontranspose_enabled (zone->flags) ? "on" : "off");
-  emu_print (1, 3, "Chorus: %s\n",
+  emu_print (1, 4, "Chorus: %s\n",
 	     emu3_get_is_chorus_enabled (zone->flags) ? "on" : "off");
-  emu_print (1, 3, "Disable Loop: %s\n",
+  emu_print (1, 4, "Original Key: %s\n", emu_get_note_name (zone->root_note));
+  emu_print (1, 4, "Sample: %03d\n",
+	     (zone->sample_id_msb << 8) + zone->sample_id_lsb);
+  emu_print (1, 4, "Disable Loop: %s\n",
 	     emu3_get_is_loop_disabled (zone->flags) ? "on" : "off");
   const char *SIDES_DISABLED[] = { "left", "off", "right" };
-  emu_print (1, 3, "Disable Side: %s\n",
+  emu_print (1, 4, "Disable Side: %s\n",
 	     SIDES_DISABLED[1 + emu3_get_is_side_disabled (zone->flags)]);
 
-  emu_print (1, 3, "VCA level: %d \%\n",
+  emu_print (1, 3, "VCA\n");
+  emu_print (1, 4, "Level: %d \%\n",
 	     emu3_get_percent_value (zone->vca_level));
-  emu_print (1, 3, "VCA pan: %d \%\n",
+  emu_print (1, 4, "Pan: %d \%\n",
 	     emu3_get_percent_value_signed (zone->vca_pan));
+  emu3_print_envelope (&zone->vca_envelope);
 
-  emu3_print_envelope ("VCA", &zone->vca_envelope);
-
+  emu_print (1, 3, "VCF\n");
   //Filter type might only work with ESI banks
   int vcf_type = zone->vcf_type_lfo_shape >> 3;
   if (vcf_type > VCF_TYPE_SIZE - 1)
     vcf_type = VCF_TYPE_SIZE - 1;
-  emu_print (1, 3, "VCF type: %s\n", VCF_TYPE[vcf_type]);
-
+  emu_print (1, 4, "Type: %s\n", VCF_TYPE[vcf_type]);
   //Cutoff: [0, 255] -> [26, 74040]
   int cutoff = zone->vcf_cutoff;
-  emu_print (1, 3, "VCF cutoff: %d Hz\n",
-	     emu3_get_vcf_cutoff_frequency (cutoff));
-  emu_print (1, 3, "VCF tracking: %.2f\n",
-	     emu3_get_vcf_tracking (zone->vcf_tracking));
+  emu_print (1, 4, "Cutoff: %d Hz\n", emu3_get_vcf_cutoff_frequency (cutoff));
   //Filter Q might only work with ESI banks
   //ESI Q: [0x80, 0xff] -> [0, 100]
   //Other formats: [0, 0x7f]
@@ -685,73 +676,79 @@ emu3_print_preset_zone_info (struct emu_file *file,
       // on the unit via Dynamic Processing / Realtime Enable
       q = q - 0x80;
     }
-
-  emu_print (1, 3, "VCF Q: %d \%\n", emu3_get_percent_value (q));
-  emu_print (1, 3, "VCF envelope amount: %d \%\n",
+  emu_print (1, 4, "Q: %d \%\n", emu3_get_percent_value (q));
+  emu_print (1, 4, "Tracking: %.2f\n",
+	     emu3_get_vcf_tracking (zone->vcf_tracking));
+  emu_print (1, 4, "Envelope Amount: %d \%\n",
 	     emu3_get_percent_value (zone->vcf_envelope_amount));
-  emu3_print_envelope ("VCF", &zone->vcf_envelope);
+  emu3_print_envelope (&zone->vcf_envelope);
 
-  emu_print (1, 3, "Auxiliary envelope destination: %s\n",
-	     AUX_ENV_DST[zone->aux_envelope_dest]);
-  emu_print (1, 3, "Auxiliary envelope amount: %d \%\n",
-	     emu3_get_percent_value (zone->aux_envelope_amount));
-  emu3_print_envelope ("Auxiliary", &zone->aux_envelope);
-
-  emu_print (1, 3, "Velocity to Pitch: %d \%\n", zone->vel_to_pitch);
-  emu_print (1, 3, "Velocity to VCA Level: %d \%\n",
-	     emu3_get_percent_value (zone->vel_to_vca_level));
-  emu_print (1, 3, "Velocity to VCA Attack: %d \%\n",
-	     zone->vel_to_vca_attack);
-  emu_print (1, 3, "Velocity to VCF Cutoff: %d \%\n",
-	     zone->vel_to_vcf_cutoff);
-  emu_print (1, 3, "Velocity to VCF Q: %d \%\n",
-	     emu3_get_percent_value (zone->vel_to_vcf_q));
-  emu_print (1, 3, "Velocity to VCF Attack: %d\n", zone->vel_to_vcf_attack);
-  emu_print (1, 3, "Velocity to Pan: %d \%\n",
-	     emu3_get_percent_value (zone->vel_to_vca_pan));
-  emu_print (1, 3, "Velocity to Sample Start: %d \%\n",
-	     zone->vel_to_sample_start);
-  emu_print (1, 3, "Velocity to Auxiliary Env: %d \%\n",
-	     zone->vel_to_aux_env);
-
-  emu_print (1, 3, "LFO rate: %.2f Hz\n", emu3_get_lfo_rate (zone->lfo_rate));
-  emu_print (1, 3, "LFO shape: %s\n",
-	     LFO_SHAPE[zone->vcf_type_lfo_shape & 0x3]);
-  emu_print (1, 3, "LFO delay: %.2f s\n",
-	     emu3_get_time_21_69 (zone->lfo_delay));
-  emu_print (1, 3, "LFO variation: %d \%\n",
+  emu_print (1, 3, "LFO\n");
+  emu_print (1, 4, "Rate: %.2f Hz\n", emu3_get_lfo_rate (zone->lfo_rate));
+  emu_print (1, 4, "Shape: %s\n", LFO_SHAPE[zone->vcf_type_lfo_shape & 0x3]);
+  emu_print (1, 4, "Delay: %.2f s\n", emu3_get_time_21_69 (zone->lfo_delay));
+  emu_print (1, 4, "Variation: %d \%\n",
 	     emu3_get_percent_value (zone->lfo_variation));
-  emu_print (1, 3, "LFO->Pitch: %d  \%\n",
+  emu_print (1, 4, "LFO->Pitch: %d  \%\n",
 	     emu3_get_percent_value (zone->lfo_to_pitch));
-  emu_print (1, 3, "LFO->Cutoff: %d \%\n",
+  emu_print (1, 4, "LFO->Cutoff: %d \%\n",
 	     emu3_get_percent_value (zone->lfo_to_cutoff));
-  emu_print (1, 3, "LFO->VCA: %d \%\n",
+  emu_print (1, 4, "LFO->VCA: %d \%\n",
 	     emu3_get_percent_value (zone->lfo_to_vca));
-  emu_print (1, 3, "LFO->Pan: %d \%\n",
+  emu_print (1, 4, "LFO->Pan: %d \%\n",
 	     emu3_get_percent_value (zone->lfo_to_pan));
 
+  emu_print (1, 3, "Auxiliary envelope\n");
+  emu_print (1, 4, "Destination: %s\n", AUX_ENV_DST[zone->aux_envelope_dest]);
+  emu_print (1, 4, "Envelope amount: %d \%\n",
+	     emu3_get_percent_value (zone->aux_envelope_amount));
+  emu3_print_envelope (&zone->aux_envelope);
+
+  emu_print (1, 3, "Velocity to\n");
+  emu_print (1, 4, "Pitch: %d \%\n", zone->vel_to_pitch);
+  emu_print (1, 4, "VCA Level: %d \%\n",
+	     emu3_get_percent_value (zone->vel_to_vca_level));
+  emu_print (1, 4, "VCA Attack: %d \%\n", zone->vel_to_vca_attack);
+  emu_print (1, 4, "VCF Cutoff: %d \%\n", zone->vel_to_vcf_cutoff);
+  emu_print (1, 4, "VCF Q: %d \%\n",
+	     emu3_get_percent_value (zone->vel_to_vcf_q));
+  emu_print (1, 4, "VCF Attack: %d\n", zone->vel_to_vcf_attack);
+  emu_print (1, 4, "Pan: %d \%\n",
+	     emu3_get_percent_value (zone->vel_to_vca_pan));
+  emu_print (1, 4, "Sample Start: %d \%\n", zone->vel_to_sample_start);
+  emu_print (1, 4, "Auxiliary Envelope: %d \%\n", zone->vel_to_aux_env);
+
+  emu_print (1, 3, "Keyboard Mode\n");
+  emu_print (1, 4, "Keyboard Envelope mode: %s\n",
+	     emu3_get_env_mode_trigger (zone->flags) ? "trigger" : "gate");
+  emu_print (1, 4, "Solo: %s\n",
+	     emu3_get_is_solo_enabled (zone->flags) ? "on" : "off");
+  emu_print (1, 4, "Nontranspose: %s\n",
+	     emu3_get_is_nontranspose_enabled (zone->flags) ? "on" : "off");
+
+  emu_print (1, 3, "Realtime Enable\n");
   const char *OFF_ON[] = { "Off", "On" };
-  emu_print (1, 3, "Realtime enable Pitch: %s\n",
+  emu_print (1, 4, "Pitch: %s\n",
 	     OFF_ON[emu3_get_is_rt_pitch_enabled (zone->rt_enable_flags)]);
-  emu_print (1, 3, "Realtime enable VCF cutoff: %s\n",
+  emu_print (1, 4, "VCF cutoff: %s\n",
 	     OFF_ON[emu3_get_is_rt_vcf_cutoff_enabled
 		    (zone->rt_enable_flags)]);
-  emu_print (1, 3, "Realtime enable VCF NoteOn Q: %s\n",
+  emu_print (1, 4, "VCF NoteOn Q: %s\n",
 	     OFF_ON[emu3_get_is_rt_note_on_q_enabled (zone->vcf_q)]);
-  emu_print (1, 3, "Realtime enable LFO->Pitch: %s\n",
+  emu_print (1, 4, "LFO->Pitch: %s\n",
 	     OFF_ON[emu3_get_is_rt_lfo_pitch_enabled
 		    (zone->rt_enable_flags)]);
-  emu_print (1, 3, "Realtime enable LFO->VCF cutoff: %s\n",
+  emu_print (1, 4, "LFO->VCF cutoff: %s\n",
 	     OFF_ON[emu3_get_is_rt_lfo_vcf_cutoff_enabled
 		    (zone->rt_enable_flags)]);
-  emu_print (1, 3, "Realtime enable LFO->VCA: %s\n",
+  emu_print (1, 4, "LFO->VCA: %s\n",
 	     OFF_ON[emu3_get_is_rt_lfo_vca_enabled (zone->rt_enable_flags)]);
-  emu_print (1, 3, "Realtime enable VCA level: %s\n",
+  emu_print (1, 4, "VCA level: %s\n",
 	     OFF_ON[emu3_get_is_rt_vca_level_enabled
 		    (zone->rt_enable_flags)]);
-  emu_print (1, 3, "Realtime enable Attack: %s\n",
+  emu_print (1, 4, "Attack: %s\n",
 	     OFF_ON[emu3_get_is_rt_attack_enabled (zone->rt_enable_flags)]);
-  emu_print (1, 3, "Realtime enable Pan: %s\n",
+  emu_print (1, 4, "Pan: %s\n",
 	     OFF_ON[emu3_get_is_rt_pan_enabled (zone->rt_enable_flags)]);
 }
 
