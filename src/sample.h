@@ -89,8 +89,6 @@ struct smpl_chunk_data
   } sample_loop;
 };
 
-int emu3_get_sample_channels (struct emu3_sample *);
-
 void emu3_process_sample (struct emu3_sample *sample, int num, int nframes,
 			  emu3_ext_mode_t ext_mode);
 

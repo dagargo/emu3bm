@@ -73,7 +73,7 @@ emu3_emu3name_to_wav_filename (const char *emu3name, int num, int ext_mode)
   return wname;
 }
 
-int
+static int
 emu3_get_sample_channels (struct emu3_sample *sample)
 {
   if ((sample->format & EMU3_SAMPLE_OPT_STEREO) == EMU3_SAMPLE_OPT_STEREO)
@@ -149,6 +149,7 @@ emu3_process_sample (struct emu3_sample *sample, int num, int nframes,
 
   if (!ext_mode)
     return;
+
   wav_file = emu3_emu3name_to_wav_filename (sample->name, num, ext_mode);
 
   emu_debug (1, "Extracting sample '%s'...", wav_file);
