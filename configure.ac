@@ -17,7 +17,7 @@ AC_SUBST(SNDFILE_CFLAGS)
 AC_SUBST(SNDFILE_LIBS)
 
 # Checks for header files.
-AC_CHECK_HEADERS([stdlib.h string.h unistd.h inttypes.h])
+AC_CHECK_HEADERS([stdlib.h string.h unistd.h inttypes.h stdint.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 

@@ -21,6 +21,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <stdint.h>
 #include <unistd.h>
 
 #define MEM_SIZE 0x08000000	//128 MiB
@@ -79,6 +80,6 @@ int emu_write_file (struct emu_file *);
 
 int emu_reverse_note_search (char *);
 
-const char *emu_get_note_name (unsigned char);
+const char *emu_get_note_name (uint8_t);
 
 #endif
