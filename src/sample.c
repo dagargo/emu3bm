@@ -88,7 +88,7 @@ emu3_get_sample_channels (struct emu3_sample *sample)
 
 static void
 emu3_print_sample_info (struct emu3_sample *sample, int num,
-			sf_count_t nframes, int32_t *loop_start,
+			sf_count_t nframes, uint32_t *loop_start,
 			uint32_t *loop_end)
 {
   emu_print (0, 0, "Sample %03d: %.*s\n", num, NAME_SIZE, sample->name);
@@ -132,7 +132,8 @@ emu3_print_sample_info (struct emu3_sample *sample, int num,
 
 void
 emu3_process_sample (struct emu3_sample *sample, int num, int nframes,
-		     emu3_ext_mode_t ext_mode)
+		     emu3_ext_mode_t ext_mode, uint8_t original_key,
+		     float tuning)
 {
   SF_INFO sfinfo;
   SNDFILE *output;
@@ -171,11 +172,24 @@ emu3_process_sample (struct emu3_sample *sample, int num, int nframes,
       emu_error ("%s", sf_strerror (output));
     }
 
+  while (tuning > 100)
+    {
+      original_key++;
+      tuning -= 100;
+    }
+
+  while (tuning < 0)
+    {
+      original_key--;
+      tuning += 100;
+    }
+
   smpl_chunk_data.manufacturer = 0;
   smpl_chunk_data.product = 0;
   smpl_chunk_data.sample_period = htole32 (1e9 / sample->sample_rate);
-  smpl_chunk_data.midi_unity_note = 0;	//TODO: For any zone with this sample, get the original note.
-  smpl_chunk_data.midi_pitch_fraction = 0;
+  smpl_chunk_data.midi_unity_note = htole32 (original_key + 9);	//Samplers use A-1 as note 0 but it's really an A0 when MIDI note 0 is C-1.
+  smpl_chunk_data.midi_pitch_fraction =
+    htole32 ((uint32_t) (tuning * INT8_MAX / 100.0));
   smpl_chunk_data.smpte_format = 0;
   smpl_chunk_data.smpte_offset = 0;
   smpl_chunk_data.num_sampler_loops = htole32 (1);

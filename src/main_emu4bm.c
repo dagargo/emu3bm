@@ -132,7 +132,7 @@ emu4_process_file (struct emu_file *file, int ext_mode)
 	  struct emu3_sample *sample =
 	    (struct emu3_sample *) &sample_chunk->data[2];
 	  emu3_process_sample (sample, sample_index + 1,
-			       be32toh (sample_chunk->len), ext_mode);
+			       be32toh (sample_chunk->len), ext_mode, 0, 0);
 	  sample_index++;
 	}
 

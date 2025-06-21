@@ -85,7 +85,7 @@ struct emu3_preset_note_zone
 
 struct emu3_preset_zone
 {
-  uint8_t root_note;
+  uint8_t original_key;
   uint8_t sample_id_lsb;
   uint8_t sample_id_msb;
   int8_t parameter_a;
@@ -624,6 +624,12 @@ emu3_print_envelope (struct emu3_envelope *envelope)
 	     emu3_get_time_163_69 (envelope->release));
 }
 
+static int
+emu3_get_sample_num (struct emu3_preset_zone *zone)
+{
+  return (zone->sample_id_msb << 8) + zone->sample_id_lsb;
+}
+
 static void
 emu3_print_preset_zone_info (struct emu_file *file,
 			     struct emu3_preset_zone *zone)
@@ -637,9 +643,9 @@ emu3_print_preset_zone_info (struct emu_file *file,
 	     emu3_get_note_on_delay (zone->note_on_delay));
   emu_print (1, 4, "Chorus: %s\n",
 	     emu3_get_is_chorus_enabled (zone->flags) ? "on" : "off");
-  emu_print (1, 4, "Original Key: %s\n", emu_get_note_name (zone->root_note));
-  emu_print (1, 4, "Sample: %03d\n",
-	     (zone->sample_id_msb << 8) + zone->sample_id_lsb);
+  emu_print (1, 4, "Original Key: %s\n",
+	     emu_get_note_name (zone->original_key));
+  emu_print (1, 4, "Sample: %03d\n", emu3_get_sample_num (zone));
   emu_print (1, 4, "Disable Loop: %s\n",
 	     emu3_get_is_loop_disabled (zone->flags) ? "on" : "off");
   const char *SIDES_DISABLED[] = { "left", "off", "right" };
@@ -1418,6 +1424,55 @@ emu3_process_preset (struct emu_file *file, int preset_num,
     }
 }
 
+static int
+emu3_find_first_zone_for_sample (struct emu_file *file, int sample_num,
+				 struct emu3_preset_zone **first_zone)
+{
+  unsigned int *addresses;
+  struct emu3_bank *bank = EMU3_BANK (file);
+  int preset_num, max_presets = emu3_get_max_presets (bank);
+  struct emu3_preset *preset;
+  struct emu3_preset_note_zone *note_zones;
+  struct emu3_preset_zone *zones;
+  struct emu3_preset_zone *zone;
+
+  preset_num = 0;
+  addresses = emu3_get_preset_addresses (bank);
+  while (preset_num < max_presets)
+    {
+      if (addresses[0] != addresses[1])
+	{
+	  preset = emu3_get_preset (file, preset_num);
+	  note_zones = emu3_get_preset_note_zones (file, preset_num);
+	  zones = emu3_get_preset_zones (file, preset_num);
+	  for (int i = 0; i < preset->note_zones; i++)
+	    {
+	      zone = NULL;
+	      if (note_zones->pri_zone != 0xff)
+		{
+		  zone = &zones[note_zones->pri_zone];
+		}
+	      if (note_zones->sec_zone != 0xff)
+		{
+		  zone = &zones[note_zones->sec_zone];
+		}
+
+	      if (zone != NULL && emu3_get_sample_num (zone) == sample_num)
+		{
+		  *first_zone = zone;
+		  return 1;
+		}
+
+	      note_zones++;
+	    }
+	}
+      addresses++;
+      preset_num++;
+    }
+
+  return 0;
+}
+
 int
 emu3_process_bank (struct emu_file *file, int ext_mode, int edit_preset,
 		   char *rt_controls, int pbr, int level, int cutoff, int q,
@@ -1460,11 +1515,28 @@ emu3_process_bank (struct emu_file *file, int ext_mode, int edit_preset,
   i = 0;
   while (addresses[i] != 0 && i < max_samples)
     {
+      struct emu3_preset_zone *zone;
+      uint32_t original_key;
+      float fraction;
       address = sample_start_addr + addresses[i] - SAMPLE_OFFSET;
       sample = (struct emu3_sample *) &file->raw[address];
       frames = ((sample->end_l + sizeof (int16_t) -
 		 sizeof (struct emu3_sample)) / sizeof (int16_t)) - 4;
-      emu3_process_sample (sample, i + 1, frames, ext_mode);
+      if (ext_mode)
+	{
+	  if (emu3_find_first_zone_for_sample (file, i + 1, &zone))
+	    {
+	      original_key = zone->original_key;
+	      fraction = emu3_get_note_tuning (zone->note_tuning);
+	    }
+	  else
+	    {
+	      original_key = 0;
+	      fraction = 0;
+	    }
+	}
+      emu3_process_sample (sample, i + 1, frames, ext_mode, original_key,
+			   fraction);
       i++;
     }
 
@@ -1707,7 +1779,7 @@ emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
 	return ERR_BANK_FULL;
     }
 
-  zone->root_note = zone_range->original_key;
+  zone->original_key = zone_range->original_key;
   zone->sample_id_lsb = sample_num % 256;
   zone->sample_id_msb = sample_num / 256;
   zone->parameter_a = 0x1f;
