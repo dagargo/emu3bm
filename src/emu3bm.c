@@ -160,7 +160,6 @@ struct emu3_preset_zone
   uint8_t flags;
 };
 
-
 // 1 0110
 // env mode trigger, solo on, notranspose on
 
@@ -1227,6 +1226,63 @@ emu3_check_bank_format (struct emu3_bank *bank)
     return 0;
 }
 
+struct emu3_preset *
+emu3_get_preset (struct emu_file *file, int preset_num)
+{
+  struct emu3_bank *bank = EMU3_BANK (file);
+  uint32_t addr = emu3_get_preset_address (bank, preset_num);
+  return (struct emu3_preset *) &file->raw[addr];
+}
+
+static uint32_t
+emu3_get_preset_note_zone_addr (struct emu_file *file, int preset_num)
+{
+  struct emu3_bank *bank = EMU3_BANK (file);
+  uint32_t addr = emu3_get_preset_address (bank, preset_num);
+  return addr + sizeof (struct emu3_preset);
+}
+
+static uint32_t
+emu3_get_preset_zone_addr (struct emu_file *file, int preset_num)
+{
+  struct emu3_preset *preset = emu3_get_preset (file, preset_num);
+  return emu3_get_preset_note_zone_addr (file, preset_num) +
+    (preset->note_zones) * sizeof (struct emu3_preset_note_zone);
+}
+
+struct emu3_preset_note_zone *
+emu3_get_preset_note_zones (struct emu_file *file, int preset_num)
+{
+  uint32_t addr = emu3_get_preset_note_zone_addr (file, preset_num);
+  return (struct emu3_preset_note_zone *) &file->raw[addr];
+}
+
+struct emu3_preset_zone *
+emu3_get_preset_zones (struct emu_file *file, int preset_num)
+{
+  uint32_t addr = emu3_get_preset_zone_addr (file, preset_num);
+  return (struct emu3_preset_zone *) &file->raw[addr];
+}
+
+static int
+emu3_count_preset_zones (struct emu_file *file, int preset_num)
+{
+  int i, max = -1;
+  struct emu3_preset *preset = emu3_get_preset (file, preset_num);
+  struct emu3_preset_note_zone *note_zone =
+    emu3_get_preset_note_zones (file, preset_num);
+
+  for (i = 0; i < preset->note_zones; i++)
+    {
+      if (note_zone->pri_zone != 0xff && note_zone->pri_zone > max)
+	max = note_zone->pri_zone;
+      if (note_zone->sec_zone != 0xff && note_zone->sec_zone > max)
+	max = note_zone->sec_zone;
+      note_zone++;
+    }
+  return max + 1;
+}
+
 struct emu_file *
 emu3_open_file (const char *filename)
 {
@@ -1322,15 +1378,12 @@ emu3_process_preset (struct emu_file *file, int preset_num,
 		     char *rt_controls, int pbr, int level, int cutoff, int q,
 		     int filter)
 {
-  struct emu3_bank *bank = EMU3_BANK (file);
-  uint32_t address = emu3_get_preset_address (bank, preset_num);
-  struct emu3_preset *preset = (struct emu3_preset *) &file->raw[address];
+  struct emu3_preset *preset = emu3_get_preset (file, preset_num);
   struct emu3_preset_zone *zones;
   struct emu3_preset_note_zone *note_zones;
 
-  emu_print (0, 0, "Preset %03d: %.*s", preset_num, NAME_SIZE, preset->name);
-  emu_print (1, 0, " @ 0x%08x", address);
-  emu_print (0, 0, "\n");
+  emu_print (0, 0, "Preset %03d: %.*s\n", preset_num, NAME_SIZE,
+	     preset->name);
 
   if (rt_controls)
     {
@@ -1344,17 +1397,9 @@ emu3_process_preset (struct emu_file *file, int preset_num,
 
   emu3_print_preset_info (preset);
 
-  note_zones =
-    (struct emu3_preset_note_zone *) &file->raw[address +
-						sizeof (struct emu3_preset)];
-  zones =
-    (struct emu3_preset_zone *) &file->raw[address +
-					   sizeof (struct
-						   emu3_preset)
-					   +
-					   sizeof (struct
-						   emu3_preset_note_zone)
-					   * preset->note_zones];
+  note_zones = emu3_get_preset_note_zones (file, preset_num);
+  zones = emu3_get_preset_zones (file, preset_num);
+
   emu_print (1, 1, "Note mappings:\n");
   for (int j = 0; j < NOTES; j++)
     {
@@ -1509,56 +1554,6 @@ emu3_reset_envelope (struct emu3_envelope *envelope)
   envelope->release = 0;
 }
 
-struct emu3_preset *
-emu3_get_preset (struct emu_file *file, int preset_num)
-{
-  struct emu3_bank *bank = EMU3_BANK (file);
-  uint32_t addr = emu3_get_preset_address (bank, preset_num);
-  return (struct emu3_preset *) &file->raw[addr];
-}
-
-static uint32_t
-emu3_get_preset_note_zone_addr (struct emu_file *file, int preset_num)
-{
-  struct emu3_bank *bank = EMU3_BANK (file);
-  uint32_t addr = emu3_get_preset_address (bank, preset_num);
-  return addr + sizeof (struct emu3_preset);
-}
-
-static uint32_t
-emu3_get_preset_zone_addr (struct emu_file *file, int preset_num)
-{
-  struct emu3_preset *preset = emu3_get_preset (file, preset_num);
-  return emu3_get_preset_note_zone_addr (file, preset_num) +
-    (preset->note_zones) * sizeof (struct emu3_preset_note_zone);
-}
-
-struct emu3_preset_note_zone *
-emu3_get_preset_note_zone (struct emu_file *file, int preset_num)
-{
-  uint32_t addr = emu3_get_preset_note_zone_addr (file, preset_num);
-  return (struct emu3_preset_note_zone *) &file->raw[addr];
-}
-
-static int
-emu3_get_preset_zones (struct emu_file *file, int preset_num)
-{
-  int i, max = -1;
-  struct emu3_preset *preset = emu3_get_preset (file, preset_num);
-  struct emu3_preset_note_zone *note_zone =
-    emu3_get_preset_note_zone (file, preset_num);
-
-  for (i = 0; i < preset->note_zones; i++)
-    {
-      if (note_zone->pri_zone != 0xff && note_zone->pri_zone > max)
-	max = note_zone->pri_zone;
-      if (note_zone->sec_zone != 0xff && note_zone->sec_zone > max)
-	max = note_zone->sec_zone;
-      note_zone++;
-    }
-  return max + 1;
-}
-
 static int
 emu3_add_zones (struct emu_file *file, int preset_num, int zone_num,
 		struct emu3_preset_zone **preset_zone)
@@ -1635,8 +1630,8 @@ emu3_add_zones (struct emu_file *file, int preset_num, int zone_num,
     }
   else
     {
-      note_zone = &emu3_get_preset_note_zone (file, preset_num)[zone_num];
-      note_zone->sec_zone = emu3_get_preset_zones (file, preset_num);
+      note_zone = &emu3_get_preset_note_zones (file, preset_num)[zone_num];
+      note_zone->sec_zone = emu3_count_preset_zones (file, preset_num);
 
       *preset_zone = (struct emu3_preset_zone *) &file->raw[next_preset_addr];
     }
@@ -1772,7 +1767,7 @@ emu3_del_preset_zone (struct emu_file *file, int preset_num, int zone_num)
       return EXIT_FAILURE;	//TODO: add error messages
     }
 
-  zones = emu3_get_preset_zones (file, preset_num);
+  zones = emu3_count_preset_zones (file, preset_num);
 
   if (zone_num < 0 || zone_num >= zones)
     {
@@ -1782,7 +1777,7 @@ emu3_del_preset_zone (struct emu_file *file, int preset_num, int zone_num)
 
   preset = emu3_get_preset (file, preset_num);
 
-  note_zone = emu3_get_preset_note_zone (file, preset_num);
+  note_zone = emu3_get_preset_note_zones (file, preset_num);
   note_zone += zone_num;
 
   addr = emu3_get_preset_note_zone_addr (file, preset_num);
@@ -1919,9 +1914,8 @@ emu3_create_bank (const char *path, const char *type)
   char *src_path =
     malloc (strlen (DATADIR) + strlen (PACKAGE) +
 	    strlen (EMPTY_BANK_TEMPLATE) + strlen (type) + 3);
-  int ret =
-    sprintf (src_path, "%s/%s/%s%s", DATADIR, PACKAGE, EMPTY_BANK_TEMPLATE,
-	     type);
+  int ret = sprintf (src_path, "%s/%s/%s%s", DATADIR, PACKAGE,
+		     EMPTY_BANK_TEMPLATE, type);
 
   if (ret < 0)
     {
