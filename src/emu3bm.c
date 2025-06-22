@@ -1478,7 +1478,7 @@ emu3_process_bank (struct emu_file *file, int ext_mode, int edit_preset,
 		   char *rt_controls, int pbr, int level, int cutoff, int q,
 		   int filter)
 {
-  int i, frames, channels;
+  int i, channels;
   uint32_t *addresses;
   uint32_t address;
   uint32_t sample_start_addr;
@@ -1520,8 +1520,6 @@ emu3_process_bank (struct emu_file *file, int ext_mode, int edit_preset,
       float fraction;
       address = sample_start_addr + addresses[i] - SAMPLE_OFFSET;
       sample = (struct emu3_sample *) &file->raw[address];
-      frames = ((sample->end_l + sizeof (int16_t) -
-		 sizeof (struct emu3_sample)) / sizeof (int16_t)) - 4;
       if (ext_mode)
 	{
 	  if (emu3_find_first_zone_for_sample (file, i + 1, &zone))
@@ -1535,8 +1533,7 @@ emu3_process_bank (struct emu_file *file, int ext_mode, int edit_preset,
 	      fraction = 0;
 	    }
 	}
-      emu3_process_sample (sample, i + 1, frames, ext_mode, original_key,
-			   fraction);
+      emu3_process_sample (sample, i + 1, ext_mode, original_key, fraction);
       i++;
     }
 

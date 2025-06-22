@@ -89,10 +89,11 @@ struct smpl_chunk_data
   } sample_loop;
 };
 
-void emu3_process_sample (struct emu3_sample *sample, int num, int nframes,
+void emu3_process_sample (struct emu3_sample *sample, int num,
 			  emu3_ext_mode_t ext_mode, uint8_t note,
 			  float fraction);
 
 int emu3_sample_get_smpl_chunk (SNDFILE * output,
 				struct smpl_chunk_data *smpl_chunk_data);
+
 #endif

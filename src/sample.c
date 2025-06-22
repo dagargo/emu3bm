@@ -34,6 +34,13 @@ static const uint8_t JUNK_CHUNK_DATA[] = {
   0, 0, 0, 0
 };
 
+static uint32_t
+emu3_sample_get_frames (struct emu3_sample *sample)
+{
+  return ((sample->end_l + sizeof (int16_t) -
+	   sizeof (struct emu3_sample)) / sizeof (int16_t)) - 4;
+}
+
 static char *
 emu3_emu3name_to_filename (const char *objname)
 {
@@ -88,10 +95,28 @@ emu3_get_sample_channels (struct emu3_sample *sample)
 
 static void
 emu3_print_sample_info (struct emu3_sample *sample, int num,
-			sf_count_t nframes, uint32_t *loop_start,
+			uint32_t *frames, uint32_t *loop_start,
 			uint32_t *loop_end)
 {
+  *frames = emu3_sample_get_frames (sample);
+
   emu_print (0, 0, "Sample %03d: %.*s\n", num, NAME_SIZE, sample->name);
+
+  *loop_start = EMU3_LOOP_START_INT_TO_FRAMES (EMU3_LOOP_POINT_BIN_TO_INT
+					       (sample->loop_start_l));
+  *loop_end = EMU3_LOOP_END_INT_TO_FRAMES (EMU3_LOOP_POINT_BIN_TO_INT
+					   (sample->loop_end_l));
+
+  emu_print (2, 1, "Sample format: 0x%08x\n", sample->format);
+  emu_print (1, 1, "Frames: %d\n", *frames);
+  emu_print (1, 1, "Loop start: %d\n", *loop_start);
+  emu_print (1, 1, "Loop end: %d\n", *loop_end);
+  emu_print (1, 1, "Channels: %d\n", emu3_get_sample_channels (sample));
+  emu_print (1, 1, "Sample rate: %d Hz\n", sample->sample_rate);
+  emu_print (1, 1, "Loop enabled: %s\n",
+	     sample->format & EMU3_SAMPLE_OPT_LOOP ? "on" : "off");
+  emu_print (1, 1, "Loop in release: %s\n",
+	     sample->format & EMU3_SAMPLE_OPT_LOOP_RELEASE ? "on" : "off");
 
   if (sample->start_l != sizeof (struct emu3_sample))
     {
@@ -108,22 +133,6 @@ emu3_print_sample_info (struct emu3_sample *sample, int num,
   emu_print (2, 1, "Loop end   L: %d\n", sample->loop_end_l);
   emu_print (2, 1, "Loop end:  R: %d\n", sample->loop_end_r);
 
-  *loop_start = EMU3_LOOP_START_INT_TO_FRAMES (EMU3_LOOP_POINT_BIN_TO_INT
-					       (sample->loop_start_l));
-  *loop_end = EMU3_LOOP_END_INT_TO_FRAMES (EMU3_LOOP_POINT_BIN_TO_INT
-					   (sample->loop_end_l));
-
-  emu_print (2, 1, "Sample format: 0x%08x\n", sample->format);
-  emu_print (1, 1, "Loop start: %d\n", *loop_start);
-  emu_print (1, 1, "Loop end: %d\n", *loop_end);
-  emu_print (1, 1, "Channels: %d\n", emu3_get_sample_channels (sample));
-  emu_print (1, 1, "Frames: %d\n", nframes);
-  emu_print (1, 1, "Sample rate: %d Hz\n", sample->sample_rate);
-  emu_print (1, 1, "Loop enabled: %s\n",
-	     sample->format & EMU3_SAMPLE_OPT_LOOP ? "on" : "off");
-  emu_print (1, 1, "Loop in release: %s\n",
-	     sample->format & EMU3_SAMPLE_OPT_LOOP_RELEASE ? "on" : "off");
-
   emu_print (2, 1, "Sample parameters:\n");
   for (int i = 0; i < SAMPLE_PARAMETERS; i++)
     emu_print (2, 2, "0x%08x (%d)\n", sample->parameters[i],
@@ -131,7 +140,7 @@ emu3_print_sample_info (struct emu3_sample *sample, int num,
 }
 
 void
-emu3_process_sample (struct emu3_sample *sample, int num, int nframes,
+emu3_process_sample (struct emu3_sample *sample, int num,
 		     emu3_ext_mode_t ext_mode, uint8_t original_key,
 		     float tuning)
 {
@@ -140,13 +149,13 @@ emu3_process_sample (struct emu3_sample *sample, int num, int nframes,
   char *wav_file;
   short *l_channel, *r_channel;
   short frame[2];
-  uint32_t loop_start, loop_end;
+  uint32_t frames, loop_start, loop_end;
   int channels = emu3_get_sample_channels (sample);
   struct SF_CHUNK_INFO smpl_chunk_info;
   struct SF_CHUNK_INFO junk_chunk_info;
   struct smpl_chunk_data smpl_chunk_data;
 
-  emu3_print_sample_info (sample, num, nframes, &loop_start, &loop_end);
+  emu3_print_sample_info (sample, num, &frames, &loop_start, &loop_end);
 
   if (!ext_mode)
     return;
@@ -155,7 +164,7 @@ emu3_process_sample (struct emu3_sample *sample, int num, int nframes,
 
   emu_debug (1, "Extracting sample '%s'...", wav_file);
 
-  sfinfo.frames = nframes;
+  sfinfo.frames = frames;
   sfinfo.samplerate = sample->sample_rate;
   sfinfo.channels = channels;
   sfinfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
@@ -212,8 +221,8 @@ emu3_process_sample (struct emu3_sample *sample, int num, int nframes,
 
   l_channel = sample->frames + 2;
   if (channels == 2)
-    r_channel = sample->frames + nframes + 6;
-  for (int i = 0; i < nframes; i++)
+    r_channel = sample->frames + frames + 6;
+  for (int i = 0; i < frames; i++)
     {
       frame[0] = *l_channel;
       l_channel++;

@@ -48,6 +48,7 @@ struct chunk
 
 static const struct option options[] = {
   {"extract-samples", 0, NULL, 'x'},
+  {"extract-samples-with-num", 0, NULL, 'X'},
   {"verbosity", 0, NULL, 'v'},
   {"help", 0, NULL, 'h'},
   {NULL, 0, NULL, 0}
@@ -92,7 +93,9 @@ emu4_process_file (struct emu_file *file, int ext_mode)
   uint32_t chunk_len;
   struct chunk *chunk;
   struct chunk *content_chunk, *sample_chunk;
+  struct emu3_sample *sample;
   int i, sample_index;
+  uint32_t sample_start, sample_len;
 
   chunk = (struct chunk *) file->raw;
   if (check_chunk_name (chunk, EMU4_FORM_TAG))
@@ -119,20 +122,16 @@ emu4_process_file (struct emu_file *file, int ext_mode)
   sample_index = 0;
   while (i < chunk_len)
     {
-      unsigned int sample_start =
-	be32toh (*(unsigned int *) content_chunk->data);
-      unsigned int sample_len =
-	be32toh (content_chunk->len) + EMU4_E3_SAMPLE_OFFSET;
+      sample_start = be32toh (*(unsigned int *) content_chunk->data);
+      sample_len = be32toh (content_chunk->len) + EMU4_E3_SAMPLE_OFFSET;
       emu_print (1, 0, "%.4s: %.16s @ 0x%08x, 0x%08x\n", content_chunk->name,
 		 &content_chunk->data[6], sample_start, sample_len);
 
       if (strcmp (content_chunk->name, EMU4_E3_SAMPLE_TAG) == 0)
 	{
 	  sample_chunk = (struct chunk *) &file->raw[sample_start];
-	  struct emu3_sample *sample =
-	    (struct emu3_sample *) &sample_chunk->data[2];
-	  emu3_process_sample (sample, sample_index + 1,
-			       be32toh (sample_chunk->len), ext_mode, 0, 0);
+	  sample = (struct emu3_sample *) &sample_chunk->data[2];
+	  emu3_process_sample (sample, sample_index + 1, ext_mode, 0, 0);
 	  sample_index++;
 	}
 
@@ -168,11 +167,11 @@ main (int argc, char *argv[])
 	  break;
 	case 'x':
 	  xflg++;
-	  ext_mode = 1;
+	  ext_mode = EMU3_EXT_MODE_NAME;
 	  break;
 	case 'X':
 	  xflg++;
-	  ext_mode = 2;
+	  ext_mode = EMU3_EXT_MODE_NAME_NUMBER;
 	  break;
 	case '?':
 	  errflg++;
