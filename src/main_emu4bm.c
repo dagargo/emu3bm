@@ -30,19 +30,20 @@
 #include "utils.h"
 
 #define CHUNK_NAME_LEN 4
-#define CONTENT_CHUNK_DATA_LEN 24
-#define CONTENT_CHUNK_LEN (sizeof(struct chunk) + CONTENT_CHUNK_DATA_LEN)
 
 #define EMU4_FORM_TAG "FORM"
 #define EMU4_E4_FORMAT "E4B0"
 #define EMU4_TOC_TAG "TOC1"
+#define EMU4_E4MA_TAG "E4Ma"
 #define EMU4_E3_SAMPLE_TAG "E3S1"
-#define EMU4_E3_SAMPLE_OFFSET (sizeof (struct chunk) + 2)
+#define EMU4_E4P1_TAG "E4P1"
+
+#define EMU4_NAME_OFFSET 2
 
 struct chunk
 {
   char name[CHUNK_NAME_LEN];
-  unsigned int len;
+  uint32_t size;
   char data[];
 };
 
@@ -77,32 +78,48 @@ print_help (char *executable_path)
     }
 }
 
-int
-check_chunk_name (struct chunk *chunk, const char *name)
+static int
+chunk_check_name (struct chunk *chunk, const char *name)
 {
-  int v = strncmp (chunk->name, name, CHUNK_NAME_LEN);
-  if (v)
-    emu_error ("Unexpected chunk name %s", name);
-  return v;
+  return strncmp (chunk->name, name, CHUNK_NAME_LEN);
 }
 
-int
+static uint32_t
+chunk_get_size (struct chunk *chunk)
+{
+  return be32toh (chunk->size);
+}
+
+static void
+chunk_print (struct chunk *chunk)
+{
+  emu_print (1, 0, "chunk %.4s (%ld B)\n", chunk->name,
+	     chunk_get_size (chunk));
+}
+
+static void
+chunk_print_with_name (struct chunk *chunk)
+{
+  emu_print (1, 0, "chunk %.4s: %.16s (%ld B)\n", chunk->name,
+	     &chunk->data[EMU4_NAME_OFFSET], chunk_get_size (chunk));
+}
+
+static int
 emu4_process_file (struct emu_file *file, int ext_mode)
 {
   char *fdata;
-  uint32_t chunk_len;
+  uint32_t total_size, chunk_size;
   struct chunk *chunk;
-  struct chunk *content_chunk, *sample_chunk;
   struct emu3_sample *sample;
   int i, sample_index;
   uint32_t sample_start, sample_len;
 
   chunk = (struct chunk *) file->raw;
-  if (check_chunk_name (chunk, EMU4_FORM_TAG))
+  if (chunk_check_name (chunk, EMU4_FORM_TAG))
     goto cleanup;
 
-  chunk_len = be32toh (chunk->len);
-  emu_print (1, 0, "FORM: %ld\n", chunk_len);
+  chunk_print (chunk);
+  total_size = chunk_get_size (chunk);
 
   if (strncmp (chunk->data, EMU4_E4_FORMAT, strlen (EMU4_E4_FORMAT)))
     {
@@ -111,33 +128,37 @@ emu4_process_file (struct emu_file *file, int ext_mode)
     }
 
   chunk = (struct chunk *) &chunk->data[strlen (EMU4_E4_FORMAT)];	//EB40
-  if (check_chunk_name (chunk, EMU4_TOC_TAG))
-    goto cleanup;
-
-  chunk_len = be32toh (chunk->len);
-  emu_print (1, 0, "%s: %ld --\n", EMU4_TOC_TAG, chunk_len);
+  chunk_size = chunk_get_size (chunk);
 
   i = 0;
-  content_chunk = (struct chunk *) chunk->data;
   sample_index = 0;
-  while (i < chunk_len)
+  while (1)
     {
-      sample_start = be32toh (*(unsigned int *) content_chunk->data);
-      sample_len = be32toh (content_chunk->len) + EMU4_E3_SAMPLE_OFFSET;
-      emu_print (1, 0, "%.4s: %.16s @ 0x%08x, 0x%08x\n", content_chunk->name,
-		 &content_chunk->data[6], sample_start, sample_len);
-
-      if (strcmp (content_chunk->name, EMU4_E3_SAMPLE_TAG) == 0)
+      if (strcmp (chunk->name, EMU4_E4P1_TAG) == 0)
 	{
-	  sample_chunk = (struct chunk *) &file->raw[sample_start];
-	  sample = (struct emu3_sample *) &sample_chunk->data[2];
+	  chunk_print_with_name (chunk);
+	}
+      else if (strcmp (chunk->name, EMU4_E3_SAMPLE_TAG) == 0)
+	{
+	  chunk_print_with_name (chunk);
+	  sample = (struct emu3_sample *) &chunk->data[EMU4_NAME_OFFSET];
 	  emu3_process_sample (sample, sample_index + 1, ext_mode, 0, 0);
 	  sample_index++;
 	}
+      else
+	{
+	  chunk_print (chunk);
+	}
 
-      content_chunk =
-	(struct chunk *) &content_chunk->data[CONTENT_CHUNK_DATA_LEN];
-      i += CONTENT_CHUNK_LEN;
+      i += chunk_size;
+
+      if (i >= total_size)
+	{
+	  break;
+	}
+
+      chunk = (struct chunk *) &chunk->data[chunk_size];
+      chunk_size = chunk_get_size (chunk);
     }
 
 cleanup:
