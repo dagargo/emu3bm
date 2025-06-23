@@ -37,6 +37,7 @@
 #define EMU4_E3S1_TAG "E3S1"
 #define EMU4_E4P1_TAG "E4P1"
 #define EMU4_E4S1_TAG "E4s1"
+#define EMU4_EMS0_TAG "EMS0"
 
 #define EMU4_E4_FORMAT "E4B0"
 
@@ -96,17 +97,17 @@ chunk_get_size (struct chunk *chunk)
 }
 
 static void
-chunk_print (struct chunk *chunk)
+chunk_print (struct chunk *chunk, char *content_name)
 {
-  emu_print (1, 0, "chunk %.4s (%ld B)\n", chunk->name,
-	     chunk_get_size (chunk));
+  emu_print (1, 0, "chunk %.4s: %.*s%s(%ld B)\n", chunk->name,
+	     content_name == NULL ? 0 : NAME_SIZE, content_name,
+	     content_name == NULL ? "" : " ", chunk_get_size (chunk));
 }
 
 static void
-chunk_print_with_name (struct chunk *chunk)
+chunk_print_named (struct chunk *chunk)
 {
-  emu_print (1, 0, "chunk %.4s: %.16s (%ld B)\n", chunk->name,
-	     &chunk->data[EMU4_NAME_OFFSET], chunk_get_size (chunk));
+  chunk_print (chunk, &chunk->data[EMU4_NAME_OFFSET]);
 }
 
 static int
@@ -125,7 +126,7 @@ emu4_process_file (struct emu_file *file, int ext_mode)
       goto cleanup;
     }
 
-  chunk_print (chunk);
+  chunk_print (chunk, NULL);
   total_size = chunk_get_size (chunk);
 
   if (strncmp (chunk->data, EMU4_E4_FORMAT, strlen (EMU4_E4_FORMAT)))
@@ -136,29 +137,41 @@ emu4_process_file (struct emu_file *file, int ext_mode)
 
   chunk = (struct chunk *) &chunk->data[strlen (EMU4_E4_FORMAT)];	//EB40
   chunk_size = chunk_get_size (chunk);
+  size = strlen (EMU4_E4_FORMAT);
 
-  size = 0;
   sample_index = 1;
   while (1)
     {
-      if (CHUNK_NAME_IS (chunk, EMU4_E4P1_TAG))
+      if (CHUNK_NAME_IS (chunk, EMU4_TOC1_TAG))
 	{
-	  chunk_print_with_name (chunk);
+	  chunk_print (chunk, NULL);
+	}
+      else if (CHUNK_NAME_IS (chunk, EMU4_E4MA_TAG))
+	{
+	  chunk_print (chunk, NULL);
 	}
       else if (CHUNK_NAME_IS (chunk, EMU4_E3S1_TAG))
 	{
-	  chunk_print_with_name (chunk);
+	  chunk_print_named (chunk);
 	  sample = (struct emu3_sample *) &chunk->data[EMU4_NAME_OFFSET];
 	  emu3_process_sample (sample, sample_index, ext_mode, 0, 0);
 	  sample_index++;
 	}
+      else if (CHUNK_NAME_IS (chunk, EMU4_E4P1_TAG))
+	{
+	  chunk_print_named (chunk);
+	}
       else if (CHUNK_NAME_IS (chunk, EMU4_E4S1_TAG))
 	{
-	  chunk_print_with_name (chunk);
+	  chunk_print_named (chunk);
+	}
+      else if (CHUNK_NAME_IS (chunk, EMU4_EMS0_TAG))
+	{
+	  chunk_print (chunk, NULL);
 	}
       else
 	{
-	  chunk_print (chunk);
+	  break;
 	}
 
       if (sample_index == EMU4_MAX_SAMPLES)
