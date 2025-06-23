@@ -34,13 +34,6 @@ static const uint8_t JUNK_CHUNK_DATA[] = {
   0, 0, 0, 0
 };
 
-static uint32_t
-emu3_sample_get_frames (struct emu3_sample *sample)
-{
-  return ((sample->end_l + sizeof (int16_t) -
-	   sizeof (struct emu3_sample)) / sizeof (int16_t)) - 4;
-}
-
 static char *
 emu3_emu3name_to_filename (const char *objname)
 {
@@ -98,16 +91,43 @@ emu3_print_sample_info (struct emu3_sample *sample, int num,
 			uint32_t *frames, uint32_t *loop_start,
 			uint32_t *loop_end)
 {
-  *frames = emu3_sample_get_frames (sample);
+  uint32_t sample_start, sample_end, sample_loop_start, sample_loop_end;
 
   emu_print (0, 0, "Sample %03d: %.*s\n", num, NAME_SIZE, sample->name);
 
-  *loop_start = EMU3_LOOP_START_INT_TO_FRAMES (EMU3_LOOP_POINT_BIN_TO_INT
-					       (sample->loop_start_l));
-  *loop_end = EMU3_LOOP_END_INT_TO_FRAMES (EMU3_LOOP_POINT_BIN_TO_INT
-					   (sample->loop_end_l));
+  //Some samples might have only the right channel.
 
-  emu_print (2, 1, "Sample format: 0x%08x\n", sample->format);
+  if (EMU3_SAMPLE_HAS_CHANNEL_L (sample))
+    {
+      sample_start = sample->start_l;
+      sample_end = sample->end_l;
+      sample_loop_start = sample->loop_start_l;
+      sample_loop_end = sample->loop_end_l;
+    }
+  else
+    {
+      sample_start = sample->start_r;
+      sample_end = sample->end_r;
+      sample_loop_start = sample->loop_start_r;
+      sample_loop_end = sample->loop_end_r;
+    }
+
+  if (sample_start != sizeof (struct emu3_sample))
+    {
+      emu_error ("Unexpected sample start: %d", sample_start);
+    }
+
+  *frames = ((sample_end + sizeof (int16_t) -
+	      sizeof (struct emu3_sample)) / sizeof (int16_t)) - 4;
+
+  *loop_start =
+    EMU3_LOOP_START_INT_TO_FRAMES (EMU3_LOOP_POINT_BIN_TO_INT
+				   (sample_loop_start));
+  *loop_end =
+    EMU3_LOOP_END_INT_TO_FRAMES (EMU3_LOOP_POINT_BIN_TO_INT
+				 (sample_loop_end));
+
+  emu_print (1, 1, "Sample format: 0x%08x\n", sample->format);
   emu_print (1, 1, "Frames: %d\n", *frames);
   emu_print (1, 1, "Loop start: %d\n", *loop_start);
   emu_print (1, 1, "Loop end: %d\n", *loop_end);
@@ -117,11 +137,6 @@ emu3_print_sample_info (struct emu3_sample *sample, int num,
 	     sample->format & EMU3_SAMPLE_OPT_LOOP ? "on" : "off");
   emu_print (1, 1, "Loop in release: %s\n",
 	     sample->format & EMU3_SAMPLE_OPT_LOOP_RELEASE ? "on" : "off");
-
-  if (sample->start_l != sizeof (struct emu3_sample))
-    {
-      emu_debug (1, "Unexpected constant: %d", sample->start_l);
-    }
 
   emu_print (2, 1, "Sample header: 0x%08x\n", sample->header);
   emu_print (2, 1, "Start L: %d\n", sample->start_l);

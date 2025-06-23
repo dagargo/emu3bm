@@ -42,6 +42,8 @@
 #define EMU3_LOOP_POINT_INT_TO_BIN(x) (sizeof (struct emu3_sample) + x)
 #define EMU3_LOOP_POINT_BIN_TO_INT(x) (x - sizeof (struct emu3_sample))
 
+#define EMU3_SAMPLE_HAS_CHANNEL_L(s) ((s)->format & EMU3_SAMPLE_OPT_MONO_L)
+
 struct emu3_sample
 {
   char name[NAME_SIZE];
