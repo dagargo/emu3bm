@@ -39,6 +39,7 @@
 #define EMU4_E4P1_TAG "E4P1"
 
 #define EMU4_NAME_OFFSET 2
+#define EMU4_MAX_SAMPLES 1000
 
 struct chunk
 {
@@ -108,10 +109,10 @@ static int
 emu4_process_file (struct emu_file *file, int ext_mode)
 {
   char *fdata;
-  uint32_t total_size, chunk_size;
+  uint32_t size, total_size, chunk_size, new_size;
   struct chunk *chunk;
   struct emu3_sample *sample;
-  int i, sample_index;
+  int sample_index;
   uint32_t sample_start, sample_len;
 
   chunk = (struct chunk *) file->raw;
@@ -130,8 +131,8 @@ emu4_process_file (struct emu_file *file, int ext_mode)
   chunk = (struct chunk *) &chunk->data[strlen (EMU4_E4_FORMAT)];	//EB40
   chunk_size = chunk_get_size (chunk);
 
-  i = 0;
-  sample_index = 0;
+  size = 0;
+  sample_index = 1;
   while (1)
     {
       if (strcmp (chunk->name, EMU4_E4P1_TAG) == 0)
@@ -142,7 +143,7 @@ emu4_process_file (struct emu_file *file, int ext_mode)
 	{
 	  chunk_print_with_name (chunk);
 	  sample = (struct emu3_sample *) &chunk->data[EMU4_NAME_OFFSET];
-	  emu3_process_sample (sample, sample_index + 1, ext_mode, 0, 0);
+	  emu3_process_sample (sample, sample_index, ext_mode, 0, 0);
 	  sample_index++;
 	}
       else
@@ -150,15 +151,30 @@ emu4_process_file (struct emu_file *file, int ext_mode)
 	  chunk_print (chunk);
 	}
 
-      i += chunk_size;
+      if (sample_index == EMU4_MAX_SAMPLES)
+	{
+	  break;
+	}
 
-      if (i >= total_size)
+      new_size = size + sizeof (struct chunk) + chunk_size;
+      if (new_size < size)
+	{			//overflow
+	  break;
+	}
+      size = new_size;
+
+      if (size >= total_size || size >= file->fsize)
 	{
 	  break;
 	}
 
       chunk = (struct chunk *) &chunk->data[chunk_size];
       chunk_size = chunk_get_size (chunk);
+
+      if (chunk_size == 0)
+	{
+	  break;
+	}
     }
 
 cleanup:
