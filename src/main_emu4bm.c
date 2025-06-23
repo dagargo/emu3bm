@@ -32,14 +32,18 @@
 #define CHUNK_NAME_LEN 4
 
 #define EMU4_FORM_TAG "FORM"
-#define EMU4_E4_FORMAT "E4B0"
-#define EMU4_TOC_TAG "TOC1"
+#define EMU4_TOC1_TAG "TOC1"
 #define EMU4_E4MA_TAG "E4Ma"
-#define EMU4_E3_SAMPLE_TAG "E3S1"
+#define EMU4_E3S1_TAG "E3S1"
 #define EMU4_E4P1_TAG "E4P1"
+#define EMU4_E4S1_TAG "E4s1"
+
+#define EMU4_E4_FORMAT "E4B0"
 
 #define EMU4_NAME_OFFSET 2
 #define EMU4_MAX_SAMPLES 1000
+
+#define CHUNK_NAME_IS(chunk,n) (strncmp((chunk)->name, n, CHUNK_NAME_LEN) == 0)
 
 struct chunk
 {
@@ -116,8 +120,10 @@ emu4_process_file (struct emu_file *file, int ext_mode)
   uint32_t sample_start, sample_len;
 
   chunk = (struct chunk *) file->raw;
-  if (chunk_check_name (chunk, EMU4_FORM_TAG))
-    goto cleanup;
+  if (!CHUNK_NAME_IS (chunk, EMU4_FORM_TAG))
+    {
+      goto cleanup;
+    }
 
   chunk_print (chunk);
   total_size = chunk_get_size (chunk);
@@ -135,16 +141,20 @@ emu4_process_file (struct emu_file *file, int ext_mode)
   sample_index = 1;
   while (1)
     {
-      if (strcmp (chunk->name, EMU4_E4P1_TAG) == 0)
+      if (CHUNK_NAME_IS (chunk, EMU4_E4P1_TAG))
 	{
 	  chunk_print_with_name (chunk);
 	}
-      else if (strcmp (chunk->name, EMU4_E3_SAMPLE_TAG) == 0)
+      else if (CHUNK_NAME_IS (chunk, EMU4_E3S1_TAG))
 	{
 	  chunk_print_with_name (chunk);
 	  sample = (struct emu3_sample *) &chunk->data[EMU4_NAME_OFFSET];
 	  emu3_process_sample (sample, sample_index, ext_mode, 0, 0);
 	  sample_index++;
+	}
+      else if (CHUNK_NAME_IS (chunk, EMU4_E4S1_TAG))
+	{
+	  chunk_print_with_name (chunk);
 	}
       else
 	{
