@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <string.h>
+#include <math.h>
 #include "sample.h"
 
 #define JUNK_CHUNK_ID "JUNK"
@@ -196,7 +197,7 @@ emu3_process_sample (struct emu3_sample *sample, int num,
       emu_error ("%s", sf_strerror (output));
     }
 
-  while (tuning > 100)
+  while (tuning >= 100)
     {
       original_key++;
       tuning -= 100;
@@ -213,7 +214,7 @@ emu3_process_sample (struct emu3_sample *sample, int num,
   smpl_chunk_data.sample_period = htole32 (1e9 / sample->sample_rate);
   smpl_chunk_data.midi_unity_note = htole32 (original_key + 9);	//Samplers use A-1 as note 0 but it's really an A0 when MIDI note 0 is C-1.
   smpl_chunk_data.midi_pitch_fraction =
-    htole32 ((uint32_t) (tuning * INT8_MAX / 100.0));
+    htole32 ((uint32_t) round(tuning * 256 / 100.0));
   smpl_chunk_data.smpte_format = 0;
   smpl_chunk_data.smpte_offset = 0;
   smpl_chunk_data.num_sampler_loops = htole32 (1);

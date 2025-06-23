@@ -1,6 +1,6 @@
-AM_CFLAGS = -I$(top_srcdir)/src $(SNDFILE_CFLAGS)
-emu3bm_LDADD = $(SNDFILE_LIBS)
-emu4bm_LDADD = $(SNDFILE_LIBS)
+AM_CFLAGS = -I$(top_srcdir)/src `$(PKG_CONFIG) --cflags $(LIBS)` $(SNDFILE_CFLAGS)
+emu3bm_LDADD = $(SNDFILE_LIBS) -lm
+emu4bm_LDADD = $(SNDFILE_LIBS) -lm
 
 bin_PROGRAMS = emu3bm emu4bm
 emu3bm_SOURCES = main_emu3bm.c emu3bm.c emu3bm.h sample.c sample.h utils.c utils.h
