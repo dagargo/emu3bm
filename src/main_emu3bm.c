@@ -19,7 +19,9 @@
  */
 
 #define _GNU_SOURCE
-#include <getopt.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
 #include "emu3bm.h"
 
 static const struct option options[] = {
@@ -44,29 +46,6 @@ static const struct option options[] = {
   {"help", 0, NULL, 'h'},
   {NULL, 0, NULL, 0}
 };
-
-static void
-print_help (char *executable_path)
-{
-  char *exec_name;
-  const struct option *option;
-
-  fprintf (stderr, "%s\n", PACKAGE_STRING);
-  exec_name = basename (executable_path);
-  fprintf (stderr, "Usage: %s [options] bank\n", exec_name);
-  fprintf (stderr, "Options:\n");
-  option = options;
-  while (option->name)
-    {
-      fprintf (stderr, "  --%s, -%c", option->name, option->val);
-      if (option->has_arg)
-	{
-	  fprintf (stderr, " value");
-	}
-      fprintf (stderr, "\n");
-      option++;
-    }
-}
 
 static int
 get_positive_int (char *str)
@@ -185,7 +164,7 @@ main (int argc, char *argv[])
       switch (opt)
 	{
 	case 'h':
-	  print_help (argv[0]);
+	  emu_print_help (argv[0], PACKAGE_STRING, options);
 	  exit (EXIT_SUCCESS);
 	case 'v':
 	  verbosity++;
@@ -303,7 +282,7 @@ main (int argc, char *argv[])
 
   if (errflg > 0)
     {
-      print_help (argv[0]);
+      emu_print_help (argv[0], PACKAGE_STRING, options);
       exit (EXIT_FAILURE);
     }
 

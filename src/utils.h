@@ -21,6 +21,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <getopt.h>
+#include <libgen.h>
 #include <stdint.h>
 #include <unistd.h>
 
@@ -83,5 +85,11 @@ struct emu_file *emu_init_file ();
 int emu_reverse_note_search (char *);
 
 const char *emu_get_note_name (uint8_t);
+
+void emu_print_help (char *executable_path, const char * name, const struct option options[]);
+
+char *emu3_str_to_emu3name (const char *src);
+
+void emu3_cpystr (char *dst, const char *src);
 
 #endif

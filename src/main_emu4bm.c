@@ -19,15 +19,16 @@
  */
 
 #define _GNU_SOURCE
-#include <getopt.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <libgen.h>
 #include <string.h>
 #include <stdint.h>
 #include "../config.h"
+#include "emu3bm.h"
 #include "sample.h"
 #include "utils.h"
+
+#define EMU4BM_PACKAGE_STRING ("emu4bm " PACKAGE_VERSION)
 
 #define CHUNK_NAME_LEN 4
 
@@ -57,35 +58,14 @@ struct emu4_chunk
 
 static const struct option options[] = {
   {"new-bank", 1, NULL, 'n'},
+  {"add-sample", 1, NULL, 's'},
+  {"add-sample-loop", 1, NULL, 'S'},
   {"extract-samples", 0, NULL, 'x'},
   {"extract-samples-with-num", 0, NULL, 'X'},
   {"verbosity", 0, NULL, 'v'},
   {"help", 0, NULL, 'h'},
   {NULL, 0, NULL, 0}
 };
-
-static void
-print_help (char *executable_path)
-{
-  char *exec_name;
-  const struct option *option;
-
-  fprintf (stderr, "%s\n", PACKAGE_STRING);
-  exec_name = basename (executable_path);
-  fprintf (stderr, "Usage: %s [options] e4bank\n", exec_name);
-  fprintf (stderr, "Options:\n");
-  option = options;
-  while (option->name)
-    {
-      fprintf (stderr, "  --%s, -%c", option->name, option->val);
-      if (option->has_arg)
-	{
-	  fprintf (stderr, " value");
-	}
-      fprintf (stderr, "\n");
-      option++;
-    }
-}
 
 static int
 emu4_chunk_check_name (struct emu4_chunk *chunk, const char *name)
@@ -126,7 +106,7 @@ emu4_chunk_add (struct emu_file *file, struct emu4_chunk *chunk)
   memcpy (&file->raw[file->size], chunk, nsize);
 }
 
-struct emu_file *
+static struct emu_file *
 emu4_new_file (const char *name)
 {
   struct emu_file *file = emu_init_file (name);
@@ -142,18 +122,49 @@ emu4_new_file (const char *name)
 }
 
 static int
-emu4_process_file (struct emu_file *file, int ext_mode)
+emu4_add_sample (struct emu_file *file, struct emu4_chunk *next_chunk,
+		 const char *sample_name, int force_loop)
+{
+  int size;
+  struct emu3_sample *sample;
+
+  next_chunk->data[0] = 0;
+  next_chunk->data[1] = 0;
+  sample = (struct emu3_sample *) &next_chunk->data[EMU4_NAME_OFFSET];
+  size = emu3_append_sample (file, sample, sample_name, force_loop);
+
+  if (size >= 0)
+    {
+      memcpy (next_chunk->name, EMU4_E3S1_TAG, CHUNK_NAME_LEN);
+      next_chunk->size = htobe32 (EMU4_NAME_OFFSET + size);
+
+      file->size += sizeof (struct emu4_chunk) + EMU4_NAME_OFFSET + size;
+    }
+
+  return size;
+}
+
+static int
+emu4_process_file (struct emu_file *file, int ext_mode,
+		   struct emu4_chunk **next_chunk)
 {
   char *fdata;
+  int err, sample_index;
   uint32_t size, total_size, chunk_size, new_size;
   struct emu4_chunk *chunk;
   struct emu3_sample *sample;
-  int sample_index;
   uint32_t sample_start, sample_len;
+
+  err = EXIT_FAILURE;
+  if (next_chunk)
+    {
+      *next_chunk = NULL;
+    }
 
   chunk = (struct emu4_chunk *) file->raw;
   if (!CHUNK_NAME_IS (chunk, EMU4_FORM_TAG))
     {
+      emu_error ("Unexpected file type");
       goto cleanup;
     }
 
@@ -202,25 +213,25 @@ emu4_process_file (struct emu_file *file, int ext_mode)
 	}
       else
 	{
+	  err = EXIT_SUCCESS;
+	  if (next_chunk)
+	    {
+	      *next_chunk = chunk;
+	    }
 	  break;
 	}
 
       if (sample_index == EMU4_MAX_SAMPLES)
 	{
+	  err = EXIT_SUCCESS;
+	  if (next_chunk)
+	    {
+	      *next_chunk = NULL;
+	    }
 	  break;
 	}
 
-      new_size = size + sizeof (struct emu4_chunk) + chunk_size;
-      if (new_size < size)
-	{			//overflow
-	  break;
-	}
-      size = new_size;
-
-      if (size >= total_size || size >= file->size)
-	{
-	  break;
-	}
+      size += sizeof (struct emu4_chunk) + chunk_size;
 
       chunk = (struct emu4_chunk *) &chunk->data[chunk_size];
       chunk_size = emu4_chunk_get_size (chunk);
@@ -240,22 +251,36 @@ int
 main (int argc, char *argv[])
 {
   int opt;
-  int nflg = 0, xflg = 0, errflg = 0, totalflg;
+  int nflg = 0, sflg = 0, xflg = 0, errflg = 0, totalflg;
   int ext_mode = 0;
+  char *sample_name;
+  int force_loop;
   int long_index = 0;
   int err = EXIT_SUCCESS;
+  struct emu4_chunk *next_chunk;
   const char *bank_name;
+  struct emu_file *file;
 
   while ((opt =
-	  getopt_long (argc, argv, "hnvxX", options, &long_index)) != -1)
+	  getopt_long (argc, argv, "hns:S:vxX", options, &long_index)) != -1)
     {
       switch (opt)
 	{
 	case 'h':
-	  print_help (argv[0]);
+	  emu_print_help (argv[0], EMU4BM_PACKAGE_STRING, options);
 	  exit (EXIT_SUCCESS);
 	case 'n':
 	  nflg++;
+	  break;
+	case 's':
+	  sflg++;
+	  sample_name = optarg;
+	  force_loop = 0;
+	  break;
+	case 'S':
+	  sflg++;
+	  sample_name = optarg;
+	  force_loop = 1;
 	  break;
 	case 'v':
 	  verbosity++;
@@ -284,38 +309,41 @@ main (int argc, char *argv[])
   if (xflg > 1)
     errflg++;
 
-  totalflg = nflg + xflg;
+  totalflg = nflg + sflg + xflg;
 
   if (totalflg > 1)
     errflg++;
 
   if (errflg > 0)
     {
-      print_help (argv[0]);
+      emu_print_help (argv[0], EMU4BM_PACKAGE_STRING, options);
       exit (EXIT_FAILURE);
     }
 
   if (nflg)
     {
-      struct emu_file *file;
-
       file = emu4_new_file (bank_name);
-
       emu_write_file (file);
-      emu_close_file (file);
     }
-  else
+
+  file = emu_open_file (bank_name);
+  if (!file)
     {
-      struct emu_file *file = emu_open_file (bank_name);
-      if (file)
-	{
-	  if (emu4_process_file (file, ext_mode))
-	    {
-	      err = EXIT_FAILURE;
-	    }
-	}
-      emu_close_file (file);
+      exit (EXIT_FAILURE);
     }
+
+  if (emu4_process_file (file, ext_mode, &next_chunk))
+    {
+      err = EXIT_FAILURE;
+    }
+
+  if (sflg)
+    {
+      err = emu4_add_sample (file, next_chunk, sample_name, force_loop);
+      emu_write_file (file);
+    }
+
+  emu_close_file (file);
 
   exit (err);
 }

@@ -18,11 +18,12 @@
  *   along with emu3bm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <inttypes.h>
+#include <libgen.h>
+#include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <inttypes.h>
 #include <string.h>
-#include <math.h>
 #include "sample.h"
 
 #define JUNK_CHUNK_ID "JUNK"
@@ -33,6 +34,13 @@ static const uint8_t JUNK_CHUNK_DATA[] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0
+};
+
+struct emu3_sample_descriptor
+{
+  int16_t *l_channel;
+  int16_t *r_channel;
+  struct emu3_sample *sample;
 };
 
 static char *
@@ -258,6 +266,16 @@ emu3_process_sample (struct emu3_sample *sample, int num,
   sf_close (output);
 }
 
+static char *
+emu3_wav_name_to_name (const char *wav_file)
+{
+  char *name = strdup (wav_file);
+  char *ext = strrchr (name, '.');
+  if (strcasecmp (ext, SAMPLE_EXT) == 0)
+    *ext = '\0';
+  return name;
+}
+
 int
 emu3_sample_get_smpl_chunk (SNDFILE *input,
 			    struct smpl_chunk_data *smpl_chunk_data)
@@ -288,4 +306,186 @@ emu3_sample_get_smpl_chunk (SNDFILE *input,
     }
 
   return loop;
+}
+
+static void
+emu3_init_sample_descriptor (struct emu3_sample_descriptor *sd,
+			     struct emu3_sample *sample, int frames)
+{
+  sd->sample = sample;
+
+  sd->l_channel = sample->frames;
+  if ((sample->format & EMU3_SAMPLE_OPT_STEREO) == EMU3_SAMPLE_OPT_STEREO)
+    //We consider the 4 shorts padding that the left channel has
+    sd->r_channel = sample->frames + frames + 4;
+}
+
+static void
+emu3_write_frame (struct emu3_sample_descriptor *sd, int16_t frame[])
+{
+  struct emu3_sample *sample = sd->sample;
+  *sd->l_channel = frame[0];
+  sd->l_channel++;
+  if ((sample->format & EMU3_SAMPLE_OPT_STEREO) == EMU3_SAMPLE_OPT_STEREO)
+    {
+      *sd->r_channel = frame[1];
+      sd->r_channel++;
+    }
+}
+
+static int
+emu3_init_sample (struct emu3_sample *sample, int samplerate, int frames,
+		  int mono, int loop_start, int loop_end, int loop)
+{
+  int mono_size, data_size, size;
+
+  data_size = sizeof (int16_t) * (frames + 4);	//2 extra frames at the beginning and 2 at the end
+  mono_size = sizeof (struct emu3_sample) + data_size;
+  size = mono_size + (mono ? 0 : data_size);
+
+  sample->header = 0;
+  sample->start_l = sizeof (struct emu3_sample);
+  sample->start_r = mono ? 0 : mono_size;
+  sample->end_l = mono_size - sizeof (int16_t);
+  sample->end_r = mono ? 0 : size - sizeof (int16_t);
+
+  int loop_start_int = EMU3_LOOP_START_FRAMES_TO_INT (loop_start);
+  sample->loop_start_l = EMU3_LOOP_POINT_INT_TO_BIN (loop_start_int);
+  sample->loop_start_r = mono ? 0 :
+    sample->loop_start_l + (frames + 4) * sizeof (int16_t);
+
+  int loop_end_int = EMU3_LOOP_END_FRAMES_TO_INT (loop_end);
+  sample->loop_end_l = EMU3_LOOP_POINT_INT_TO_BIN (loop_end_int);
+  sample->loop_end_r = mono ? 0 :
+    sample->loop_end_l + (frames + 4) * sizeof (int16_t);
+
+  sample->sample_rate = samplerate;
+
+  sample->format = mono ? EMU3_SAMPLE_OPT_MONO_L : EMU3_SAMPLE_OPT_STEREO;
+
+  if (loop)
+    {
+      sample->format =
+	sample->format | EMU3_SAMPLE_OPT_LOOP | EMU3_SAMPLE_OPT_LOOP_RELEASE;
+    }
+
+  for (int i = 0; i < SAMPLE_PARAMETERS; i++)
+    {
+      sample->parameters[i] = 0;
+    }
+
+  return size;
+}
+
+//returns the sample size in bytes that the the sample takes in the bank
+int
+emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
+		    const char *path, int force_loop)
+{
+  SF_INFO sfinfo;
+  SNDFILE *input;
+  int loop, smpl_chunk, size, loop_start, loop_end;
+  int16_t frame[2];
+  int16_t zero[] = { 0, 0 };
+  const char *filename;
+  struct emu3_sample_descriptor sd;
+  struct smpl_chunk_data smpl_chunk_data;
+
+  if (access (path, R_OK) != 0)
+    return -ERR_CANT_OPEN_SAMPLE;
+
+  size = -1;
+  sfinfo.format = 0;
+  input = sf_open (path, SFM_READ, &sfinfo);
+
+  if (sfinfo.channels > 2)
+    {
+      size = -ERR_BAD_SAMPLE_CHANS;
+      goto close;
+    }
+
+  if (force_loop)
+    {
+      loop = 1;
+      loop_start = 0;
+      loop_end = sfinfo.frames - 1;
+    }
+  else
+    {
+      smpl_chunk = emu3_sample_get_smpl_chunk (input, &smpl_chunk_data);
+      if (smpl_chunk)
+	{
+	  loop = (smpl_chunk_data.sample_loop.type != htole32 (0x7f));
+
+	  loop_start = smpl_chunk_data.sample_loop.start;
+	  if (loop_start >= sfinfo.frames)
+	    {
+	      emu_error ("Bad loop start. Using sample start...");
+	      loop_start = 0;
+	    }
+
+	  loop_end = smpl_chunk_data.sample_loop.end;
+	  if (loop_end >= sfinfo.frames)
+	    {
+	      emu_error ("Bad loop end. Using sample end...");
+	      loop_end = sfinfo.frames - 1;
+	    }
+	  emu_debug (1, "Loop start at %d, loop end at %d", loop_start,
+		     loop_end);
+	}
+      else
+	{
+	  loop = 0;
+	  loop_start = 0;
+	  loop_end = sfinfo.frames - 1;
+	}
+    }
+
+  size = emu3_init_sample (sample, sfinfo.samplerate, sfinfo.frames,
+			   sfinfo.channels == 1, loop_start, loop_end, loop);
+
+  if (file->size + size > MEM_SIZE)
+    {
+      size = -ERR_BANK_FULL;
+      goto close;
+    }
+
+  file->size += size;
+
+  char *basec = strdup (path);
+  filename = basename (basec);
+  emu_print (1, 0, "Appending sample %s (%" PRId64
+	     " frames, %d channels)...\n", filename, sfinfo.frames,
+	     sfinfo.channels);
+  //Sample header initialization
+  char *name = emu3_wav_name_to_name (filename);
+  char *emu3name = emu3_str_to_emu3name (name);
+  emu3_cpystr (sample->name, emu3name);
+
+  free (basec);
+  free (name);
+  free (emu3name);
+
+  emu3_init_sample_descriptor (&sd, sample, sfinfo.frames);
+
+  //2 first frames set to 0
+  emu3_write_frame (&sd, zero);
+  emu3_write_frame (&sd, zero);
+
+  for (int i = 0; i < sfinfo.frames; i++)
+    {
+      sf_readf_short (input, frame, 1);
+      emu3_write_frame (&sd, frame);
+    }
+
+  //2 end frames set to 0
+  emu3_write_frame (&sd, zero);
+  emu3_write_frame (&sd, zero);
+
+  emu_print (1, 0, "Appended %dB (0x%08x).\n", size, size);
+
+close:
+  sf_close (input);
+
+  return size;
 }

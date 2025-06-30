@@ -247,3 +247,54 @@ emu_get_note_name (unsigned char note_num)
     return "?";
   return NOTE_NAMES[note_num];
 }
+
+char *
+emu3_str_to_emu3name (const char *src)
+{
+  size_t len = strlen (src);
+  if (len > NAME_SIZE)
+    len = NAME_SIZE;
+
+  char *emu3name = strndup (src, len);
+
+  char *c = emu3name;
+  for (int i = 0; i < len; i++, c++)
+    if (*c < 32 || *c >= 127)
+      *c = '?';
+
+  return emu3name;
+}
+
+void
+emu3_cpystr (char *dst, const char *src)
+{
+  size_t len = strlen (src);
+  if (len > NAME_SIZE)
+    len = NAME_SIZE;
+
+  memcpy (dst, src, NAME_SIZE);
+  memset (&dst[len], ' ', NAME_SIZE - len);
+}
+
+void
+emu_print_help (char *executable_path, const char * name, const struct option options[])
+{
+  char *exec_name;
+  const struct option *option;
+
+  fprintf (stderr, "%s\n", name);
+  exec_name = basename (executable_path);
+  fprintf (stderr, "Usage: %s [options] bank\n", exec_name);
+  fprintf (stderr, "Options:\n");
+  option = options;
+  while (option->name)
+    {
+      fprintf (stderr, "  --%s, -%c", option->name, option->val);
+      if (option->has_arg)
+	{
+	  fprintf (stderr, " value");
+	}
+      fprintf (stderr, "\n");
+      option++;
+    }
+}
