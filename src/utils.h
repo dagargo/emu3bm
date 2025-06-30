@@ -78,6 +78,8 @@ void emu_close_file (struct emu_file *);
 
 int emu_write_file (struct emu_file *);
 
+struct emu_file *emu_init_file ();
+
 int emu_reverse_note_search (char *);
 
 const char *emu_get_note_name (uint8_t);
