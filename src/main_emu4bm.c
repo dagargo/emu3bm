@@ -44,9 +44,11 @@
 #define EMU4_NAME_OFFSET 2
 #define EMU4_MAX_SAMPLES 1000
 
+#define EMU
+
 #define CHUNK_NAME_IS(chunk,n) (strncmp((chunk)->name, n, CHUNK_NAME_LEN) == 0)
 
-struct chunk
+struct emu4_chunk
 {
   char name[CHUNK_NAME_LEN];
   uint32_t size;
@@ -54,6 +56,7 @@ struct chunk
 };
 
 static const struct option options[] = {
+  {"new-bank", 1, NULL, 'n'},
   {"extract-samples", 0, NULL, 'x'},
   {"extract-samples-with-num", 0, NULL, 'X'},
   {"verbosity", 0, NULL, 'v'},
@@ -85,29 +88,57 @@ print_help (char *executable_path)
 }
 
 static int
-chunk_check_name (struct chunk *chunk, const char *name)
+emu4_chunk_check_name (struct emu4_chunk *chunk, const char *name)
 {
   return strncmp (chunk->name, name, CHUNK_NAME_LEN);
 }
 
 static uint32_t
-chunk_get_size (struct chunk *chunk)
+emu4_chunk_get_size (struct emu4_chunk *chunk)
 {
   return be32toh (chunk->size);
 }
 
 static void
-chunk_print (struct chunk *chunk, char *content_name)
+emu4_chunk_print (struct emu4_chunk *chunk, char *content_name)
 {
   emu_print (1, 0, "chunk %.4s: %.*s%s(%ld B)\n", chunk->name,
 	     content_name == NULL ? 0 : NAME_SIZE, content_name,
-	     content_name == NULL ? "" : " ", chunk_get_size (chunk));
+	     content_name == NULL ? "" : " ", emu4_chunk_get_size (chunk));
 }
 
 static void
-chunk_print_named (struct chunk *chunk)
+emu4_chunk_print_named (struct emu4_chunk *chunk)
 {
-  chunk_print (chunk, &chunk->data[EMU4_NAME_OFFSET]);
+  emu4_chunk_print (chunk, &chunk->data[EMU4_NAME_OFFSET]);
+}
+
+static int
+emu4_chunk_add (struct emu_file *file, struct emu4_chunk *chunk)
+{
+  uint32_t csize = sizeof (struct emu4_chunk) + chunk->size;
+  uint32_t nsize = file->size + csize;
+  if (nsize >= MEM_SIZE)
+    {
+      return -1;
+    }
+  file->size = nsize;
+  memcpy (&file->raw[file->size], chunk, nsize);
+}
+
+struct emu_file *
+emu4_new_file (const char *name)
+{
+  struct emu_file *file = emu_init_file (name);
+  struct emu4_chunk *chunk = (struct emu4_chunk *) file->raw;
+
+  memcpy (chunk->name, EMU4_FORM_TAG, CHUNK_NAME_LEN);
+  chunk->size = htobe32 (strlen (EMU4_E4_FORMAT));
+  memcpy (chunk->data, EMU4_E4_FORMAT, strlen (EMU4_E4_FORMAT));
+
+  file->size = sizeof (struct emu4_chunk) + strlen (EMU4_E4_FORMAT);
+
+  return file;
 }
 
 static int
@@ -115,19 +146,19 @@ emu4_process_file (struct emu_file *file, int ext_mode)
 {
   char *fdata;
   uint32_t size, total_size, chunk_size, new_size;
-  struct chunk *chunk;
+  struct emu4_chunk *chunk;
   struct emu3_sample *sample;
   int sample_index;
   uint32_t sample_start, sample_len;
 
-  chunk = (struct chunk *) file->raw;
+  chunk = (struct emu4_chunk *) file->raw;
   if (!CHUNK_NAME_IS (chunk, EMU4_FORM_TAG))
     {
       goto cleanup;
     }
 
-  chunk_print (chunk, NULL);
-  total_size = chunk_get_size (chunk);
+  emu4_chunk_print (chunk, NULL);
+  total_size = emu4_chunk_get_size (chunk);
 
   if (strncmp (chunk->data, EMU4_E4_FORMAT, strlen (EMU4_E4_FORMAT)))
     {
@@ -135,8 +166,8 @@ emu4_process_file (struct emu_file *file, int ext_mode)
       goto cleanup;
     }
 
-  chunk = (struct chunk *) &chunk->data[strlen (EMU4_E4_FORMAT)];	//EB40
-  chunk_size = chunk_get_size (chunk);
+  chunk = (struct emu4_chunk *) &chunk->data[strlen (EMU4_E4_FORMAT)];	//EB40
+  chunk_size = emu4_chunk_get_size (chunk);
   size = strlen (EMU4_E4_FORMAT);
 
   sample_index = 1;
@@ -144,30 +175,30 @@ emu4_process_file (struct emu_file *file, int ext_mode)
     {
       if (CHUNK_NAME_IS (chunk, EMU4_TOC1_TAG))
 	{
-	  chunk_print (chunk, NULL);
+	  emu4_chunk_print (chunk, NULL);
 	}
       else if (CHUNK_NAME_IS (chunk, EMU4_E4MA_TAG))
 	{
-	  chunk_print (chunk, NULL);
+	  emu4_chunk_print (chunk, NULL);
 	}
       else if (CHUNK_NAME_IS (chunk, EMU4_E3S1_TAG))
 	{
-	  chunk_print_named (chunk);
+	  emu4_chunk_print_named (chunk);
 	  sample = (struct emu3_sample *) &chunk->data[EMU4_NAME_OFFSET];
 	  emu3_process_sample (sample, sample_index, ext_mode, 0, 0);
 	  sample_index++;
 	}
       else if (CHUNK_NAME_IS (chunk, EMU4_E4P1_TAG))
 	{
-	  chunk_print_named (chunk);
+	  emu4_chunk_print_named (chunk);
 	}
       else if (CHUNK_NAME_IS (chunk, EMU4_E4S1_TAG))
 	{
-	  chunk_print_named (chunk);
+	  emu4_chunk_print_named (chunk);
 	}
       else if (CHUNK_NAME_IS (chunk, EMU4_EMS0_TAG))
 	{
-	  chunk_print (chunk, NULL);
+	  emu4_chunk_print (chunk, NULL);
 	}
       else
 	{
@@ -179,7 +210,7 @@ emu4_process_file (struct emu_file *file, int ext_mode)
 	  break;
 	}
 
-      new_size = size + sizeof (struct chunk) + chunk_size;
+      new_size = size + sizeof (struct emu4_chunk) + chunk_size;
       if (new_size < size)
 	{			//overflow
 	  break;
@@ -191,8 +222,8 @@ emu4_process_file (struct emu_file *file, int ext_mode)
 	  break;
 	}
 
-      chunk = (struct chunk *) &chunk->data[chunk_size];
-      chunk_size = chunk_get_size (chunk);
+      chunk = (struct emu4_chunk *) &chunk->data[chunk_size];
+      chunk_size = emu4_chunk_get_size (chunk);
 
       if (chunk_size == 0)
 	{
@@ -209,19 +240,23 @@ int
 main (int argc, char *argv[])
 {
   int opt;
-  int xflg = 0, errflg = 0;
+  int nflg = 0, xflg = 0, errflg = 0, totalflg;
   int ext_mode = 0;
   int long_index = 0;
   int err = EXIT_SUCCESS;
   const char *bank_name;
 
-  while ((opt = getopt_long (argc, argv, "hvxX", options, &long_index)) != -1)
+  while ((opt =
+	  getopt_long (argc, argv, "hnvxX", options, &long_index)) != -1)
     {
       switch (opt)
 	{
 	case 'h':
 	  print_help (argv[0]);
 	  exit (EXIT_SUCCESS);
+	case 'n':
+	  nflg++;
+	  break;
 	case 'v':
 	  verbosity++;
 	  break;
@@ -243,18 +278,44 @@ main (int argc, char *argv[])
   else
     errflg++;
 
+  if (nflg > 1)
+    errflg++;
+
+  if (xflg > 1)
+    errflg++;
+
+  totalflg = nflg + xflg;
+
+  if (totalflg > 1)
+    errflg++;
+
   if (errflg > 0)
     {
       print_help (argv[0]);
       exit (EXIT_FAILURE);
     }
 
-  struct emu_file *file = emu_open_file (bank_name);
-  if (!file)
-    exit (EXIT_FAILURE);
+  if (nflg)
+    {
+      struct emu_file *file;
 
-  if (emu4_process_file (file, ext_mode))
-    err = EXIT_FAILURE;
+      file = emu4_new_file (bank_name);
+
+      emu_write_file (file);
+      emu_close_file (file);
+    }
+  else
+    {
+      struct emu_file *file = emu_open_file (bank_name);
+      if (file)
+	{
+	  if (emu4_process_file (file, ext_mode))
+	    {
+	      err = EXIT_FAILURE;
+	    }
+	}
+      emu_close_file (file);
+    }
 
   exit (err);
 }
