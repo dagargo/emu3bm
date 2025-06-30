@@ -186,7 +186,7 @@ emu4_process_file (struct emu_file *file, int ext_mode)
 	}
       size = new_size;
 
-      if (size >= total_size || size >= file->fsize)
+      if (size >= total_size || size >= file->size)
 	{
 	  break;
 	}
@@ -213,7 +213,7 @@ main (int argc, char *argv[])
   int ext_mode = 0;
   int long_index = 0;
   int err = EXIT_SUCCESS;
-  const char *bank_filename;
+  const char *bank_name;
 
   while ((opt = getopt_long (argc, argv, "hvxX", options, &long_index)) != -1)
     {
@@ -239,7 +239,7 @@ main (int argc, char *argv[])
     }
 
   if (optind + 1 == argc)
-    bank_filename = argv[optind];
+    bank_name = argv[optind];
   else
     errflg++;
 
@@ -249,7 +249,7 @@ main (int argc, char *argv[])
       exit (EXIT_FAILURE);
     }
 
-  struct emu_file *file = emu_open_file (bank_filename);
+  struct emu_file *file = emu_open_file (bank_name);
   if (!file)
     exit (EXIT_FAILURE);
 
