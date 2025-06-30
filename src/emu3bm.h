@@ -18,16 +18,6 @@
  *   along with emu3bm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <libgen.h>
-#include <errno.h>
-#include <inttypes.h>
-#include <stdarg.h>
-#include <libgen.h>
 #include "sample.h"
 #include "utils.h"
 #include "../config.h"
