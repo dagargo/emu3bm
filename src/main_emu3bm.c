@@ -158,8 +158,8 @@ main (int argc, char *argv[])
   int xflg = 0, dflg = 0, sflg = 0, nflg = 0, errflg = 0, modflg = 0, pflg =
     0, zflg = 0, yflg = 0, ext_mode = EMU3_EXT_MODE_NONE;
   char *device = NULL;
-  char *bank_filename;
-  char *sample_filename;
+  char *bank_name;
+  char *sample_name;
   char *preset_name;
   char *rt_controls = NULL;
   char *zone_params = NULL;
@@ -196,12 +196,12 @@ main (int argc, char *argv[])
 	  break;
 	case 's':
 	  sflg++;
-	  sample_filename = optarg;
+	  sample_name = optarg;
 	  force_loop = 0;
 	  break;
 	case 'S':
 	  sflg++;
-	  sample_filename = optarg;
+	  sample_name = optarg;
 	  force_loop = 1;
 	  break;
 	case 'x':
@@ -265,7 +265,7 @@ main (int argc, char *argv[])
     }
 
   if (optind + 1 == argc)
-    bank_filename = argv[optind];
+    bank_name = argv[optind];
   else
     errflg++;
 
@@ -309,17 +309,17 @@ main (int argc, char *argv[])
 
   if (nflg)
     {
-      err = emu3_create_bank (bank_filename, device);
+      err = emu3_create_bank (bank_name, device);
       exit (err);
     }
 
-  struct emu_file *file = emu3_open_file (bank_filename);
+  struct emu_file *file = emu3_open_file (bank_name);
   if (!file)
     exit (EXIT_FAILURE);
 
   if (sflg)
     {
-      err = emu3_add_sample (file, sample_filename, force_loop);
+      err = emu3_add_sample (file, sample_name, force_loop);
       goto end;
     }
 
