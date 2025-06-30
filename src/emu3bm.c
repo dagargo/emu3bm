@@ -533,13 +533,13 @@ emu3_get_is_side_disabled (const uint8_t value)
 }
 
 static char *
-emu3_wav_filename_to_filename (const char *wav_file)
+emu3_wav_name_to_name (const char *wav_file)
 {
-  char *filename = strdup (wav_file);
-  char *ext = strrchr (filename, '.');
+  char *name = strdup (wav_file);
+  char *ext = strrchr (name, '.');
   if (strcasecmp (ext, SAMPLE_EXT) == 0)
     *ext = '\0';
-  return filename;
+  return name;
 }
 
 static char *
@@ -1080,7 +1080,7 @@ emu3_append_sample (struct emu_file *file, char *path,
   size = emu3_init_sample (sample, sfinfo.samplerate, sfinfo.frames,
 			   sfinfo.channels == 1, loop_start, loop_end, loop);
 
-  if (file->fsize + size > MEM_SIZE)
+  if (file->size + size > MEM_SIZE)
     {
       size = -ERR_BANK_FULL;
       goto close;
@@ -1092,7 +1092,7 @@ emu3_append_sample (struct emu_file *file, char *path,
 	     " frames, %d channels)...\n", filename, sfinfo.frames,
 	     sfinfo.channels);
   //Sample header initialization
-  char *name = emu3_wav_filename_to_filename (filename);
+  char *name = emu3_wav_name_to_name (filename);
   char *emu3name = emu3_str_to_emu3name (name);
   emu3_cpystr (sample->name, emu3name);
 
@@ -1290,10 +1290,10 @@ emu3_count_preset_zones (struct emu_file *file, int preset_num)
 }
 
 struct emu_file *
-emu3_open_file (const char *filename)
+emu3_open_file (const char *name)
 {
   struct emu3_bank *bank;
-  struct emu_file *file = emu_open_file (filename);
+  struct emu_file *file = emu_open_file (name);
 
   if (!file)
     {
@@ -1310,7 +1310,7 @@ emu3_open_file (const char *filename)
     }
 
   emu_print (1, 0, "Bank name: %.*s\n", NAME_SIZE, bank->name);
-  emu_print (1, 0, "Bank fsize: %zuB\n", file->fsize);
+  emu_print (1, 0, "Bank size: %zuB\n", file->size);
   emu_print (1, 0, "Bank format: %s\n", bank->format);
 
   emu_print (2, 1, "Geometry:\n");
@@ -1579,7 +1579,7 @@ emu3_get_bank_objects (struct emu3_bank *bank)
 }
 
 int
-emu3_add_sample (struct emu_file *file, char *sample_filename, int force_loop)
+emu3_add_sample (struct emu_file *file, char *sample_name, int force_loop)
 {
   int i;
   struct emu3_bank *bank = EMU3_BANK (file);
@@ -1597,7 +1597,7 @@ emu3_add_sample (struct emu_file *file, char *sample_filename, int force_loop)
     }
 
   emu_debug (1, "Adding sample %d...", total_samples + 1);	//Sample number is 1 based
-  int size = emu3_append_sample (file, sample_filename, sample, force_loop);
+  int size = emu3_append_sample (file, sample_name, sample, force_loop);
 
   if (size < 0)
     {
@@ -1608,7 +1608,7 @@ emu3_add_sample (struct emu_file *file, char *sample_filename, int force_loop)
   bank->next_sample = next_sample_addr + size - sample_start_addr;
   saddresses[total_samples] = saddresses[max_samples];
   saddresses[max_samples] = bank->next_sample + SAMPLE_OFFSET;
-  file->fsize += size;
+  file->size += size;
 
   return EXIT_SUCCESS;
 }
@@ -1641,7 +1641,7 @@ emu3_add_zones (struct emu_file *file, int preset_num, int zone_num,
   if (zone_num == -1)
     inc_size += sizeof (struct emu3_preset_note_zone);
 
-  if (file->fsize + inc_size > MEM_SIZE)
+  if (file->size + inc_size > MEM_SIZE)
     return -1;
 
   bank = EMU3_BANK (file);
@@ -1814,7 +1814,7 @@ emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
   zone->flags = 0x01;
 
   bank->next_preset += inc_size;
-  file->fsize += inc_size;
+  file->size += inc_size;
 
   return EXIT_SUCCESS;
 }
@@ -1855,7 +1855,7 @@ emu3_del_preset_zone (struct emu_file *file, int preset_num, int zone_num)
   dst_addr = addr + sizeof (struct emu3_preset_note_zone) * zone_num;
   src = &file->raw[src_addr];
   dst = &file->raw[dst_addr];
-  size = file->fsize - src_addr;
+  size = file->size - src_addr;
   emu_debug (3, "Moving %dB from 0x%08x to 0x%08x...", size,
 	     src_addr, dst_addr);
   memmove (dst, src, size);
@@ -1872,7 +1872,7 @@ emu3_del_preset_zone (struct emu_file *file, int preset_num, int zone_num)
   src_addr = dst_addr + dec_size_zone;
   src = &file->raw[src_addr];
   dst = &file->raw[dst_addr];
-  size = file->fsize - dec_size_note_zone - src_addr;
+  size = file->size - dec_size_note_zone - src_addr;
   emu_debug (3, "Moving %dB from 0x%08x to 0x%08x...", size,
 	     src_addr, dst_addr);
   memmove (dst, src, size);
@@ -1884,7 +1884,7 @@ emu3_del_preset_zone (struct emu_file *file, int preset_num, int zone_num)
     paddresses[i] -= dec_size_note_zone + dec_size_zone;
 
   bank->next_preset -= dec_size_note_zone + dec_size_zone;
-  file->fsize -= dec_size_note_zone + dec_size_zone;
+  file->size -= dec_size_note_zone + dec_size_zone;
 
   for (int i = 0; i < NOTES; i++)
     {
@@ -1944,7 +1944,7 @@ emu3_add_preset (struct emu_file *file, char *preset_name)
 
   size_t size = next_sample_addr - copy_start_addr;
 
-  if (file->fsize + size > MEM_SIZE)
+  if (file->size + size > MEM_SIZE)
     return ERR_BANK_FULL;
 
   emu_debug (2, "Moving %dB...", size);
@@ -1964,7 +1964,7 @@ emu3_add_preset (struct emu_file *file, char *preset_name)
   bank->objects = objects;
   bank->next_preset += sizeof (struct emu3_preset);
   bank->selected_preset = 0;
-  file->fsize += sizeof (struct emu3_preset);
+  file->size += sizeof (struct emu3_preset);
 
   return EXIT_SUCCESS;
 }

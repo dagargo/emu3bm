@@ -172,22 +172,22 @@ emu_get_err (int error)
 }
 
 struct emu_file *
-emu_open_file (const char *filename)
+emu_open_file (const char *name)
 {
   struct emu_file *file;
-  FILE *fd = fopen (filename, "r");
+  FILE *fd = fopen (name, "r");
 
   if (!fd)
     {
-      emu_error ("Error while opening %s for input", filename);
+      emu_error ("Error while opening %s for input", name);
       return NULL;
     }
 
   file = (struct emu_file *) malloc (sizeof (struct emu_file));
 
-  file->filename = filename;
+  file->name = name;
   file->raw = malloc (MEM_SIZE);
-  file->fsize = fread (file->raw, 1, MEM_SIZE, fd);
+  file->size = fread (file->raw, 1, MEM_SIZE, fd);
   fclose (fd);
 
   return file;
@@ -204,13 +204,13 @@ int
 emu_write_file (struct emu_file *file)
 {
   int err = 0;
-  FILE *fd = fopen (file->filename, "w");
+  FILE *fd = fopen (file->name, "w");
   if (!fd)
     {
       return ERR_OPEN_BANK;
     }
 
-  if (fwrite (file->raw, file->fsize, 1, fd) != 1)
+  if (fwrite (file->raw, file->size, 1, fd) != 1)
     {
       emu_error ("Unexpected written bytes amount.");
       err = ERR_WRITE_BANK;

@@ -42,9 +42,9 @@ enum emu_error
 
 struct emu_file
 {
-  const char *filename;
+  const char *name;
   char *raw;
-  size_t fsize;
+  size_t size;
 };
 
 #define emu_print(level, indent, ...) { \

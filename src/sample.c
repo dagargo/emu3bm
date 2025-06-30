@@ -36,7 +36,7 @@ static const uint8_t JUNK_CHUNK_DATA[] = {
 };
 
 static char *
-emu3_emu3name_to_filename (const char *objname)
+emu3_emu3name_to_name (const char *objname)
 {
   int i, size;
   const char *index = &objname[NAME_SIZE - 1];
@@ -59,9 +59,9 @@ emu3_emu3name_to_filename (const char *objname)
 }
 
 static char *
-emu3_emu3name_to_wav_filename (const char *emu3name, int num, int ext_mode)
+emu3_emu3name_to_wav_name (const char *emu3name, int num, int ext_mode)
 {
-  char *fname = emu3_emu3name_to_filename (emu3name);
+  char *fname = emu3_emu3name_to_name (emu3name);
   char *wname = malloc (strlen (fname) + 9);
 
   if (ext_mode == EMU3_EXT_MODE_NAME_NUMBER)
@@ -176,7 +176,7 @@ emu3_process_sample (struct emu3_sample *sample, int num,
   if (!ext_mode)
     return;
 
-  wav_file = emu3_emu3name_to_wav_filename (sample->name, num, ext_mode);
+  wav_file = emu3_emu3name_to_wav_name (sample->name, num, ext_mode);
 
   emu_debug (1, "Extracting sample '%s'...", wav_file);
 
@@ -214,7 +214,7 @@ emu3_process_sample (struct emu3_sample *sample, int num,
   smpl_chunk_data.sample_period = htole32 (1e9 / sample->sample_rate);
   smpl_chunk_data.midi_unity_note = htole32 (original_key + 9);	//Samplers use A-1 as note 0 but it's really an A0 when MIDI note 0 is C-1.
   smpl_chunk_data.midi_pitch_fraction =
-    htole32 ((uint32_t) round(tuning * 256 / 100.0));
+    htole32 ((uint32_t) round (tuning * 256 / 100.0));
   smpl_chunk_data.smpte_format = 0;
   smpl_chunk_data.smpte_offset = 0;
   smpl_chunk_data.num_sampler_loops = htole32 (1);
