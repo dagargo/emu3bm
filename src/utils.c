@@ -220,6 +220,16 @@ emu_write_file (struct emu_file *file)
   return err;
 }
 
+struct emu_file *
+emu_init_file (const char *name)
+{
+  struct emu_file *file = malloc (sizeof (struct emu_file));
+  file->name = name;
+  file->size = 0;
+  file->raw = malloc (MEM_SIZE);
+  return file;
+}
+
 int
 emu_reverse_note_search (char *note_name)
 {
