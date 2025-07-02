@@ -1770,30 +1770,20 @@ emu3_create_bank (const char *path, const char *type)
       goto out1;
     }
 
-  char *dst_path = malloc (strlen (dname) + strlen (name) + 2);
-  ret = sprintf (dst_path, "%s/%s", dname, name);
-
-  if (ret < 0)
-    {
-      emu_error ("Error while creating dst path");
-      rvalue = EXIT_FAILURE;
-      goto out2;
-    }
-
   FILE *src = fopen (src_path, "rb");
   if (!src)
     {
       emu_error ("Error while opening %s for input", src_path);
       rvalue = EXIT_FAILURE;
-      goto out3;
+      goto out2;
     }
 
-  FILE *dst = fopen (dst_path, "w+b");
+  FILE *dst = fopen (path, "w+b");
   if (!dst)
     {
-      emu_error ("Error while opening %s for output", dst_path);
+      emu_error ("Error while opening %s for output", path);
       rvalue = EXIT_FAILURE;
-      goto out4;
+      goto out3;
     }
 
   char buf[BUFSIZ];
@@ -1812,15 +1802,13 @@ emu3_create_bank (const char *path, const char *type)
       fwrite (&bank, sizeof (struct emu3_bank), 1, dst);
     }
 
-  emu_debug (2, "File created in %s", dst_path);
+  emu_debug (2, "File created in %s", path);
 
   rvalue = EXIT_SUCCESS;
 
   fclose (dst);
-out4:
-  fclose (src);
 out3:
-  free (dst_path);
+  fclose (src);
 out2:
   free (src_path);
 out1:
