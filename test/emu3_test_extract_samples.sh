@@ -14,7 +14,7 @@ rm -rf $EXT_DIR
 mkdir $EXT_DIR
 cd $EXT_DIR
 
-logAndRun '$srcdir/../../src/emu3bm -x ../data/test_add_sample_6'
+logAndRun '$srcdir/../../src/emu3bm -x ../data/emu3_test_add_sample_6'
 test
 
 logAndRun 'file s1.wav'
@@ -31,7 +31,7 @@ test
 logAndRun 'diff s2_loop.wav ../data/s2_loop.wav'
 test
 
-logAndRun '$srcdir/../../src/emu3bm -X ../data/test_add_sample_6'
+logAndRun '$srcdir/../../src/emu3bm -X ../data/emu3_test_add_sample_6'
 test
 
 logAndRun 'file 001-s1.wav'
