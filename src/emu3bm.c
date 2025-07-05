@@ -1382,6 +1382,8 @@ emu3_add_sample (struct emu_file *file, char *sample_name, int force_loop)
       return -size;
     }
 
+  file->size += size;
+
   bank->objects++;
   bank->next_sample = next_sample_addr + size - sample_start_addr;
   saddresses[total_samples] = saddresses[max_samples];

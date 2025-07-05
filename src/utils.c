@@ -277,7 +277,8 @@ emu3_cpystr (char *dst, const char *src)
 }
 
 void
-emu_print_help (char *executable_path, const char * name, const struct option options[])
+emu_print_help (char *executable_path, const char *name,
+		const struct option options[])
 {
   char *exec_name;
   const struct option *option;
