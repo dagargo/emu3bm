@@ -17,10 +17,10 @@ cd $EXT_DIR
 logAndRun '$srcdir/../../src/emu3bm -x ../data/emu3_test_add_sample_6'
 test
 
-logAndRun 'file s1.wav'
+logAndRun 'ls s1.wav'
 test
 
-logAndRun 'file s2.wav'
+logAndRun 'ls s2.wav'
 test
 
 #Other samples sharing the same names names are being overwritten.
@@ -34,16 +34,16 @@ test
 logAndRun '$srcdir/../../src/emu3bm -X ../data/emu3_test_add_sample_6'
 test
 
-logAndRun 'file 001-s1.wav'
+logAndRun 'ls 001-s1.wav'
 test
 
-logAndRun 'file 002-s1.wav'
+logAndRun 'ls 002-s1.wav'
 test
 
-logAndRun 'file 003-s2.wav'
+logAndRun 'ls 003-s2.wav'
 test
 
-logAndRun 'file 004-s2.wav'
+logAndRun 'ls 004-s2.wav'
 test
 
 logAndRun 'diff 005-s1_loop.wav ../data/s1_loop.wav'

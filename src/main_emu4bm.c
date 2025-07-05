@@ -18,6 +18,8 @@
  *   along with emu3bm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <endian.h>
+#include <sys/types.h>
 #define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
@@ -42,7 +44,7 @@
 
 #define EMU4_E4_FORMAT "E4B0"
 
-#define EMU4_NAME_OFFSET 2
+#define EMU4_E3S1_OFFSET 2
 #define EMU4_MAX_SAMPLES 1000
 
 #define EMU
@@ -67,10 +69,22 @@ static const struct option options[] = {
   {NULL, 0, NULL, 0}
 };
 
+static void
+emu4_chunk_set_name (struct emu4_chunk *chunk, const char *name)
+{
+  memcpy (chunk->name, name, CHUNK_NAME_LEN);
+}
+
 static int
 emu4_chunk_check_name (struct emu4_chunk *chunk, const char *name)
 {
   return strncmp (chunk->name, name, CHUNK_NAME_LEN);
+}
+
+static void
+emu4_chunk_set_size (struct emu4_chunk *chunk, uint32_t size)
+{
+  chunk->size = htobe32 (size);
 }
 
 static uint32_t
@@ -90,7 +104,7 @@ emu4_chunk_print (struct emu4_chunk *chunk, char *content_name)
 static void
 emu4_chunk_print_named (struct emu4_chunk *chunk)
 {
-  emu4_chunk_print (chunk, &chunk->data[EMU4_NAME_OFFSET]);
+  emu4_chunk_print (chunk, &chunk->data[EMU4_E3S1_OFFSET]);
 }
 
 static int
@@ -112,8 +126,8 @@ emu4_new_file (const char *name)
   struct emu_file *file = emu_init_file (name);
   struct emu4_chunk *chunk = (struct emu4_chunk *) file->raw;
 
-  memcpy (chunk->name, EMU4_FORM_TAG, CHUNK_NAME_LEN);
-  chunk->size = htobe32 (strlen (EMU4_E4_FORMAT));
+  emu4_chunk_set_name (chunk, EMU4_FORM_TAG);
+  emu4_chunk_set_size (chunk, 0);
   memcpy (chunk->data, EMU4_E4_FORMAT, strlen (EMU4_E4_FORMAT));
 
   file->size = sizeof (struct emu4_chunk) + strlen (EMU4_E4_FORMAT);
@@ -126,40 +140,43 @@ emu4_add_sample (struct emu_file *file, struct emu4_chunk *next_chunk,
 		 const char *sample_name, int force_loop)
 {
   int size;
+  uint32_t chunk_size;
+  struct emu4_chunk *form_chunk;
   struct emu3_sample *sample;
 
+  emu4_chunk_set_name (next_chunk, EMU4_E3S1_TAG);
   next_chunk->data[0] = 0;
   next_chunk->data[1] = 0;
-  sample = (struct emu3_sample *) &next_chunk->data[EMU4_NAME_OFFSET];
+
+  sample = (struct emu3_sample *) &next_chunk->data[EMU4_E3S1_OFFSET];
   size = emu3_append_sample (file, sample, sample_name, force_loop);
-
-  if (size >= 0)
+  if (size < 0)
     {
-      memcpy (next_chunk->name, EMU4_E3S1_TAG, CHUNK_NAME_LEN);
-      next_chunk->size = htobe32 (EMU4_NAME_OFFSET + size);
-
-      file->size += sizeof (struct emu4_chunk) + EMU4_NAME_OFFSET + size;
+      return 1;
     }
 
-  return size;
+  emu4_chunk_set_size (next_chunk, EMU4_E3S1_OFFSET + size);
+  chunk_size = sizeof (struct emu4_chunk) + EMU4_E3S1_OFFSET + size;
+
+  file->size += chunk_size;
+
+  form_chunk = (struct emu4_chunk *) file->raw;
+  emu4_chunk_set_size (form_chunk,
+		       emu4_chunk_get_size (form_chunk) + chunk_size);
+
+  return 0;
 }
 
 static int
 emu4_process_file (struct emu_file *file, int ext_mode,
-		   struct emu4_chunk **next_chunk)
+		   struct emu4_chunk **next_chunk, int *sample_index)
 {
   char *fdata;
-  int err, sample_index;
+  int err;
   uint32_t size, total_size, chunk_size, new_size;
   struct emu4_chunk *chunk;
   struct emu3_sample *sample;
   uint32_t sample_start, sample_len;
-
-  err = EXIT_FAILURE;
-  if (next_chunk)
-    {
-      *next_chunk = NULL;
-    }
 
   chunk = (struct emu4_chunk *) file->raw;
   if (!CHUNK_NAME_IS (chunk, EMU4_FORM_TAG))
@@ -178,12 +195,32 @@ emu4_process_file (struct emu_file *file, int ext_mode,
     }
 
   chunk = (struct emu4_chunk *) &chunk->data[strlen (EMU4_E4_FORMAT)];	//EB40
-  chunk_size = emu4_chunk_get_size (chunk);
-  size = strlen (EMU4_E4_FORMAT);
+  size = 0;
 
-  sample_index = 1;
+  *sample_index = 1;
   while (1)
     {
+      if (size == total_size)
+	{
+	  err = EXIT_SUCCESS;
+	  if (next_chunk)
+	    {
+	      *next_chunk = chunk;
+	    }
+	  break;
+	}
+
+      chunk_size = emu4_chunk_get_size (chunk);
+      if (chunk_size == 0)
+	{
+	  err = EXIT_SUCCESS;
+	  if (next_chunk)
+	    {
+	      *next_chunk = chunk;
+	    }
+	  break;
+	}
+
       if (CHUNK_NAME_IS (chunk, EMU4_TOC1_TAG))
 	{
 	  emu4_chunk_print (chunk, NULL);
@@ -195,9 +232,9 @@ emu4_process_file (struct emu_file *file, int ext_mode,
       else if (CHUNK_NAME_IS (chunk, EMU4_E3S1_TAG))
 	{
 	  emu4_chunk_print_named (chunk);
-	  sample = (struct emu3_sample *) &chunk->data[EMU4_NAME_OFFSET];
-	  emu3_process_sample (sample, sample_index, ext_mode, 0, 0);
-	  sample_index++;
+	  sample = (struct emu3_sample *) &chunk->data[EMU4_E3S1_OFFSET];
+	  emu3_process_sample (sample, *sample_index, ext_mode, 0, 0);
+	  (*sample_index)++;
 	}
       else if (CHUNK_NAME_IS (chunk, EMU4_E4P1_TAG))
 	{
@@ -213,6 +250,7 @@ emu4_process_file (struct emu_file *file, int ext_mode,
 	}
       else
 	{
+	  //The file might have more bytes than the actual used space in the bank.
 	  err = EXIT_SUCCESS;
 	  if (next_chunk)
 	    {
@@ -221,30 +259,14 @@ emu4_process_file (struct emu_file *file, int ext_mode,
 	  break;
 	}
 
-      if (sample_index == EMU4_MAX_SAMPLES)
-	{
-	  err = EXIT_SUCCESS;
-	  if (next_chunk)
-	    {
-	      *next_chunk = NULL;
-	    }
-	  break;
-	}
-
       size += sizeof (struct emu4_chunk) + chunk_size;
 
       chunk = (struct emu4_chunk *) &chunk->data[chunk_size];
-      chunk_size = emu4_chunk_get_size (chunk);
-
-      if (chunk_size == 0)
-	{
-	  break;
-	}
     }
 
 cleanup:
   free (fdata);
-  return 0;
+  return err;
 }
 
 int
@@ -256,6 +278,7 @@ main (int argc, char *argv[])
   char *sample_name;
   int force_loop;
   int long_index = 0;
+  int sample_index;
   int err = EXIT_SUCCESS;
   struct emu4_chunk *next_chunk;
   const char *bank_name;
@@ -332,17 +355,30 @@ main (int argc, char *argv[])
       exit (EXIT_FAILURE);
     }
 
-  if (emu4_process_file (file, ext_mode, &next_chunk))
+  if (emu4_process_file (file, ext_mode, &next_chunk, &sample_index))
     {
       err = EXIT_FAILURE;
+      goto end;
     }
 
   if (sflg)
     {
-      err = emu4_add_sample (file, next_chunk, sample_name, force_loop);
-      emu_write_file (file);
+      if (next_chunk && sample_index < EMU4_MAX_SAMPLES)
+	{
+	  err = emu4_add_sample (file, next_chunk, sample_name, force_loop);
+	  if (!err)
+	    {
+	      emu_write_file (file);
+	    }
+	}
+      else
+	{
+	  emu_error ("No space for more samples");
+	  err = EXIT_FAILURE;
+	}
     }
 
+end:
   emu_close_file (file);
 
   exit (err);
