@@ -1,4 +1,4 @@
-.TH emu3bm 1 "May 2017"
+.TH emu3bm 1 "July 2025"
 
 .SH NAME
 emu3bm \- manage EMU3 banks
@@ -7,7 +7,7 @@ emu3bm \- manage EMU3 banks
 \fBemu3bm\fP [OPTIONS] \fIbank\fP
 
 .SH DESCRIPTION
-Manage EMU3 banks, add and extract samples, create presets and set some preset and zone parameters.
+Manage EIII banks, add and extract samples, create presets and set some preset and zone parameters.
 
 .SH OPTIONS
 .TP
@@ -79,7 +79,7 @@ Extract all the bank samples in the current directory. Exporting samples always 
 Same as \-x but prepending the sample number to the sample name.
 
 .RE
-Options \fB\-s\fR, \fB\-S\fR, \fB\-p\fR, \fB\-z\fR and \fB\-n\fR can not be used in conjuction with options \fB\-c\fR, \fB\-f\fR, \fB\-l\fR, \fB\-b\fR, \fB\-q\fR, \fB\-r\fR and \fB\-x\fR.
+Options \fB\-s\fR, \fB\-S\fR, \fB\-p\fR, \fB\-z\fR and \fB\-n\fR can not be used in conjuction with options \fB\-c\fR, \fB\-f\fR, \fB\-l\fR, \fB\-b\fR, \fB\-q\fR, \fB\-r\fR, \fB\-x\fR and \fB\-X\fR.
 
 .SH COPYRIGHT
 Copyright © 2018 David García Goñi. License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.

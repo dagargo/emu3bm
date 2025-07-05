@@ -450,8 +450,6 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
       goto close;
     }
 
-  file->size += size;
-
   char *basec = strdup (path);
   filename = basename (basec);
   emu_print (1, 0, "Appending sample %s (%" PRId64
