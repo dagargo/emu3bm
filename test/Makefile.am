@@ -1,1 +1,1 @@
-TESTS=test_create_bank.sh test_add_sample.sh test_extract_samples.sh test_add_preset.sh test_add_zone.sh test_edit_parameter.sh
+TESTS=emu3_test_create_bank.sh emu3_test_add_sample.sh emu3_test_extract_samples.sh emu3_test_add_preset.sh emu3_test_add_zone.sh emu3_test_edit_parameter.sh
