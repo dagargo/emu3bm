@@ -11,8 +11,7 @@ AM_INIT_AUTOMAKE
 AC_PROG_CC
 
 # Checks for libraries.
-PKG_CHECK_MODULES(SNDFILE, sndfile >= 1.0.2, ac_cv_sndfile=1, ac_cv_sndfile=0)
-AC_DEFINE_UNQUOTED([HAVE_SNDFILE],${ac_cv_sndfile}, [Set to 1 if you have libsndfile.])
+PKG_CHECK_MODULES(SNDFILE, sndfile >= 1.0.2)
 AC_SUBST(SNDFILE_CFLAGS)
 AC_SUBST(SNDFILE_LIBS)
 
