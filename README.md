@@ -17,6 +17,18 @@ make
 sudo make install
 ```
 
+The package dependencies for Debian-based distributions are:
+- automake
+- libtool
+- build-essential
+- libsndfile1-dev
+
+You can easily install them by running this.
+
+```
+sudo apt install automake libtool build-essential libsndfile1-dev`
+```
+
 ## Features not available in the sampler
 
 * Bulk edition.
