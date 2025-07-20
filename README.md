@@ -58,7 +58,7 @@ Sample 003: 619 Grvd Snare 1
 [...]
 ```
 
-Extract samples from existing bank including the loop points and the loop enabled.
+Extract samples from existing bank including the loop points and the loop enabled option. Use `-X` to prepend the sample number.
 
 ```
 $ emu3bm -x bank
@@ -70,18 +70,21 @@ Create a new bank.
 ```
 $ emu3bm -d esi2000 -n bank
 $ emu3bm -d emu3x -n bank
+$ emu4bm -n bank
 ```
 
 Import a sample including the loop points and the loop enabled in it.
 
 ```
 $ emu3bm -s bd.wav bank
+$ emu4bm -s bd.wav bank
 ```
 
-Import a sample and set the loop points to its entirety and the loop enabled.
+Import a sample, set the loop enabled option and set the loop points to its entirety.
 
 ```
 $ emu3bm -S saw.wav bank
+$ emu4bm -S saw.wav bank
 ```
 
 Create a new preset.
