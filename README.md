@@ -22,11 +22,12 @@ The package dependencies for Debian-based distributions are:
 - libtool
 - build-essential
 - libsndfile1-dev
+- libsamplerate0-dev
 
 You can easily install them by running this.
 
 ```
-sudo apt install automake libtool build-essential libsndfile1-dev`
+sudo apt install automake libtool build-essential libsndfile1-dev libsamplerate0-dev`
 ```
 
 ## Features not available in the sampler

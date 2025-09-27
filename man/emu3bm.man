@@ -51,6 +51,10 @@ Set the level of the VCA for all the preset zones.
 Create a new bank. Use it with -d to set the device.
 
 .TP
+.BR \-F " sfz"
+Add a new preset from the SFZ file.
+
+.TP
 .BR \-d
 Set the device type. Only 'esi2000' and 'emu3x' values are allowed. If not used, 'esi2000' is used as the device type.
 

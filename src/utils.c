@@ -285,3 +285,20 @@ emu_print_help (char *executable_path, const char *name,
       option++;
     }
 }
+
+char *
+emu_filename_to_filename_wo_ext (const char *filename_, const char **ext)
+{
+  char *filename = strdup (filename_);
+  char *e = strrchr (filename, '.');
+  if (e)
+    {
+      *e = 0;
+      e++;
+      if (ext)
+	{
+	  *ext = e;
+	}
+    }
+  return filename;
+}

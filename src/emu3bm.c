@@ -18,10 +18,13 @@
  *   along with emu3bm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <errno.h>
 #include <libgen.h>
 #include <string.h>
 #include <stdlib.h>
 #include "emu3bm.h"
+#include "sfz.h"
+#include "sfz.tab.h"
 #include "utils.h"
 
 #define FORMAT_SIZE 16
@@ -55,6 +58,10 @@
 
 #define EMU3_BANK(f) ((struct emu3_bank *) ((f)->raw))
 
+extern void yyset_in (FILE * _in_str);
+extern void sfz_parser_set_context (struct emu_file *file, int preset_num,
+				    const char *sfz_dir);
+
 struct emu3_bank
 {
   char format[FORMAT_SIZE];
@@ -69,15 +76,6 @@ struct emu3_bank
   uint32_t more_parameters[MORE_BANK_PARAMETERS];
 };
 
-struct emu3_envelope
-{
-  uint8_t attack;
-  uint8_t hold;
-  uint8_t decay;
-  uint8_t sustain;
-  uint8_t release;
-};
-
 struct emu3_preset_note_zone
 {
   uint8_t unknown_1;
@@ -85,89 +83,6 @@ struct emu3_preset_note_zone
   uint8_t pri_zone;
   uint8_t sec_zone;
 };
-
-struct emu3_preset_zone
-{
-  uint8_t original_key;
-  uint8_t sample_id_lsb;
-  uint8_t sample_id_msb;
-  int8_t parameter_a;
-  struct emu3_envelope vca_envelope;
-  uint8_t lfo_rate;
-  uint8_t lfo_delay;
-  uint8_t lfo_variation;
-  uint8_t vcf_cutoff;
-  uint8_t vcf_q;		// 10000000b/0x80 bit flags that rt-vcf-noteon-q is enabled
-  uint8_t vcf_envelope_amount;
-  struct emu3_envelope vcf_envelope;
-  struct emu3_envelope aux_envelope;
-  int8_t aux_envelope_amount;
-  uint8_t aux_envelope_dest;
-  int8_t vel_to_vca_level;
-  int8_t vel_to_vca_attack;
-  int8_t vel_to_vcf_cutoff;
-  int8_t vel_to_pitch;
-  int8_t vel_to_aux_env;
-  int8_t vel_to_vcf_q;
-  int8_t vel_to_vcf_attack;
-  int8_t vel_to_sample_start;
-  int8_t vel_to_vca_pan;
-  int8_t lfo_to_pitch;
-  int8_t lfo_to_vca;
-  int8_t lfo_to_cutoff;
-  int8_t lfo_to_pan;
-  int8_t vca_level;
-  int8_t note_tuning;		// -64 to 64 for -100cents to 100cents
-  int8_t vcf_tracking;
-  uint8_t note_on_delay;	// 0x00 to 0xFF for 0.00 to 1.53s
-  int8_t vca_pan;
-  uint8_t vcf_type_lfo_shape;
-
-  // `rt_enable_flags`
-  // The realtime controls can be disabled on the unit (via Dynamic
-  // processing, Realtime enable). These are normally all enabled (0xff)
-  // but can be turned off.
-  //
-  // 0000 0000
-  // |||| |||^pitch       0x01
-  // |||| ||^vcf cutoff   0x02
-  // |||| |^vca level     0x04
-  // |||| ^lfo->pitch     0x08
-  // |||^lfo->vcf cutoff  0x10
-  // ||^lfo->vca          0x20
-  // |^attack             0x40
-  // ^pan                 0x80
-  uint8_t rt_enable_flags;	// 0xff
-
-  // Various settings are encoded into this last byte of the structure. The
-  // bits set the following settings:
-  // 'chorus (off/on)',
-  // 'disable loop (off/on)',
-  // 'disable side (off/left/right)' (2 bits),
-  // 'keyboard env. mode (gate/trigger)',
-  // 'solo (off/on)',
-  // 'nontranspose (off/on)'
-  //
-  // There unused bit 0 is unknown at this point.
-  //
-  //  1010 0000 = off, disable side right
-  //  1010 1000 = on, disable side right
-  //  0110 1000 = disable side left
-  //  |||| ||^nontranspose = 1
-  //  |||| |^env mode trigger = 1 (else gate)
-  //  |||| ^chorus on = 1
-  //  |||^ solo on = 1
-  //  ||^disable loop on = 1
-  //  |^disable left = 1
-  //  ^disable right
-  uint8_t flags;
-};
-
-// 1 0110
-// env mode trigger, solo on, notranspose on
-
-// 1 0010
-// env mode gate, solo on
 
 struct emu3_preset
 {
@@ -1335,9 +1250,10 @@ emu3_get_bank_samples (struct emu3_bank *bank)
 }
 
 int
-emu3_add_sample (struct emu_file *file, char *sample_name, int force_loop)
+emu3_add_sample (struct emu_file *file, char *sample_name, int force_loop,
+		 int *sample_num)
 {
-  int size;
+  int next_sample;
   struct emu3_bank *bank = EMU3_BANK (file);
   int max_samples = emu3_get_max_samples (bank);
   int total_samples = emu3_get_bank_samples (bank);
@@ -1353,11 +1269,18 @@ emu3_add_sample (struct emu_file *file, char *sample_name, int force_loop)
       return EXIT_FAILURE;
     }
 
-  emu_debug (1, "Adding sample %d...", total_samples + 1);	//Sample number is 1 based
-  size = emu3_append_sample (file, sample, sample_name, force_loop);
+  next_sample = total_samples + 1;	//Sample number is 1 based
+  if (sample_num)
+    {
+      *sample_num = next_sample;
+    }
+
+  emu_debug (1, "Adding sample %d...", next_sample);
+  int size = emu3_append_sample (file, sample, sample_name, force_loop);
 
   if (size < 0)
     {
+      emu_error ("Appending sample error");
       return -size;
     }
 
@@ -1468,7 +1391,8 @@ emu3_add_zones (struct emu_file *file, int preset_num, int zone_num,
 
 int
 emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
-		      struct emu3_zone_range *zone_range)
+		      struct emu3_zone_range *zone_range,
+		      struct emu3_preset_zone **zone_)
 {
   int sec_zone_id;
   struct emu3_bank *bank = EMU3_BANK (file);
@@ -1537,6 +1461,11 @@ emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
 	  emu_error ("No space left for zones");
 	  return EXIT_FAILURE;
 	}
+    }
+
+  if (zone_)
+    {
+      *zone_ = zone;
     }
 
   zone->original_key = zone_range->original_key;
@@ -1662,7 +1591,7 @@ emu3_del_preset_zone (struct emu_file *file, int preset_num, int zone_num)
 }
 
 int
-emu3_add_preset (struct emu_file *file, char *preset_name)
+emu3_add_preset (struct emu_file *file, char *preset_name, int *preset_num)
 {
   int i, objects;
   uint32_t copy_start_addr;
@@ -1689,6 +1618,10 @@ emu3_add_preset (struct emu_file *file, char *preset_name)
 
   emu_debug (1, "Adding preset %d...", i);
 
+  if (preset_num)
+    {
+      *preset_num = i;
+    }
   objects += i;
 
   copy_start_addr = emu3_get_preset_address (bank, i);
@@ -1804,4 +1737,140 @@ out1:
   free (basec);
   free (name);
   return rvalue;
+}
+
+static gpointer
+emu3_get_opcode_val (GHashTable *global_opcodes, GHashTable *group_opcodes,
+		     GHashTable *region_opcodes, const gchar *key)
+{
+  gchar *v = g_hash_table_lookup (region_opcodes, key);
+  if (v)
+    {
+      return v;
+    }
+  v = g_hash_table_lookup (group_opcodes, key);
+  if (v)
+    {
+      return v;
+    }
+  return g_hash_table_lookup (global_opcodes, key);
+}
+
+void
+emu3_sfz_region_add (struct emu_file *file, int preset_num,
+		     GHashTable *global_opcodes, GHashTable *group_opcodes,
+		     GHashTable *region_opcodes, const gchar *sfz_dir)
+{
+  int err, sample_num;
+  struct emu3_zone_range zone_range;
+  gchar *sample = emu3_get_opcode_val (global_opcodes, group_opcodes,
+				       region_opcodes, "sample");
+  gint *hikey = emu3_get_opcode_val (global_opcodes, group_opcodes,
+				     region_opcodes, "hikey");
+  gint *lokey = emu3_get_opcode_val (global_opcodes, group_opcodes,
+				     region_opcodes, "lokey");
+  gint *pitch_keycenter = emu3_get_opcode_val (global_opcodes, group_opcodes,
+					       region_opcodes,
+					       "pitch_keycenter");
+
+  if (!sample || !lokey || !hikey || !pitch_keycenter)
+    {
+      emu_error ("Incomplete region");
+      return;
+    }
+
+  emu_debug (1, "Adding region for '%s' centered at %d [%d, %d]...",
+	     sample, *pitch_keycenter, *lokey, *hikey);
+
+  // Notice that SFZ states that MIDI notes go from C-1 to G9. See https://sfzformat.com/opcodes/sw_hikey/.
+  // Therefore the lowest A on a piano is A0 in the SFZ format while it is A-1 in the E-mu.
+
+  zone_range.layer = 1;		//Always using pri layer
+  zone_range.original_key = *pitch_keycenter - 21;	//0 is A-1
+  zone_range.lower_key = *lokey - 21;	//0 is A-1
+  zone_range.higher_key = *hikey - 21;	//0 is A-1
+
+  if (zone_range.original_key < 0 && zone_range.original_key > 87 &&
+      zone_range.lower_key < 0 && zone_range.lower_key > 87 &&
+      zone_range.higher_key < 0 && zone_range.higher_key > 87)
+    {
+      emu_error ("Key outside range");
+      return;
+    }
+
+  struct emu3_preset_zone *zone;
+  gchar *sample_path = g_strdup_printf ("%s/%s", sfz_dir, sample);
+  gchar *c = sample_path;
+  //Perhaps converting backslashes to slashes is not a good idea but it's practical.
+  while (*c)
+    {
+      if (*c == '\\')
+	{
+	  *c = '/';
+	}
+      c++;
+    }
+
+  err = emu3_add_sample (file, sample_path, 0, &sample_num);
+  g_free (sample_path);
+  if (err)
+    {
+      return;
+    }
+
+  if (emu3_add_preset_zone (file, preset_num, sample_num, &zone_range, &zone))
+    {
+      return;
+    }
+
+  // Use pcodes here
+}
+
+int
+emu3_add_sfz (struct emu_file *file, const char *sfz_path)
+{
+  FILE *sfz;
+  int err, preset_num;
+  const char *ext;
+  char *sfz_name, *bnsfz, *preset_name, *sfz_dir, *bdsfz;
+
+  bdsfz = strdup (sfz_path);
+  sfz_dir = dirname (bdsfz);
+  bnsfz = strdup (sfz_path);
+  sfz_name = basename (bnsfz);
+  preset_name = emu_filename_to_filename_wo_ext (sfz_name, &ext);
+  if (strcasecmp (ext, "sfz"))
+    {
+      emu_debug (1, "Unexpected extension \"%s\"", ext);
+    }
+
+  err = emu3_add_preset (file, preset_name, &preset_num);
+  if (err)
+    {
+      goto end;
+    }
+
+  sfz = fopen (sfz_path, "rb");
+  if (!sfz)
+    {
+      emu_error ("Error: %s", strerror (errno));
+      err = EXIT_FAILURE;
+      goto end;
+    }
+
+  yyset_in (sfz);
+
+  sfz_parser_set_context (file, preset_num, sfz_dir);
+
+  yyparse ();
+
+  fclose (sfz);
+
+  err = emu_write_file (file);
+
+end:
+  free (bdsfz);
+  free (bnsfz);
+  free (preset_name);
+  return err;
 }
