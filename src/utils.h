@@ -82,4 +82,6 @@ char *emu3_str_to_emu3name (const char *src);
 
 void emu3_cpystr (char *dst, const char *src);
 
+char *emu_filename_to_filename_wo_ext (const char *file, const char **ext);
+
 #endif

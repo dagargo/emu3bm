@@ -36,6 +36,7 @@ static const struct option options[] = {
   {"filter-type", 1, NULL, 'f'},
   {"level", 1, NULL, 'l'},
   {"new-bank", 1, NULL, 'n'},
+  {"new-bank-from-sfz", 1, NULL, 'F'},
   {"device-type", 1, NULL, 'd'},
   {"pitch-bend-range", 1, NULL, 'b'},
   {"filter-q", 1, NULL, 'q'},
@@ -134,11 +135,12 @@ main (int argc, char *argv[])
 {
   int opt;
   int long_index = 0;
-  int xflg = 0, dflg = 0, sflg = 0, nflg = 0, errflg = 0, modflg = 0, pflg =
-    0, zflg = 0, yflg = 0, ext_mode = EMU3_EXT_MODE_NONE;
+  int xflg = 0, dflg = 0, sflg = 0, nflg = 0, sfzflg = 0, errflg = 0, modflg =
+    0, pflg = 0, zflg = 0, yflg = 0, ext_mode = EMU3_EXT_MODE_NONE;
   char *device = NULL;
   char *bank_name = NULL;
   char *sample_name;
+  char *sfz_filename;
   char *preset_name;
   char *rt_controls = NULL;
   char *zone_params = NULL;
@@ -156,9 +158,9 @@ main (int argc, char *argv[])
   struct emu3_zone_range zone_range;
   int zone_num;
 
-  while ((opt =
-	  getopt_long (argc, argv, "hvd:ns:S:xXr:l:c:q:f:b:e:p:z:Z:y",
-		       options, &long_index)) != -1)
+  while ((opt = getopt_long (argc, argv,
+			     "hvd:nF:s:S:xXr:l:c:q:f:b:e:p:z:Z:y", options,
+			     &long_index)) != -1)
     {
       switch (opt)
 	{
@@ -192,6 +194,10 @@ main (int argc, char *argv[])
 	  break;
 	case 'n':
 	  nflg++;
+	  break;
+	case 'F':
+	  sfzflg++;
+	  sfz_filename = optarg;
 	  break;
 	case 'r':
 	  rt_controls = optarg;
@@ -273,10 +279,13 @@ main (int argc, char *argv[])
   if (yflg > 1)
     errflg++;
 
-  if (nflg + sflg + pflg + zflg + yflg > 1)
+  if (sfzflg > 1)
     errflg++;
 
-  if ((nflg || sflg || pflg || zflg || yflg) && modflg)
+  if (nflg + sflg + pflg + zflg + yflg + sfzflg > 1)
+    errflg++;
+
+  if ((nflg || sflg || pflg || zflg || yflg || sfzflg) && modflg)
     errflg++;
 
   if (errflg > 0)
@@ -297,25 +306,32 @@ main (int argc, char *argv[])
 
   if (sflg)
     {
-      err = emu3_add_sample (file, sample_name, force_loop);
+      err = emu3_add_sample (file, sample_name, force_loop, NULL);
       goto end;
     }
 
   if (pflg)
     {
-      err = emu3_add_preset (file, preset_name);
+      err = emu3_add_preset (file, preset_name, NULL);
       goto end;
     }
 
   if (zflg)
     {
-      err = emu3_add_preset_zone (file, preset_num, sample_num, &zone_range);
+      err = emu3_add_preset_zone (file, preset_num, sample_num,
+				  &zone_range, NULL);
       goto end;
     }
 
   if (yflg)
     {
       err = emu3_del_preset_zone (file, preset_num, zone_num);
+      goto end;
+    }
+
+  if (sfzflg)
+    {
+      err = emu3_add_sfz (file, sfz_filename);
       goto end;
     }
 

@@ -15,6 +15,7 @@ coverage_report
 depcomp
 install-sh
 libtool
+ltmain.sh
 m4
 missing
 stamp-h1
@@ -37,5 +38,7 @@ src/emu4bm
 src/*~
 test/*.log
 test/*.trs
-
+src/sfz.yy.c
+src/sfz.tab.h
+src/sfz.tab.c
 .vs/

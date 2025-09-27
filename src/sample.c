@@ -21,6 +21,7 @@
 #include <inttypes.h>
 #include <libgen.h>
 #include <math.h>
+#include <samplerate.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -273,16 +274,6 @@ emu3_process_sample (struct emu3_sample *sample, int num,
   sf_close (output);
 }
 
-static char *
-emu3_wav_name_to_name (const char *wav_file)
-{
-  char *name = strdup (wav_file);
-  char *ext = strrchr (name, '.');
-  if (strcasecmp (ext, SAMPLE_EXT) == 0)
-    *ext = '\0';
-  return name;
-}
-
 int
 emu3_sample_get_smpl_chunk (SNDFILE *input,
 			    struct smpl_chunk_data *smpl_chunk_data)
@@ -390,19 +381,144 @@ emu3_init_sample (struct emu3_sample *sample, int samplerate, int frames,
   return size;
 }
 
+int16_t *
+emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
+			     int *samplerate, int force_loop, int *loop,
+			     int *loop_start, int *loop_end, int *frames)
+{
+  int direct_read;
+  int16_t *output;
+  double ratio;
+
+  if (sfinfo->samplerate <= MAX_SAMPLING_RATE)
+    {
+      direct_read = 1;
+      *samplerate = sfinfo->samplerate;
+      ratio = 1;
+    }
+  else
+    {
+      direct_read = 0;		//Requires resampling
+      *samplerate = MAX_SAMPLING_RATE;
+      ratio = MAX_SAMPLING_RATE / (double) sfinfo->samplerate;
+    }
+
+  //Set scale factor. See http://www.mega-nerd.com/libsndfile/api.html#note2
+  if ((sfinfo->format & SF_FORMAT_FLOAT) == SF_FORMAT_FLOAT ||
+      (sfinfo->format & SF_FORMAT_DOUBLE) == SF_FORMAT_DOUBLE)
+    {
+      emu_debug (2,
+		 "Setting scale factor to ensure correct integer readings...\n");
+      sf_command (sndfile, SFC_SET_SCALE_FLOAT_INT_READ, NULL, SF_TRUE);
+    }
+
+  if (direct_read)
+    {
+      output = malloc (sizeof (int16_t) * sfinfo->channels * sfinfo->frames);
+      sf_readf_short (sndfile, output, sfinfo->frames);
+      *frames = sfinfo->frames;
+    }
+  else
+    {
+      SRC_DATA srcdata;
+
+      emu_debug (1, "Resampling...");
+
+      srcdata.src_ratio = ratio;
+      srcdata.input_frames = sfinfo->frames;
+      srcdata.output_frames = ceil (ratio * sfinfo->frames);
+      srcdata.data_in =
+	malloc (sizeof (float) * sfinfo->channels * sfinfo->frames);
+      srcdata.data_out =
+	malloc (sizeof (float) * sfinfo->channels * srcdata.output_frames);
+
+      sf_readf_float (sndfile, (float *) srcdata.data_in, sfinfo->frames);
+
+      int err = src_simple (&srcdata, SRC_SINC_BEST_QUALITY,
+			    sfinfo->channels);
+      if (err)
+	{
+	  emu_error ("Error while resampling: %s", src_strerror (err));
+	  free ((float *) srcdata.data_in);
+	  free (srcdata.data_out);
+	  return NULL;
+	}
+
+      emu_debug (1,
+		 "Resampling done. Used frames: %ld; generated frames: %ld",
+		 srcdata.input_frames_used, srcdata.output_frames_gen);
+
+      output = malloc (sizeof (int16_t) * sfinfo->channels *
+		       srcdata.output_frames_gen);
+      src_float_to_short_array (srcdata.data_out, output,
+				srcdata.output_frames_gen);
+
+      free ((float *) srcdata.data_in);
+      free (srcdata.data_out);
+
+      *frames = srcdata.output_frames_gen;
+
+      // Sometimes libsamplerate returns less frames less than expected.
+      // This fixes the ratio, which is used to calculate the loop points.
+      ratio = srcdata.output_frames_gen / (double) sfinfo->frames;
+    }
+
+  if (force_loop)
+    {
+      *loop = 1;
+      *loop_start = 0;
+      *loop_end = *frames - 1;
+    }
+  else
+    {
+      int smpl_chunk;
+      struct smpl_chunk_data smpl_chunk_data;
+
+      smpl_chunk = emu3_sample_get_smpl_chunk (sndfile, &smpl_chunk_data);
+      if (smpl_chunk)
+	{
+	  *loop = (smpl_chunk_data.sample_loop.type != htole32 (0x7f));
+
+	  *loop_start = smpl_chunk_data.sample_loop.start * ratio;
+	  if (*loop_start >= *frames)
+	    {
+	      emu_error ("Bad loop start. Using sample start...");
+	      *loop_start = 0;
+	    }
+
+	  *loop_end = smpl_chunk_data.sample_loop.end * ratio;
+	  if (*loop_end >= *frames)
+	    {
+	      emu_error ("Bad loop end. Using sample end...");
+	      *loop_end = *frames - 1;
+	    }
+	}
+      else
+	{
+	  *loop = 0;
+	  *loop_start = 0;
+	  *loop_end = *frames - 1;
+	}
+    }
+
+  emu_debug (1, "Loop: %s; loop start at %d; loop end at %d",
+	     *loop ? "on" : "off", *loop_start, *loop_end);
+
+  return output;
+}
+
 //returns the sample size in bytes that the the sample takes in the bank
 int
 emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
 		    const char *path, int force_loop)
 {
   SF_INFO sfinfo;
-  SNDFILE *input;
-  int loop, smpl_chunk, size, loop_start, loop_end;
-  int16_t frame[2];
+  SNDFILE *sndfile;
+  int loop, size, loop_start, loop_end, frames, samplerate;
+  int16_t *f, *data = NULL;
   int16_t zero[] = { 0, 0 };
   const char *filename;
   struct emu3_sample_descriptor sd;
-  struct smpl_chunk_data smpl_chunk_data;
 
   if (access (path, R_OK) != 0)
     {
@@ -412,7 +528,7 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
 
   size = -1;
   sfinfo.format = 0;
-  input = sf_open (path, SFM_READ, &sfinfo);
+  sndfile = sf_open (path, SFM_READ, &sfinfo);
 
   if (sfinfo.channels > 2)
     {
@@ -420,45 +536,19 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
       goto close;
     }
 
-  if (force_loop)
+  data = emu3_append_sample_get_data (sndfile, &sfinfo, &samplerate,
+				      force_loop, &loop, &loop_start,
+				      &loop_end, &frames);
+  if (!data)
     {
-      loop = 1;
-      loop_start = 0;
-      loop_end = sfinfo.frames - 1;
-    }
-  else
-    {
-      smpl_chunk = emu3_sample_get_smpl_chunk (input, &smpl_chunk_data);
-      if (smpl_chunk)
-	{
-	  loop = (smpl_chunk_data.sample_loop.type != htole32 (0x7f));
-
-	  loop_start = smpl_chunk_data.sample_loop.start;
-	  if (loop_start >= sfinfo.frames)
-	    {
-	      emu_error ("Bad loop start. Using sample start...");
-	      loop_start = 0;
-	    }
-
-	  loop_end = smpl_chunk_data.sample_loop.end;
-	  if (loop_end >= sfinfo.frames)
-	    {
-	      emu_error ("Bad loop end. Using sample end...");
-	      loop_end = sfinfo.frames - 1;
-	    }
-	  emu_debug (1, "Loop start at %d, loop end at %d", loop_start,
-		     loop_end);
-	}
-      else
-	{
-	  loop = 0;
-	  loop_start = 0;
-	  loop_end = sfinfo.frames - 1;
-	}
+      goto close;
     }
 
-  size = emu3_init_sample (sample, sfinfo.samplerate, sfinfo.frames,
-			   sfinfo.channels == 1, loop_start, loop_end, loop);
+  loop_start += 2; //Due to the 2 frames added below
+  loop_end += 2; //Due to the 2 frames added below
+
+  size = emu3_init_sample (sample, samplerate, frames, sfinfo.channels == 1,
+			   loop_start, loop_end, loop);
 
   if (file->size + size > MEM_SIZE)
     {
@@ -469,11 +559,10 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
 
   char *basec = strdup (path);
   filename = basename (basec);
-  emu_print (1, 0, "Appending sample %s (%" PRId64
-	     " frames, %d channels)...\n", filename, sfinfo.frames,
-	     sfinfo.channels);
+  emu_print (0, 0, "Appending sample %s (%d frames, %d channels)...\n",
+	     filename, frames, sfinfo.channels);
   //Sample header initialization
-  char *name = emu3_wav_name_to_name (filename);
+  char *name = emu_filename_to_filename_wo_ext (filename, NULL);
   char *emu3name = emu3_str_to_emu3name (name);
   emu3_cpystr (sample->name, emu3name);
 
@@ -481,26 +570,27 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
   free (name);
   free (emu3name);
 
-  emu3_init_sample_descriptor (&sd, sample, sfinfo.frames);
+  emu3_init_sample_descriptor (&sd, sample, frames);
 
   //2 first frames set to 0
   emu3_write_frame (&sd, zero);
   emu3_write_frame (&sd, zero);
 
-  for (int i = 0; i < sfinfo.frames; i++)
+  f = data;
+  for (int i = 0; i < frames; i++, f += sfinfo.channels)
     {
-      sf_readf_short (input, frame, 1);
-      emu3_write_frame (&sd, frame);
+      emu3_write_frame (&sd, f);
     }
 
   //2 end frames set to 0
   emu3_write_frame (&sd, zero);
   emu3_write_frame (&sd, zero);
 
-  emu_print (1, 0, "Appended %dB (0x%08x).\n", size, size);
+  emu_debug (1, "Appended %d B (0x%08x B)", size, size);
 
 close:
-  sf_close (input);
+  free (data);
+  sf_close (sndfile);
 
   return size;
 }
