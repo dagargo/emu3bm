@@ -76,7 +76,7 @@ parse_zone_params (char *zone_params, int *sample_num,
   *sample_num = strtol (sample_str, &endtoken, 10);
   if (*endtoken != '\0' || sample_num <= 0)
     {
-      emu_error ("Invalid sample %d", sample_num);
+      emu_error ("Invalid sample %d", *sample_num);
       return EXIT_FAILURE;
     }
 
@@ -137,12 +137,11 @@ main (int argc, char *argv[])
   int xflg = 0, dflg = 0, sflg = 0, nflg = 0, errflg = 0, modflg = 0, pflg =
     0, zflg = 0, yflg = 0, ext_mode = EMU3_EXT_MODE_NONE;
   char *device = NULL;
-  char *bank_name;
+  char *bank_name = NULL;
   char *sample_name;
   char *preset_name;
   char *rt_controls = NULL;
   char *zone_params = NULL;
-  char *type;
   int level = -1;
   int cutoff = -1;
   int q = -1;

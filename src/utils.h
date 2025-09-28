@@ -31,7 +31,7 @@
 #define SAMPLE_EXT ".wav"
 #define NOTES 88		// 0x58
 
-enum emu_error
+enum emu_error_code
 {
   ERR_BANK_FULL = 1,
   ERR_BAD_SAMPLE_CHANS,
