@@ -47,8 +47,8 @@ static char *
 emu3_emu3name_to_name (const char *objname)
 {
   int i, size;
-  const char *index = &objname[NAME_SIZE - 1];
   char *fname;
+  const char *index = &objname[NAME_SIZE - 1];
 
   for (size = NAME_SIZE; size > 0; size--)
     {
@@ -56,9 +56,14 @@ emu3_emu3name_to_name (const char *objname)
 	break;
       index--;
     }
+
   fname = (char *) malloc (size + 1);
-  strncpy (fname, objname, size);
-  fname[size] = '\0';
+  if (size)
+    {
+      strncpy (fname, objname, size);
+    }
+  fname[size] = 0;
+
   for (i = 0; i < size; i++)
     if (fname[i] == '/' || fname[i] == 127)
       fname[i] = '?';
@@ -246,6 +251,8 @@ emu3_process_sample (struct emu3_sample *sample, int num,
   l_channel = sample->frames + 2;
   if (channels == 2)
     r_channel = sample->frames + frames + 6;
+  else
+    r_channel = l_channel;
   for (int i = 0; i < frames; i++)
     {
       frame[0] = *l_channel;
@@ -280,7 +287,7 @@ int
 emu3_sample_get_smpl_chunk (SNDFILE *input,
 			    struct smpl_chunk_data *smpl_chunk_data)
 {
-  int loop_start, loop_end, loop;
+  int loop;
   struct SF_CHUNK_INFO chunk_info;
   SF_CHUNK_ITERATOR *chunk_iter;
 
@@ -313,11 +320,17 @@ emu3_init_sample_descriptor (struct emu3_sample_descriptor *sd,
 			     struct emu3_sample *sample, int frames)
 {
   sd->sample = sample;
-
   sd->l_channel = sample->frames;
   if ((sample->format & EMU3_SAMPLE_OPT_STEREO) == EMU3_SAMPLE_OPT_STEREO)
-    //We consider the 4 shorts padding that the left channel has
-    sd->r_channel = sample->frames + frames + 4;
+    {
+      // We consider the 4 shorts padding that the left channel has.
+      sd->r_channel = sample->frames + frames + 4;
+    }
+  else
+    {
+      // The initialization is required to avoid a warning.
+      sd->r_channel = sample->frames;
+    }
 }
 
 static void

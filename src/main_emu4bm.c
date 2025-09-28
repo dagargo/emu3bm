@@ -75,12 +75,6 @@ emu4_chunk_set_name (struct emu4_chunk *chunk, const char *name)
   memcpy (chunk->name, name, CHUNK_NAME_LEN);
 }
 
-static int
-emu4_chunk_check_name (struct emu4_chunk *chunk, const char *name)
-{
-  return strncmp (chunk->name, name, CHUNK_NAME_LEN);
-}
-
 static void
 emu4_chunk_set_size (struct emu4_chunk *chunk, uint32_t size)
 {
@@ -96,28 +90,22 @@ emu4_chunk_get_size (struct emu4_chunk *chunk)
 static void
 emu4_chunk_print (struct emu4_chunk *chunk, char *content_name)
 {
-  emu_print (1, 0, "chunk %.4s: %.*s%s(%ld B)\n", chunk->name,
-	     content_name == NULL ? 0 : NAME_SIZE, content_name,
-	     content_name == NULL ? "" : " ", emu4_chunk_get_size (chunk));
+  if (content_name)
+    {
+      emu_print (1, 0, "chunk %.4s: %.*s (%u B)\n", chunk->name,
+		 NAME_SIZE, content_name, emu4_chunk_get_size (chunk));
+    }
+  else
+    {
+      emu_print (1, 0, "chunk %.4s: (%u B)\n", chunk->name,
+		 emu4_chunk_get_size (chunk));
+    }
 }
 
 static void
 emu4_chunk_print_named (struct emu4_chunk *chunk)
 {
   emu4_chunk_print (chunk, &chunk->data[EMU4_E3S1_OFFSET]);
-}
-
-static int
-emu4_chunk_add (struct emu_file *file, struct emu4_chunk *chunk)
-{
-  uint32_t csize = sizeof (struct emu4_chunk) + chunk->size;
-  uint32_t nsize = file->size + csize;
-  if (nsize >= MEM_SIZE)
-    {
-      return -1;
-    }
-  file->size = nsize;
-  memcpy (&file->raw[file->size], chunk, nsize);
 }
 
 static struct emu_file *
@@ -171,18 +159,15 @@ static int
 emu4_process_file (struct emu_file *file, int ext_mode,
 		   struct emu4_chunk **next_chunk, int *sample_index)
 {
-  char *fdata;
-  int err;
-  uint32_t size, total_size, chunk_size, new_size;
+  uint32_t size, total_size, chunk_size;
   struct emu4_chunk *chunk;
   struct emu3_sample *sample;
-  uint32_t sample_start, sample_len;
 
   chunk = (struct emu4_chunk *) file->raw;
   if (!CHUNK_NAME_IS (chunk, EMU4_FORM_TAG))
     {
-      emu_error ("Unexpected file type");
-      goto cleanup;
+      emu_error ("Unexpected format");
+      return EXIT_FAILURE;
     }
 
   emu4_chunk_print (chunk, NULL);
@@ -191,7 +176,7 @@ emu4_process_file (struct emu_file *file, int ext_mode,
   if (strncmp (chunk->data, EMU4_E4_FORMAT, strlen (EMU4_E4_FORMAT)))
     {
       emu_error ("Unexpected format");
-      goto cleanup;
+      return EXIT_FAILURE;
     }
 
   chunk = (struct emu4_chunk *) &chunk->data[strlen (EMU4_E4_FORMAT)];	//EB40
@@ -202,7 +187,6 @@ emu4_process_file (struct emu_file *file, int ext_mode,
     {
       if (size == total_size)
 	{
-	  err = EXIT_SUCCESS;
 	  if (next_chunk)
 	    {
 	      *next_chunk = chunk;
@@ -213,7 +197,6 @@ emu4_process_file (struct emu_file *file, int ext_mode,
       chunk_size = emu4_chunk_get_size (chunk);
       if (chunk_size == 0)
 	{
-	  err = EXIT_SUCCESS;
 	  if (next_chunk)
 	    {
 	      *next_chunk = chunk;
@@ -251,7 +234,6 @@ emu4_process_file (struct emu_file *file, int ext_mode,
       else
 	{
 	  //The file might have more bytes than the actual used space in the bank.
-	  err = EXIT_SUCCESS;
 	  if (next_chunk)
 	    {
 	      *next_chunk = chunk;
@@ -264,9 +246,7 @@ emu4_process_file (struct emu_file *file, int ext_mode,
       chunk = (struct emu4_chunk *) &chunk->data[chunk_size];
     }
 
-cleanup:
-  free (fdata);
-  return err;
+  return 0;
 }
 
 int
@@ -275,13 +255,13 @@ main (int argc, char *argv[])
   int opt;
   int nflg = 0, sflg = 0, xflg = 0, errflg = 0, totalflg;
   int ext_mode = 0;
-  char *sample_name;
-  int force_loop;
+  char *sample_name = NULL;
+  int force_loop = 0;
   int long_index = 0;
   int sample_index;
   int err = EXIT_SUCCESS;
   struct emu4_chunk *next_chunk;
-  const char *bank_name;
+  const char *bank_name = NULL;
   struct emu_file *file;
 
   while ((opt =

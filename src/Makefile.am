@@ -1,4 +1,4 @@
-AM_CFLAGS = -I$(top_srcdir)/src `$(PKG_CONFIG) --cflags $(LIBS)` $(SNDFILE_CFLAGS)
+AM_CFLAGS = -Wall -O3 -I$(top_srcdir)/src `$(PKG_CONFIG) --cflags $(LIBS)` $(SNDFILE_CFLAGS)
 emu3bm_LDADD = $(SNDFILE_LIBS) -lm
 emu4bm_LDADD = $(SNDFILE_LIBS) -lm
 
