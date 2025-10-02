@@ -1073,7 +1073,7 @@ emu3_open_file (const char *name)
 
   if (!emu3_check_bank_format (bank))
     {
-      emu_error ("Bank format not supported.");
+      emu_error ("Bank format not supported");
       emu_close_file (file);
       return NULL;
     }
@@ -1349,7 +1349,8 @@ emu3_add_sample (struct emu_file *file, char *sample_name, int force_loop)
 
   if (total_samples == max_samples)
     {
-      return ERR_SAMPLE_LIMIT;
+      emu_error ("Sample limit reached");
+      return EXIT_FAILURE;
     }
 
   emu_debug (1, "Adding sample %d...", total_samples + 1);	//Sample number is 1 based
@@ -1483,7 +1484,7 @@ emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
     }
 
   emu_debug (2,
-	     "Adding sample %d to layer %d with original key %s (%d) from %s (%d) to %s (%d) to preset %d...\n",
+	     "Adding sample %d to layer %d with original key %s (%d) from %s (%d) to %s (%d) to preset %d...",
 	     sample_num, zone_range->layer,
 	     emu_get_note_name (zone_range->original_key),
 	     zone_range->original_key,
@@ -1502,7 +1503,7 @@ emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
 	  assigned = 1;
       if (assigned == 1)
 	{
-	  emu_error ("Zone already assigned to notes.");
+	  emu_error ("Zone already assigned to notes");
 	  return EXIT_FAILURE;
 	}
 
@@ -1511,7 +1512,10 @@ emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
 
       inc_size = emu3_add_zones (file, preset_num, -1, &zone);
       if (inc_size < 0)
-	return ERR_BANK_FULL;
+	{
+	  emu_error ("No space left in bank");
+	  return EXIT_FAILURE;
+	}
     }
   else if (zone_range->layer == 2)
     {
@@ -1523,13 +1527,16 @@ emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
 	  several = 1;
       if (several == 1)
 	{
-	  emu_error ("Note range in several zones.");
+	  emu_error ("Note range in several zones");
 	  return EXIT_FAILURE;
 	}
 
       inc_size = emu3_add_zones (file, preset_num, sec_zone_id, &zone);
       if (inc_size < 0)
-	return ERR_BANK_FULL;
+	{
+	  emu_error ("No space left for zones");
+	  return EXIT_FAILURE;
+	}
     }
 
   zone->original_key = zone_range->original_key;
@@ -1589,7 +1596,7 @@ emu3_del_preset_zone (struct emu_file *file, int preset_num, int zone_num)
   if (preset_num < 0 || preset_num >= total_presets)
     {
       emu_error ("Invalid preset number: %d", preset_num);
-      return EXIT_FAILURE;	//TODO: add error messages
+      return EXIT_FAILURE;
     }
 
   zones = emu3_count_preset_zones (file, preset_num);
@@ -1612,7 +1619,7 @@ emu3_del_preset_zone (struct emu_file *file, int preset_num, int zone_num)
   src = &file->raw[src_addr];
   dst = &file->raw[dst_addr];
   size = file->size - src_addr;
-  emu_debug (3, "Moving %dB from 0x%08x to 0x%08x...", size,
+  emu_debug (3, "Moving %d B from 0x%08x to 0x%08x...", size,
 	     src_addr, dst_addr);
   memmove (dst, src, size);
   preset->note_zones--;
@@ -1629,7 +1636,7 @@ emu3_del_preset_zone (struct emu_file *file, int preset_num, int zone_num)
   src = &file->raw[src_addr];
   dst = &file->raw[dst_addr];
   size = file->size - dec_size_note_zone - src_addr;
-  emu_debug (3, "Moving %dB from 0x%08x to 0x%08x...", size,
+  emu_debug (3, "Moving %d B from 0x%08x to 0x%08x...", size,
 	     src_addr, dst_addr);
   memmove (dst, src, size);
 
@@ -1676,7 +1683,8 @@ emu3_add_preset (struct emu_file *file, char *preset_name)
 
   if (i == max_presets)
     {
-      return ERR_PRESET_LIMIT;
+      emu_error ("No more presets allowed");
+      return EXIT_FAILURE;
     }
 
   emu_debug (1, "Adding preset %d...", i);
@@ -1700,7 +1708,10 @@ emu3_add_preset (struct emu_file *file, char *preset_name)
   size_t size = next_sample_addr - copy_start_addr;
 
   if (file->size + size > MEM_SIZE)
-    return ERR_BANK_FULL;
+    {
+      emu_error ("Bank is full");
+      return EXIT_FAILURE;
+    }
 
   emu_debug (2, "Moving %zu B...", size);
 

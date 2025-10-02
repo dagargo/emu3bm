@@ -405,7 +405,10 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
   struct smpl_chunk_data smpl_chunk_data;
 
   if (access (path, R_OK) != 0)
-    return -ERR_CANT_OPEN_SAMPLE;
+    {
+      emu_error ("Can't open sample");
+      return -1;
+    }
 
   size = -1;
   sfinfo.format = 0;
@@ -413,7 +416,7 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
 
   if (sfinfo.channels > 2)
     {
-      size = -ERR_BAD_SAMPLE_CHANS;
+      emu_error ("Sample neither mono nor stereo");
       goto close;
     }
 
@@ -459,7 +462,8 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
 
   if (file->size + size > MEM_SIZE)
     {
-      size = -ERR_BANK_FULL;
+      emu_error ("Bank is full");
+      size = -1;
       goto close;
     }
 

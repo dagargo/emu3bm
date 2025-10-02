@@ -325,13 +325,13 @@ main (int argc, char *argv[])
 end:
   if (err)
     {
-      emu_error ("%s", emu_get_err (err));
       goto close;
     }
 
   if (sflg || pflg || zflg || yflg || modflg)
-    if (emu_write_file (file))
-      emu_error ("%s", emu_get_err (err));
+    {
+      err = emu_write_file (file);
+    }
 
 close:
   emu_close_file (file);
