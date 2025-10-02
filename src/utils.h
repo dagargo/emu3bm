@@ -31,17 +31,6 @@
 #define SAMPLE_EXT ".wav"
 #define NOTES 88		// 0x58
 
-enum emu_error_code
-{
-  ERR_BANK_FULL = 1,
-  ERR_BAD_SAMPLE_CHANS,
-  ERR_CANT_OPEN_SAMPLE,
-  ERR_SAMPLE_LIMIT,
-  ERR_PRESET_LIMIT,
-  ERR_OPEN_BANK,
-  ERR_WRITE_BANK
-};
-
 struct emu_file
 {
   const char *name;
@@ -54,7 +43,7 @@ struct emu_file
 			for (int i = 0; i < indent; i++) \
 				fprintf(stdout, "  "); \
 			fprintf(stdout, __VA_ARGS__); \
-		}\
+		} \
 	}
 
 #define emu_debug(level, format, ...) { \

@@ -23,15 +23,6 @@
 #include <stdio.h>
 #include "utils.h"
 
-static const char *EMU_ERROR_STR[] = {
-  NULL, "Bank is full", "Sample neither mono nor stereo",
-  "Error while opening sample file",
-  "No more samples allowed",
-  "No more presetc allowed",
-  "Error while opening bank file",
-  "Error while writing bank file",
-};
-
 static const char *NOTE_NAMES[] = {
   "A-1",			//Note 0
   "A#-1",
@@ -165,12 +156,6 @@ static const char *NOTE_NAMES[] = {
 
 int verbosity = 0;
 
-const char *
-emu_get_err (int error)
-{
-  return EMU_ERROR_STR[error];
-}
-
 struct emu_file *
 emu_open_file (const char *name)
 {
@@ -207,13 +192,14 @@ emu_write_file (struct emu_file *file)
   FILE *fd = fopen (file->name, "w");
   if (!fd)
     {
-      return ERR_OPEN_BANK;
+      emu_error ("Can't write file");
+      return EXIT_FAILURE;
     }
 
   if (fwrite (file->raw, file->size, 1, fd) != 1)
     {
-      emu_error ("Unexpected written bytes amount.");
-      err = ERR_WRITE_BANK;
+      emu_error ("Unexpected written bytes amount");
+      err = EXIT_FAILURE;
     }
 
   fclose (fd);
