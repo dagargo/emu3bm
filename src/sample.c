@@ -477,7 +477,7 @@ emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
       smpl_chunk = emu3_sample_get_smpl_chunk (sndfile, &smpl_chunk_data);
       if (smpl_chunk)
 	{
-	  *loop = (smpl_chunk_data.sample_loop.type != htole32 (0x7f));
+	  *loop = smpl_chunk_data.sample_loop.type == htole32 (0x7f) ? 0 : 1;
 
 	  *loop_start = smpl_chunk_data.sample_loop.start * ratio;
 	  if (*loop_start >= *frames)
