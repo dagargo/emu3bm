@@ -33,15 +33,6 @@
 #define EMU3_SAMPLE_OPT_MONO_R       0x00400000
 #define EMU3_SAMPLE_OPT_STEREO       (EMU3_SAMPLE_OPT_MONO_L | EMU3_SAMPLE_OPT_MONO_R)
 
-#define EMU3_LOOP_START_FRAMES_TO_INT(loop_start) ((loop_start + 2) * sizeof (int16_t))
-#define EMU3_LOOP_START_INT_TO_FRAMES(loop_start) ((loop_start / sizeof (int16_t)) - 2)
-
-#define EMU3_LOOP_END_FRAMES_TO_INT(loop_end) ((loop_end + 1) * sizeof (int16_t))
-#define EMU3_LOOP_END_INT_TO_FRAMES(loop_end) ((loop_end / sizeof (int16_t)) - 1)
-
-#define EMU3_LOOP_POINT_INT_TO_BIN(x) (sizeof (struct emu3_sample) + x)
-#define EMU3_LOOP_POINT_BIN_TO_INT(x) (x - sizeof (struct emu3_sample))
-
 #define EMU3_SAMPLE_HAS_CHANNEL_L(s) ((s)->format & EMU3_SAMPLE_OPT_MONO_L)
 
 struct emu3_sample
