@@ -133,14 +133,12 @@ emu3_print_sample_info (struct emu3_sample *sample, int num,
     }
 
   *frames = ((sample_end + sizeof (int16_t) -
-	      sizeof (struct emu3_sample)) / sizeof (int16_t)) - 4;
+	      sizeof (struct emu3_sample)) / sizeof (int16_t));
 
   *loop_start =
-    EMU3_LOOP_START_INT_TO_FRAMES (EMU3_LOOP_POINT_BIN_TO_INT
-				   (sample_loop_start));
+    (sample_loop_start - sizeof (struct emu3_sample)) / sizeof (int16_t);
   *loop_end =
-    EMU3_LOOP_END_INT_TO_FRAMES (EMU3_LOOP_POINT_BIN_TO_INT
-				 (sample_loop_end));
+    (sample_loop_end - sizeof (struct emu3_sample)) / sizeof (int16_t);
 
   emu_print (1, 1, "Sample format: 0x%08x\n", sample->format);
   emu_print (1, 1, "Frames: %d\n", *frames);
@@ -249,9 +247,9 @@ emu3_process_sample (struct emu3_sample *sample, int num,
       emu_error ("%s", sf_strerror (output));
     }
 
-  l_channel = sample->frames + 2;
+  l_channel = sample->frames;
   if (channels == 2)
-    r_channel = sample->frames + frames + 6;
+    r_channel = sample->frames + frames;
   else
     r_channel = l_channel;
   for (int i = 0; i < frames; i++)
@@ -314,8 +312,7 @@ emu3_init_sample_descriptor (struct emu3_sample_descriptor *sd,
   sd->l_channel = sample->frames;
   if ((sample->format & EMU3_SAMPLE_OPT_STEREO) == EMU3_SAMPLE_OPT_STEREO)
     {
-      // We consider the 4 shorts padding that the left channel has.
-      sd->r_channel = sample->frames + frames + 4;
+      sd->r_channel = sample->frames + frames;
     }
   else
     {
@@ -343,7 +340,7 @@ emu3_init_sample (struct emu3_sample *sample, int samplerate, int frames,
 {
   int mono_size, data_size, size;
 
-  data_size = sizeof (int16_t) * (frames + 4);	//2 extra frames at the beginning and 2 at the end
+  data_size = sizeof (int16_t) * frames;
   mono_size = sizeof (struct emu3_sample) + data_size;
   size = mono_size + (mono ? 0 : data_size);
 
@@ -353,15 +350,15 @@ emu3_init_sample (struct emu3_sample *sample, int samplerate, int frames,
   sample->end_l = mono_size - sizeof (int16_t);
   sample->end_r = mono ? 0 : size - sizeof (int16_t);
 
-  int loop_start_int = EMU3_LOOP_START_FRAMES_TO_INT (loop_start);
-  sample->loop_start_l = EMU3_LOOP_POINT_INT_TO_BIN (loop_start_int);
+  int loop_start_bytes = loop_start * sizeof (int16_t);
+  sample->loop_start_l = loop_start_bytes + sizeof (struct emu3_sample);
   sample->loop_start_r = mono ? 0 :
-    sample->loop_start_l + (frames + 4) * sizeof (int16_t);
+    sample->loop_start_l + frames * sizeof (int16_t);
 
-  int loop_end_int = EMU3_LOOP_END_FRAMES_TO_INT (loop_end);
-  sample->loop_end_l = EMU3_LOOP_POINT_INT_TO_BIN (loop_end_int);
+  int loop_end_bytes = loop_end * sizeof (int16_t);
+  sample->loop_end_l = loop_end_bytes + sizeof (struct emu3_sample);
   sample->loop_end_r = mono ? 0 :
-    sample->loop_end_l + (frames + 4) * sizeof (int16_t);
+    sample->loop_end_l + frames * sizeof (int16_t);
 
   sample->sample_rate = samplerate;
 
@@ -516,7 +513,6 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
   SNDFILE *sndfile;
   int loop, size, loop_start, loop_end, frames, samplerate;
   int16_t *f, *data = NULL;
-  int16_t zero[] = { 0, 0 };
   const char *filename;
   struct emu3_sample_descriptor sd;
 
@@ -544,9 +540,6 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
       goto close;
     }
 
-  loop_start += 2; //Due to the 2 frames added below
-  loop_end += 2; //Due to the 2 frames added below
-
   size = emu3_init_sample (sample, samplerate, frames, sfinfo.channels == 1,
 			   loop_start, loop_end, loop);
 
@@ -572,19 +565,11 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
 
   emu3_init_sample_descriptor (&sd, sample, frames);
 
-  //2 first frames set to 0
-  emu3_write_frame (&sd, zero);
-  emu3_write_frame (&sd, zero);
-
   f = data;
   for (int i = 0; i < frames; i++, f += sfinfo.channels)
     {
       emu3_write_frame (&sd, f);
     }
-
-  //2 end frames set to 0
-  emu3_write_frame (&sd, zero);
-  emu3_write_frame (&sd, zero);
 
   emu_debug (1, "Appended %d B (0x%08x B)", size, size);
 
