@@ -1252,7 +1252,7 @@ emu3_get_bank_samples (struct emu3_bank *bank)
 int
 emu3_add_sample (struct emu_file *file, char *sample_name, int *sample_num)
 {
-  int next_sample;
+  int next_sample, sample_offset;
   struct emu3_bank *bank = EMU3_BANK (file);
   int max_samples = emu3_get_max_samples (bank);
   int total_samples = emu3_get_bank_samples (bank);
@@ -1275,7 +1275,8 @@ emu3_add_sample (struct emu_file *file, char *sample_name, int *sample_num)
     }
 
   emu_debug (1, "Adding sample %d...", next_sample);
-  int size = emu3_append_sample (file, sample, sample_name);
+  sample_offset = next_sample_addr - sample_start_addr - total_samples * 2;
+  int size = emu3_append_sample (file, sample, sample_name, sample_offset);
 
   if (size < 0)
     {
