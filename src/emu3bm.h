@@ -146,4 +146,6 @@ const char *emu3_get_err (int);
 
 struct emu_file *emu3_open_file (const char *filename);
 
+int emu3_write_file (struct emu_file *file);
+
 int emu3_add_sfz (struct emu_file *file, const char *sfz_path);
