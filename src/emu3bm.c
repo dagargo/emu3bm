@@ -20,6 +20,7 @@
 
 #include <errno.h>
 #include <libgen.h>
+#include <math.h>
 #include <string.h>
 #include <stdlib.h>
 #include "emu3bm.h"
@@ -28,8 +29,7 @@
 #include "utils.h"
 
 #define FORMAT_SIZE 16
-#define BANK_PARAMETERS 5
-#define MORE_BANK_PARAMETERS 3
+#define BANK_PARAMETERS 3
 #define SAMPLE_ADDR_START_EMU_3X 0x1bd2
 #define SAMPLE_ADDR_START_EMU_THREE 0x204
 #define PRESET_OFFSET_EMU_THREE 0x1a6fe
@@ -56,6 +56,8 @@
 
 #define WRITE_BUFLEN 4096
 
+#define EMU3_BLOCK_SIZE 512
+
 #define EMU3_BANK(f) ((struct emu3_bank *) ((f)->raw))
 
 extern void yyset_in (FILE * _in_str);
@@ -70,10 +72,14 @@ struct emu3_bank
   uint32_t padding[3];
   uint32_t next_preset;
   uint32_t next_sample;
-  uint32_t parameters[BANK_PARAMETERS];
+  uint32_t unknown_0;
+  uint32_t preset_blocks;
+  uint32_t sample_blocks;
+  uint32_t unknown_1;
+  uint32_t total_blocks;
   char name_copy[NAME_SIZE];
   uint32_t selected_preset;
-  uint32_t more_parameters[MORE_BANK_PARAMETERS];
+  uint32_t parameters[BANK_PARAMETERS];
 };
 
 struct emu3_preset_note_zone
@@ -1001,25 +1007,27 @@ emu3_open_file (const char *name)
   emu_print (2, 1, "Objects: %d\n", bank->objects + 1);
   emu_print (2, 1, "Next sample: 0x%08x\n", bank->next_sample);
 
-  for (int i = 0; i < BANK_PARAMETERS; i++)
-    emu_print (2, 1, "Parameter %2d: 0x%08x (%d)\n", i,
-	       bank->parameters[i], bank->parameters[i]);
-
-  if (bank->parameters[1] + bank->parameters[2] != bank->parameters[4])
-    emu_print (2, 1, "Kind of checksum error.\n");
+  if (bank->preset_blocks + bank->sample_blocks != bank->total_blocks)
+    {
+      emu_error ("Block sum error\n");
+    }
 
   if (strncmp (bank->name, bank->name_copy, NAME_SIZE))
     emu_print (2, 1, "Bank name is different than previously found.\n");
 
   emu_print (2, 1, "Selected preset: %d\n", bank->selected_preset);
 
-  emu_print (2, 1, "More geometry:\n");
-  for (int i = 0; i < MORE_BANK_PARAMETERS; i++)
-    emu_print (2, 1, "Parameter %d: 0x%08x (%d)\n", i,
-	       bank->more_parameters[i], bank->more_parameters[i]);
+  emu_print (2, 1, "Preset blocks: %d\n", bank->preset_blocks);
+  emu_print (2, 1, "Sample blocks: %d\n", bank->sample_blocks);
+  emu_print (2, 1, "Total  blocks: %d\n", bank->total_blocks);
 
-  emu_print (2, 1, "Current preset: %d\n", bank->more_parameters[0]);
-  emu_print (2, 1, "Current sample: %d\n", bank->more_parameters[1]);
+  emu_print (2, 1, "Parameters:\n");
+  for (int i = 0; i < BANK_PARAMETERS; i++)
+    emu_print (2, 1, "Parameter %d: 0x%08x (%d)\n", i,
+	       bank->parameters[i], bank->parameters[i]);
+
+  emu_print (2, 1, "Current preset: %d\n", bank->parameters[0]);
+  emu_print (2, 1, "Current sample: %d\n", bank->parameters[1]);
 
   return file;
 }
@@ -1739,6 +1747,21 @@ out1:
   return rvalue;
 }
 
+int
+emu3_write_file (struct emu_file *file)
+{
+  struct emu3_bank *bank = EMU3_BANK (file);
+  uint32_t sample_addr = emu3_get_sample_start_address (bank) - 1;
+  uint32_t preset = ceil (sample_addr / (double) EMU3_BLOCK_SIZE);
+  uint32_t total = ceil (file->size / (double) EMU3_BLOCK_SIZE);
+
+  bank->total_blocks = htole32 (total);
+  bank->preset_blocks = htole32 (preset);
+  bank->sample_blocks = htole32 (total - preset);
+
+  return emu_write_file (file);
+}
+
 static gpointer
 emu3_get_opcode_val (GHashTable *global_opcodes, GHashTable *group_opcodes,
 		     GHashTable *region_opcodes, const gchar *key)
@@ -1866,7 +1889,7 @@ emu3_add_sfz (struct emu_file *file, const char *sfz_path)
 
   fclose (sfz);
 
-  err = emu_write_file (file);
+  err = emu3_write_file (file);
 
 end:
   free (bdsfz);

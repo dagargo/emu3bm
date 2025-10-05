@@ -338,7 +338,7 @@ end:
 
   if (sflg || pflg || zflg || yflg || modflg)
     {
-      err = emu_write_file (file);
+      err = emu3_write_file (file);
     }
 
 close:
