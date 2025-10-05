@@ -378,7 +378,21 @@ emu3_init_sample (struct emu3_sample *sample, int samplerate, int frames,
   return size;
 }
 
-int16_t *
+// These additional fixes are needed by the ESI.
+static void
+emu3_check_and_fix_loop_point (int *loop_point, int frames)
+{
+  if (*loop_point < 6)
+    {
+      *loop_point = 6;
+    }
+  if (*loop_point > frames - 7)
+    {
+      *loop_point = frames - 7;
+    }
+}
+
+static int16_t *
 emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
 			     int *samplerate, int force_loop, int *loop,
 			     int *loop_start, int *loop_end, int *frames)
@@ -497,6 +511,9 @@ emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
 	  *loop_end = *frames - 1;
 	}
     }
+
+  emu3_check_and_fix_loop_point (loop_start, *frames);
+  emu3_check_and_fix_loop_point (loop_end, *frames);
 
   emu_debug (1, "Loop: %s; loop start at %d; loop end at %d",
 	     *loop ? "on" : "off", *loop_start, *loop_end);
