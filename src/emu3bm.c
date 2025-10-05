@@ -1250,8 +1250,7 @@ emu3_get_bank_samples (struct emu3_bank *bank)
 }
 
 int
-emu3_add_sample (struct emu_file *file, char *sample_name, int force_loop,
-		 int *sample_num)
+emu3_add_sample (struct emu_file *file, char *sample_name, int *sample_num)
 {
   int next_sample;
   struct emu3_bank *bank = EMU3_BANK (file);
@@ -1276,7 +1275,7 @@ emu3_add_sample (struct emu_file *file, char *sample_name, int force_loop,
     }
 
   emu_debug (1, "Adding sample %d...", next_sample);
-  int size = emu3_append_sample (file, sample, sample_name, force_loop);
+  int size = emu3_append_sample (file, sample, sample_name);
 
   if (size < 0)
     {
@@ -1811,7 +1810,7 @@ emu3_sfz_region_add (struct emu_file *file, int preset_num,
       c++;
     }
 
-  err = emu3_add_sample (file, sample_path, 0, &sample_num);
+  err = emu3_add_sample (file, sample_path, &sample_num);
   g_free (sample_path);
   if (err)
     {

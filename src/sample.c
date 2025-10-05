@@ -394,8 +394,8 @@ emu3_check_and_fix_loop_point (int *loop_point, int frames)
 
 static int16_t *
 emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
-			     int *samplerate, int force_loop, int *loop,
-			     int *loop_start, int *loop_end, int *frames)
+			     int *samplerate, int *frames, int *loop_start,
+			     int *loop_end, int *loop)
 {
   int direct_read;
   int16_t *output;
@@ -474,42 +474,33 @@ emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
       ratio = srcdata.output_frames_gen / (double) sfinfo->frames;
     }
 
-  if (force_loop)
+  int smpl_chunk;
+  struct smpl_chunk_data smpl_chunk_data;
+
+  smpl_chunk = emu3_sample_get_smpl_chunk (sndfile, &smpl_chunk_data);
+  if (smpl_chunk)
     {
-      *loop = 1;
-      *loop_start = 0;
-      *loop_end = *frames - 1;
+      *loop = smpl_chunk_data.sample_loop.type == htole32 (0x7f) ? 0 : 1;
+
+      *loop_start = smpl_chunk_data.sample_loop.start * ratio;
+      if (*loop_start >= *frames)
+	{
+	  emu_error ("Bad loop start. Using sample start...");
+	  *loop_start = 0;
+	}
+
+      *loop_end = smpl_chunk_data.sample_loop.end * ratio;
+      if (*loop_end >= *frames)
+	{
+	  emu_error ("Bad loop end. Using sample end...");
+	  *loop_end = *frames - 1;
+	}
     }
   else
     {
-      int smpl_chunk;
-      struct smpl_chunk_data smpl_chunk_data;
-
-      smpl_chunk = emu3_sample_get_smpl_chunk (sndfile, &smpl_chunk_data);
-      if (smpl_chunk)
-	{
-	  *loop = smpl_chunk_data.sample_loop.type == htole32 (0x7f) ? 0 : 1;
-
-	  *loop_start = smpl_chunk_data.sample_loop.start * ratio;
-	  if (*loop_start >= *frames)
-	    {
-	      emu_error ("Bad loop start. Using sample start...");
-	      *loop_start = 0;
-	    }
-
-	  *loop_end = smpl_chunk_data.sample_loop.end * ratio;
-	  if (*loop_end >= *frames)
-	    {
-	      emu_error ("Bad loop end. Using sample end...");
-	      *loop_end = *frames - 1;
-	    }
-	}
-      else
-	{
-	  *loop = 0;
-	  *loop_start = 0;
-	  *loop_end = *frames - 1;
-	}
+      *loop = 0;
+      *loop_start = 0;
+      *loop_end = *frames - 1;
     }
 
   emu3_check_and_fix_loop_point (loop_start, *frames);
@@ -524,7 +515,7 @@ emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
 //returns the sample size in bytes that the the sample takes in the bank
 int
 emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
-		    const char *path, int force_loop)
+		    const char *path)
 {
   SF_INFO sfinfo;
   SNDFILE *sndfile;
@@ -549,9 +540,8 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
       goto close;
     }
 
-  data = emu3_append_sample_get_data (sndfile, &sfinfo, &samplerate,
-				      force_loop, &loop, &loop_start,
-				      &loop_end, &frames);
+  data = emu3_append_sample_get_data (sndfile, &sfinfo, &samplerate, &frames,
+				      &loop_start, &loop_end, &loop);
   if (!data)
     {
       goto close;

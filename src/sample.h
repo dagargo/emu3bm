@@ -90,6 +90,6 @@ int emu3_sample_get_smpl_chunk (SNDFILE * output,
 				struct smpl_chunk_data *smpl_chunk_data);
 
 int emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
-			const char *path, int force_loop);
+			const char *path);
 
 #endif

@@ -81,11 +81,10 @@ $ emu3bm -s bd.wav bank
 $ emu4bm -s bd.wav bank
 ```
 
-Import a sample, set the loop enabled option and set the loop points to its entirety.
+Add a new preset from a SFZ file.
 
 ```
-$ emu3bm -S saw.wav bank
-$ emu4bm -S saw.wav bank
+$ emu3bm -S marimba.sfz
 ```
 
 Create a new preset.
