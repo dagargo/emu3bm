@@ -136,7 +136,7 @@ emu4_add_sample (struct emu_file *file, struct emu4_chunk *next_chunk,
   next_chunk->data[1] = 0;
 
   sample = (struct emu3_sample *) &next_chunk->data[EMU4_E3S1_OFFSET];
-  size = emu3_append_sample (file, sample, sample_name);
+  size = emu3_append_sample (file, sample, sample_name, 0);
   if (size < 0)
     {
       return 1;

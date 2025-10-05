@@ -161,6 +161,11 @@ emu3_print_sample_info (struct emu3_sample *sample, int num,
   emu_print (2, 1, "Loop end   L: %d\n", sample->loop_end_l);
   emu_print (2, 1, "Loop end:  R: %d\n", sample->loop_end_r);
 
+  emu_print (2, 1, "Sample data offset L: %d\n",
+	     sample->sample_data_offset_l);
+  emu_print (2, 1, "Sample data offset R: %d\n",
+	     sample->sample_data_offset_r);
+
   emu_print (2, 1, "Sample parameters:\n");
   for (int i = 0; i < SAMPLE_PARAMETERS; i++)
     emu_print (2, 2, "0x%08x (%d)\n", sample->parameters[i],
@@ -335,8 +340,9 @@ emu3_write_frame (struct emu3_sample_descriptor *sd, int16_t frame[])
 }
 
 static int
-emu3_init_sample (struct emu3_sample *sample, int samplerate, int frames,
-		  int mono, int loop_start, int loop_end, int loop)
+emu3_init_sample (struct emu3_sample *sample, int offset, int samplerate,
+		  int frames, int mono, int loop_start, int loop_end,
+		  int loop)
 {
   int mono_size, data_size, size;
 
@@ -368,6 +374,12 @@ emu3_init_sample (struct emu3_sample *sample, int samplerate, int frames,
     {
       sample->format =
 	sample->format | EMU3_SAMPLE_OPT_LOOP | EMU3_SAMPLE_OPT_LOOP_RELEASE;
+    }
+
+  sample->sample_data_offset_l = offset + sample->start_l;
+  if (!mono)
+    {
+      sample->sample_data_offset_r = offset + sample->start_r;
     }
 
   for (int i = 0; i < SAMPLE_PARAMETERS; i++)
@@ -515,7 +527,7 @@ emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
 //returns the sample size in bytes that the the sample takes in the bank
 int
 emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
-		    const char *path)
+		    const char *path, int offset)
 {
   SF_INFO sfinfo;
   SNDFILE *sndfile;
@@ -547,8 +559,8 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
       goto close;
     }
 
-  size = emu3_init_sample (sample, samplerate, frames, sfinfo.channels == 1,
-			   loop_start, loop_end, loop);
+  size = emu3_init_sample (sample, offset, samplerate, frames,
+			   sfinfo.channels == 1, loop_start, loop_end, loop);
 
   if (file->size + size > MEM_SIZE)
     {

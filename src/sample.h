@@ -24,7 +24,7 @@
 #ifndef SAMPLE_H
 #define SAMPLE_H
 
-#define SAMPLE_PARAMETERS 8
+#define SAMPLE_PARAMETERS 6
 #define MAX_SAMPLING_RATE 44100
 
 #define EMU3_SAMPLE_OPT_LOOP         0x00010000
@@ -49,6 +49,8 @@ struct emu3_sample
   uint32_t loop_end_r;
   uint32_t sample_rate;
   uint32_t format;
+  uint32_t sample_data_offset_l;
+  uint32_t sample_data_offset_r;
   uint32_t parameters[SAMPLE_PARAMETERS];
   int16_t frames[];
 };
@@ -89,7 +91,7 @@ void emu3_process_sample (struct emu3_sample *sample, int num,
 int emu3_sample_get_smpl_chunk (SNDFILE * output,
 				struct smpl_chunk_data *smpl_chunk_data);
 
-int emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
-			const char *path);
-
+int
+emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
+		    const char *path, int offset);
 #endif
