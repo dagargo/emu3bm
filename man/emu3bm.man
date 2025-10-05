@@ -12,11 +12,7 @@ Manage EIII banks, add and extract samples, create presets and set some preset a
 .SH OPTIONS
 .TP
 .BR \-s " sample"
-Add the sample to the bank, set the loop points as in the file and set the loop enabled as in the file. If the sample has no loop information ("smpl" chunk is missing), the loop points are set to 0 and the last frame and the loop enabled is set to "off".
-
-.TP
-.BR \-S " sample"
-Add the sample in WAV format, set the loop points to 0 and the last frame and set loop enabled to "on".
+Add the sample to the bank, set the loop points as in the file and set the loop enabled as in the file. If the sample has no loop information ("smpl" chunk is missing), the loop points are set to lowest and highest allowed values and the loop enabled is set to "off".
 
 .TP
 .BR \-p " preset_name"
@@ -51,7 +47,7 @@ Set the level of the VCA for all the preset zones.
 Create a new bank. Use it with -d to set the device.
 
 .TP
-.BR \-F " sfz"
+.BR \-S " sfz"
 Add a new preset from the SFZ file.
 
 .TP

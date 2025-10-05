@@ -26,7 +26,6 @@
 
 static const struct option options[] = {
   {"add-sample", 1, NULL, 's'},
-  {"add-sample-loop", 1, NULL, 'S'},
   {"add-preset", 1, NULL, 'p'},
   {"add-zone", 1, NULL, 'z'},
   {"add-zone-with-num", 1, NULL, 'Z'},
@@ -36,7 +35,7 @@ static const struct option options[] = {
   {"filter-type", 1, NULL, 'f'},
   {"level", 1, NULL, 'l'},
   {"new-bank", 1, NULL, 'n'},
-  {"new-bank-from-sfz", 1, NULL, 'F'},
+  {"add-preset-from-sfz", 1, NULL, 'S'},
   {"device-type", 1, NULL, 'd'},
   {"pitch-bend-range", 1, NULL, 'b'},
   {"filter-q", 1, NULL, 'q'},
@@ -153,13 +152,12 @@ main (int argc, char *argv[])
   extern char *optarg;
   extern int optind, optopt;
   int err = 0;
-  int force_loop;
   int sample_num;
   struct emu3_zone_range zone_range;
   int zone_num;
 
   while ((opt = getopt_long (argc, argv,
-			     "hvd:nF:s:S:xXr:l:c:q:f:b:e:p:z:Z:y", options,
+			     "hvd:nS:s:xXr:l:c:q:f:b:e:p:z:Z:y", options,
 			     &long_index)) != -1)
     {
       switch (opt)
@@ -177,12 +175,6 @@ main (int argc, char *argv[])
 	case 's':
 	  sflg++;
 	  sample_name = optarg;
-	  force_loop = 0;
-	  break;
-	case 'S':
-	  sflg++;
-	  sample_name = optarg;
-	  force_loop = 1;
 	  break;
 	case 'x':
 	  xflg++;
@@ -195,7 +187,7 @@ main (int argc, char *argv[])
 	case 'n':
 	  nflg++;
 	  break;
-	case 'F':
+	case 'S':
 	  sfzflg++;
 	  sfz_filename = optarg;
 	  break;
@@ -306,7 +298,7 @@ main (int argc, char *argv[])
 
   if (sflg)
     {
-      err = emu3_add_sample (file, sample_name, force_loop, NULL);
+      err = emu3_add_sample (file, sample_name, NULL);
       goto end;
     }
 

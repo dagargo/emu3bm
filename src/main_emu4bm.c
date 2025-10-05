@@ -22,7 +22,6 @@
 #include <sys/types.h>
 #define _GNU_SOURCE
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <stdint.h>
 #include "../config.h"
@@ -125,7 +124,7 @@ emu4_new_file (const char *name)
 
 static int
 emu4_add_sample (struct emu_file *file, struct emu4_chunk *next_chunk,
-		 const char *sample_name, int force_loop)
+		 const char *sample_name)
 {
   int size;
   uint32_t chunk_size;
@@ -137,7 +136,7 @@ emu4_add_sample (struct emu_file *file, struct emu4_chunk *next_chunk,
   next_chunk->data[1] = 0;
 
   sample = (struct emu3_sample *) &next_chunk->data[EMU4_E3S1_OFFSET];
-  size = emu3_append_sample (file, sample, sample_name, force_loop);
+  size = emu3_append_sample (file, sample, sample_name);
   if (size < 0)
     {
       return 1;
@@ -256,7 +255,6 @@ main (int argc, char *argv[])
   int nflg = 0, sflg = 0, xflg = 0, errflg = 0, totalflg;
   int ext_mode = 0;
   char *sample_name = NULL;
-  int force_loop = 0;
   int long_index = 0;
   int sample_index;
   int err = EXIT_SUCCESS;
@@ -265,7 +263,7 @@ main (int argc, char *argv[])
   struct emu_file *file;
 
   while ((opt =
-	  getopt_long (argc, argv, "hns:S:vxX", options, &long_index)) != -1)
+	  getopt_long (argc, argv, "hns:vxX", options, &long_index)) != -1)
     {
       switch (opt)
 	{
@@ -278,12 +276,6 @@ main (int argc, char *argv[])
 	case 's':
 	  sflg++;
 	  sample_name = optarg;
-	  force_loop = 0;
-	  break;
-	case 'S':
-	  sflg++;
-	  sample_name = optarg;
-	  force_loop = 1;
 	  break;
 	case 'v':
 	  verbosity++;
@@ -345,7 +337,7 @@ main (int argc, char *argv[])
     {
       if (next_chunk && sample_index < EMU4_MAX_SAMPLES)
 	{
-	  err = emu4_add_sample (file, next_chunk, sample_name, force_loop);
+	  err = emu4_add_sample (file, next_chunk, sample_name);
 	  if (!err)
 	    {
 	      emu_write_file (file);

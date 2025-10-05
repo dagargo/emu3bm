@@ -125,8 +125,7 @@ struct emu3_preset_zone
 // 1 0010
 // env mode gate, solo on
 
-int emu3_add_sample (struct emu_file *file, char *path, int force_loop,
-		     int *sample_num);
+int emu3_add_sample (struct emu_file *file, char *path, int *sample_num);
 
 int emu3_add_preset (struct emu_file *file, char *preset_name,
 		     int *preset_num);
