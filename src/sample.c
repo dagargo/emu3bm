@@ -27,6 +27,8 @@
 #include <string.h>
 #include "sample.h"
 
+#define MINIMUM_LOOP_LEN 10
+
 #define JUNK_CHUNK_ID "JUNK"
 #define SMPL_CHUNK_ID "smpl"
 
@@ -237,6 +239,7 @@ emu3_process_sample (struct emu3_sample *sample, int num,
   smpl_chunk_data.num_sampler_loops = htole32 (1);
   smpl_chunk_data.sampler_data = 0;
   smpl_chunk_data.sample_loop.cue_point_id = 0;
+
   smpl_chunk_data.sample_loop.type = htole32 (sample->format & EMU3_SAMPLE_OPT_LOOP ? 0 : 0x7f);	// as in midi sds, 0x00 = forward loop, 0x7F = no loop
   smpl_chunk_data.sample_loop.start = htole32 (loop_start);
   smpl_chunk_data.sample_loop.end = htole32 (loop_end);
@@ -507,9 +510,20 @@ emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
 	  emu_error ("Bad loop end. Using sample end...");
 	  *loop_end = *frames - 1;
 	}
+
+      // As loops can't be less than MINIMUM_LOOP_LEN samples, it's better to ignore the loop.
+      if (*loop_start == *loop_end)
+	{
+	  *loop = 0;
+	}
     }
   else
     {
+      // Other tools would've enabled the loop and set both loop points to the last sample.
+      // Not only is this not desirable here because the loop can be disabled but also because
+      // the loop can't be smaller than 10 samples (MINIMUM_LOOP_LEN), which would very likely
+      // create audio artifacts. However, when exporting the sample, the result will be
+      // different compared to the aforementioned tools.
       *loop = 0;
       *loop_start = 0;
       *loop_end = *frames - 1;
@@ -517,6 +531,12 @@ emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
 
   emu3_check_and_fix_loop_point (loop_start, *frames);
   emu3_check_and_fix_loop_point (loop_end, *frames);
+
+  //This fixes some "Mono End Loop!!!  0006" errors when editing the loop points in the sampler.
+  if (*loop_end - *loop_start < MINIMUM_LOOP_LEN)
+    {
+      *loop_start = *loop_end - MINIMUM_LOOP_LEN;
+    }
 
   emu_debug (1, "Loop: %s; loop start at %d; loop end at %d",
 	     *loop ? "on" : "off", *loop_start, *loop_end);
