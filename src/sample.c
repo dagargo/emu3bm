@@ -533,6 +533,7 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
   SNDFILE *sndfile;
   int loop, size, loop_start, loop_end, frames, samplerate;
   int16_t *f, *data = NULL;
+  int16_t zero[2] = { 0, 0 };
   const char *filename;
   struct emu3_sample_descriptor sd;
 
@@ -587,7 +588,18 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
   f = data;
   for (int i = 0; i < frames; i++, f += sfinfo.channels)
     {
-      emu3_write_frame (&sd, f);
+      // First 2 and last 2 frames must be set to 0.
+      // Without this, the sampler will complain with a "Mono Start Zero!!!001" error message.
+      // As indicated in the manual, running the sample integrity in the digital tools menu would fix the error and it'll fix it by doing this.
+      // In previous versions of emu3bm, the pairs of 0 samples were appended automatically but this broke SDS compatibility frame count.
+      if (i < 2 || i >= frames - 2)
+	{
+	  emu3_write_frame (&sd, zero);
+	}
+      else
+	{
+	  emu3_write_frame (&sd, f);
+	}
     }
 
   emu_debug (1, "Appended %d B (0x%08x B)", size, size);
