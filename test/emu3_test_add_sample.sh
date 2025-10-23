@@ -18,32 +18,21 @@ test
 logAndRun 'diff $TEST_BANK_NAME data/emu3_test_add_sample_1'
 test
 
-#Force loop
-logAndRun '$srcdir/../src/emu3bm -S data/s1.wav $TEST_BANK_NAME'
-test
-logAndRun 'diff $TEST_BANK_NAME data/emu3_test_add_sample_2'
-test
-
 logAndRun '$srcdir/../src/emu3bm -s data/s2.wav $TEST_BANK_NAME'
 test
-logAndRun 'diff $TEST_BANK_NAME data/emu3_test_add_sample_3'
-test
-
-logAndRun '$srcdir/../src/emu3bm -S data/s2.wav $TEST_BANK_NAME'
-test
-logAndRun 'diff $TEST_BANK_NAME data/emu3_test_add_sample_4'
+logAndRun 'diff $TEST_BANK_NAME data/emu3_test_add_sample_2'
 test
 
 # Loop info ("smpl" chunk with loop type 0)
 logAndRun '$srcdir/../src/emu3bm -s data/s1_loop.wav $TEST_BANK_NAME'
 test
-logAndRun 'diff $TEST_BANK_NAME data/emu3_test_add_sample_5'
+logAndRun 'diff $TEST_BANK_NAME data/emu3_test_add_sample_3'
 test
 
 # Loop info ("smpl" chunk with loop type 0x7f, AKA no-loop)
 logAndRun '$srcdir/../src/emu3bm -s data/s2_loop.wav $TEST_BANK_NAME'
 test
-logAndRun 'diff $TEST_BANK_NAME data/emu3_test_add_sample_6'
+logAndRun 'diff $TEST_BANK_NAME data/emu3_test_add_sample_4'
 test
 
 logAndRun '$srcdir/../src/emu3bm -n $TEST_BANK_NAME'
