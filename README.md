@@ -6,6 +6,12 @@ Although Emulator samplers from series EIII and EIV use the same filesystem, the
 
 On EIV banks, content listing and sample extraction is possible by using the `emu4bm` binary included in this project. Note that `emu4bm` is very experimental.
 
+Other interesting features are:
+
+* Preset import from SFZ files
+* Bulk edition
+* Setting the pitch bend range beyond the 12 semitones limit
+
 ## Installation
 
 As with other autotools project, you need to run the following commands.
@@ -29,11 +35,6 @@ You can easily install them by running this.
 ```
 sudo apt install automake libtool build-essential libsndfile1-dev libsamplerate0-dev`
 ```
-
-## Features not available in the sampler
-
-* Bulk edition.
-* Set the pitch bend range beyond the 12 semitones limit.
 
 ## Examples
 
@@ -148,6 +149,26 @@ Set all presets realtime controllers. In this case, we are setting:
 ```
 $ emu3bm -r 1,4,8,9,2,10,0,0 bank
 ```
+
+## Implementation details and device limitations
+
+This section includes some notes on implementation details and device limitations that are worth sharing even though they might have nothing to do with the code in the project.
+
+### Loop points
+
+* Loop start must be greater or equal than `2`.
+* Loop end must be lower than `lenth - 2`
+* Loop length need to be 10 samples at least.
+* Based on all this constraints, `emu3bm` will try its best to convert loop points. Also, if loop start equals loop end, loop is disabled.
+
+### MIDI notes
+
+* Device note range go from `A-1` (MIDI note `21`) to `C7` (MIDI note `108`). Notice that other vendors call the same MIDI notes `A0` and `C8`.
+* Based on this, `emu3bm` will not be able to set the note outside this range regardless of the name, and exporting might change the note number.
+
+### Other details
+
+* SDS upload seems to add a zero sample at the beginning and remove the last one. This means that on every upload-download pair of operations, the last sample would be shifted out.
 
 ## Related projects
 
