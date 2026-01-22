@@ -27,8 +27,8 @@ extern int yylval;
 
 \/\/.*                     { }
 
-<value>[ \t]+              { return SFZ_SPACE; }
-[ \t]+                     { }
+<value>[[:space:]]+        { return SFZ_SPACE; }
+[[:space:]]+               { }
 
 \<[[:alpha:]]+\>           { return SFZ_HEADER; }
 
@@ -38,9 +38,8 @@ extern int yylval;
 
 <value>[\+\-]?[[:digit:]]*\.[[:digit:]]+ { BEGIN(INITIAL); return SFZ_FLOAT; }
 <value>[\+\-]?[[:digit:]]+               { BEGIN(INITIAL); return SFZ_INTEGER; }
-<value>[^[:space:]=<>\n]+                { BEGIN(string); yymore(); }
-<string>[^=<>\n]*[^[:space:]=<>\n]+      { BEGIN(INITIAL); return SFZ_STRING; }
-<string>[=<>\n[:space:]]                 { BEGIN(INITIAL); yyless(yyleng-1); return SFZ_STRING; }
+<value>[^[:space:]=<>\n]                 { BEGIN(string); yymore(); }
+<string>[^=<>\n]*[[:space:]\n]           { BEGIN(INITIAL); yyless(yyleng-1); return SFZ_STRING; }
 
 . { emu_error ("Illegal character %s at line %d", yytext, yylineno); exit (1); }
 
