@@ -559,7 +559,7 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
 
   if (access (path, R_OK) != 0)
     {
-      emu_error ("Can't open sample");
+      emu_error ("Can't open sample '%s'", path);
       return -1;
     }
 
