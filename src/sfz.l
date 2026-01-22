@@ -22,6 +22,7 @@ extern int yylval;
         /* 2. As spaces are allowed inside a path, conditionals are used to recognise a SFZ_STRING. */
         /* 3. As there are lots of headers and opcodes and some are custom, there are no tokens for each. */
 
+\r
 \n                         { yylineno++; }
 
 \/\/.*                     { }
@@ -29,7 +30,7 @@ extern int yylval;
 <value>[ \t]+              { return SFZ_SPACE; }
 [ \t]+                     { }
 
-\<[[:alpha:]]+\>          { return SFZ_HEADER; }
+\<[[:alpha:]]+\>           { return SFZ_HEADER; }
 
 [[:alpha:]_]+[[:alnum:]_]* { BEGIN(value); return SFZ_OPCODE; }
 
