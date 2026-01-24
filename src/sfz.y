@@ -102,7 +102,7 @@ opcode_expr: SFZ_OPCODE
 
 opcode_val: SFZ_FLOAT   { value = g_malloc(sizeof(gfloat)); *(gfloat *)value = atof (yytext); } |
             SFZ_INTEGER { value = g_malloc(sizeof(gint)); *(gint *)value = atoi (yytext); } |
-            SFZ_STRING  { value = g_strdup (yytext); };
+            SFZ_STRING  { value = g_strdup (yytext); g_strchomp (value); };
 
 %%
 
