@@ -1431,8 +1431,12 @@ emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
     {
       int assigned = 0;
       for (int i = zone_range->lower_key; i <= zone_range->higher_key; i++)
-	if (preset->note_zone_mappings[i] != 0xff)
-	  assigned = 1;
+	{
+	  if (preset->note_zone_mappings[i] != 0xff)
+	    {
+	      assigned = 1;
+	    }
+	}
       if (assigned == 1)
 	{
 	  emu_error ("Zone already assigned to notes");
@@ -1440,7 +1444,9 @@ emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
 	}
 
       for (int i = zone_range->lower_key; i <= zone_range->higher_key; i++)
-	preset->note_zone_mappings[i] = preset->note_zones;
+	{
+	  preset->note_zone_mappings[i] = preset->note_zones;
+	}
 
       inc_size = emu3_add_zones (file, preset_num, -1, &zone);
       if (inc_size < 0)
@@ -1455,8 +1461,12 @@ emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
       int several = 0;
       for (int i = zone_range->lower_key + 1; i <= zone_range->higher_key;
 	   i++)
-	if (preset->note_zone_mappings[i] != sec_zone_id)
-	  several = 1;
+	{
+	  if (preset->note_zone_mappings[i] != sec_zone_id)
+	    {
+	      several = 1;
+	    }
+	}
       if (several == 1)
 	{
 	  emu_error ("Note range in several zones");
