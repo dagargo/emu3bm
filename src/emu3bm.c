@@ -1789,6 +1789,23 @@ emu3_get_opcode_val (GHashTable *global_opcodes, GHashTable *group_opcodes,
   return g_hash_table_lookup (global_opcodes, key);
 }
 
+static guint8
+emu3_get_note_in_range (gint note)
+{
+  if (note < 0)
+    {
+      return 0;
+    }
+  else if (note >= NOTES)
+    {
+      return NOTES - 1;
+    }
+  else
+    {
+      return note;
+    }
+}
+
 void
 emu3_sfz_region_add (struct emu_file *file, int preset_num,
 		     GHashTable *global_opcodes, GHashTable *group_opcodes,
@@ -1881,19 +1898,12 @@ emu3_sfz_region_add (struct emu_file *file, int preset_num,
 
   // Notice that SFZ states that MIDI notes go from C-1 to G9. See https://sfzformat.com/opcodes/sw_hikey/.
   // Therefore the lowest A on a piano is A0 in the SFZ format while it is A-1 in the E-mu.
+  // 0 is A-1
 
   zone_range.layer = 1;		//Always using pri layer
-  zone_range.original_key = *pitch_keycenter - 21;	//0 is A-1
-  zone_range.lower_key = *lokey - 21;	//0 is A-1
-  zone_range.higher_key = *hikey - 21;	//0 is A-1
-
-  if (zone_range.original_key < 0 && zone_range.original_key > 87 &&
-      zone_range.lower_key < 0 && zone_range.lower_key > 87 &&
-      zone_range.higher_key < 0 && zone_range.higher_key > 87)
-    {
-      emu_error ("Key outside range");
-      return;
-    }
+  zone_range.original_key = emu3_get_note_in_range (*pitch_keycenter - 21);
+  zone_range.lower_key = emu3_get_note_in_range (*lokey - 21);
+  zone_range.higher_key = emu3_get_note_in_range (*hikey - 21);
 
   struct emu3_preset_zone *zone;
   gchar *sample_path = g_strdup_printf ("%s/%s", sfz_dir, sample);
@@ -1920,7 +1930,7 @@ emu3_sfz_region_add (struct emu_file *file, int preset_num,
       return;
     }
 
-  // Use pcodes here
+  // Use opcodes here
 }
 
 int
