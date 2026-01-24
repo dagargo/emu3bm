@@ -1,0 +1,27 @@
+///////////////////////////////////
+// SFZ grammar test empty header //
+///////////////////////////////////
+
+<control>
+ hint_ram_based=1
+ set_cc1=0
+ set_cc11=127
+ set_cc64=0
+
+<global>
+ lfo06_wave=0
+ lfo06_pitch=0 lfo06_pitch_oncc129=50 lfo06_pitch_oncc1=50
+ lfo06_freq=8.176
+ amplitude_oncc11=100 amplitude_curvecc11=7
+
+<master>
+<group>
+ ampeg_sustain=0.001
+ ampeg_release=0.4
+ loop_mode=loop_continuous
+
+<region>
+sample=s1.wav
+lokey=0 hikey=53
+pitch_keycenter=53
+ampeg_decay=25.0

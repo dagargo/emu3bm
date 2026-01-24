@@ -1,0 +1,14 @@
+////////////////////////////////
+// SFZ grammar test LF and CR //
+////////////////////////////////
+
+<group>
+ ampeg_sustain=0.001
+ ampeg_release=0.4
+ loop_mode=loop_continuous
+
+<region>
+sample=s1.wav
+lokey=0 hikey=53
+pitch_keycenter=53
+ampeg_decay=25.0

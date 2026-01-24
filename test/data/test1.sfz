@@ -1,6 +1,6 @@
-//////////////////////
-// SFZ grammar test //
-//////////////////////
+////////////////////////////
+// SFZ grammar basic test //
+////////////////////////////
 
 <region> sample=s1.wav
 lokey=24 hikey=35 pitch_keycenter=29
@@ -11,11 +11,13 @@ lokey=24 hikey=35 pitch_keycenter=29
 lokey=48 hikey=59
 pitch_keycenter=53
 
+// double space
 <region>
   sample=sample 1.wav lokey=60
   hikey=71  pitch_keycenter=65
 
-<region> sample=sample 1 A.wav  lokey=72    hikey=83 pitch_keycenter=77
+// key opcode
+<region> sample=sample 1 A.wav  key=72
 
 <group>
 group=1 off_by=1
@@ -25,3 +27,8 @@ ampeg_release=20
  group=2
  off_by=1
 ampeg_release=20
+
+// Relative path
+  <region>
+   sample=./sample 1.wav lokey=73
+     hikey=127  pitch_keycenter=80
