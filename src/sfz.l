@@ -11,6 +11,7 @@ extern int yylval;
 %option noyywrap
 %option nounput
 %option noinput
+%option yylineno
 
 %x value
 %x string
