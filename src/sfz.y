@@ -95,14 +95,15 @@ opcode_expr: SFZ_OPCODE
              SFZ_EQUAL
              opcode_val
              {
+               emu_debug (2, "SFZ opcode '%s' read", opcode);
                if (header_opcodes) {
                  g_hash_table_insert (header_opcodes, opcode, value);
                }
              };
 
-opcode_val: SFZ_FLOAT   { value = g_malloc(sizeof(gfloat)); *(gfloat *)value = atof (yytext); } |
-            SFZ_INTEGER { value = g_malloc(sizeof(gint)); *(gint *)value = atoi (yytext); } |
-            SFZ_STRING  { value = g_strdup (yytext); g_strchomp (value); };
+opcode_val: SFZ_FLOAT   { value = g_malloc(sizeof(gfloat)); *(gfloat *)value = atof (yytext); emu_debug (2, "SFZ float '%f' read", *(gfloat *)value); } |
+            SFZ_INTEGER { value = g_malloc(sizeof(gint)); *(gint *)value = atoi (yytext); emu_debug (2, "SFZ integer '%d' read", *(gint *)value); } |
+            SFZ_STRING  { value = g_strdup (yytext); g_strchomp (value); emu_debug (2, "SFZ string '%s' read", (gchar *)value); };
 
 %%
 
