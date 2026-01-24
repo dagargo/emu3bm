@@ -33,8 +33,7 @@
 
 %define parse.error verbose
 
-%token SFZ_SPACE
-       SFZ_EQUAL
+%token SFZ_EQUAL
        SFZ_FLOAT
        SFZ_INTEGER
        SFZ_STRING

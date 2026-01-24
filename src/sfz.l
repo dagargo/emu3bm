@@ -14,34 +14,28 @@ extern int yylval;
 %option yylineno
 
 %x value
-%x string
 %%
 
-        /* Some tricks improve the token indentification and simplify the lexer and the parser. */
-        /* 1. Spaces are not allowed in opcode expressions but allowed anywhere else. */
-        /*    Returning SFZ_SPACE only in the middle of an opcode expression simplifies the grammar. */
-        /* 2. As spaces are allowed inside a path, conditionals are used to recognise a SFZ_STRING. */
-        /* 3. As there are lots of headers and opcodes and some are custom, there are no tokens for each. */
-
-\r
+\r                         { }
 \n                         { yylineno++; }
 
 \/\/.*                     { }
 
-<value>[[:space:]]+        { return SFZ_SPACE; }
 [[:space:]]+               { }
 
 \<[[:alpha:]]+\>           { return SFZ_HEADER; }
 
 [[:alpha:]_]+[[:alnum:]_]* { BEGIN(value); return SFZ_OPCODE; }
 
-<value>=                   { return SFZ_EQUAL; }
+    /* A string might end with 2 spaces due to the internal string spaces and the ending one. */
+    /* Therefore, it is required that all the value rules capture all the trailing spaces.    */
+    /* Otherwise, the longest match (string) would apply and "1  " would be read as a string. */
 
-<value>[\+\-]?[[:digit:]]*\.[[:digit:]]+ { BEGIN(INITIAL); return SFZ_FLOAT; }
-<value>[\+\-]?[[:digit:]]+               { BEGIN(INITIAL); return SFZ_INTEGER; }
-<value>[^[:space:]=<>\n]                 { BEGIN(string); yymore(); }
-<string>[^=<>\n]*[[:space:]\n]           { BEGIN(INITIAL); yyless(yyleng-1); return SFZ_STRING; }
+<value>=                                                            { return SFZ_EQUAL; }
+<value>[\+\-]?[[:digit:]]*\.[[:digit:]]+[[:space:]]*[[:space:]\r\n] { BEGIN(INITIAL); yyless(yyleng - 1); return SFZ_FLOAT; }
+<value>[\+\-]?[[:digit:]]+[[:space:]]*[[:space:]\r\n]               { BEGIN(INITIAL); yyless(yyleng - 1); return SFZ_INTEGER; }
+<value>[[:alpha:][:digit:].][^=\r\n]*[[:space:]\r\n]                { BEGIN(INITIAL); yyless(yyleng - 1); return SFZ_STRING; }
 
-. { emu_error ("Illegal character %s at line %d", yytext, yylineno); exit (1); }
+<INITIAL,value>. { emu_error ("Illegal character '%s' at line %d", yytext, yylineno); exit (1); }
 
 %%
