@@ -477,7 +477,7 @@ emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
       output = malloc (sizeof (int16_t) * sfinfo->channels *
 		       srcdata.output_frames_gen);
       src_float_to_short_array (srcdata.data_out, output,
-				srcdata.output_frames_gen);
+				sfinfo->channels * srcdata.output_frames_gen);
 
       free ((float *) srcdata.data_in);
       free (srcdata.data_out);
