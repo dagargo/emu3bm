@@ -87,7 +87,7 @@ header: SFZ_HEADER
           free (header);
         };
 
-opcode_expr_list: opcode_expr | opcode_expr opcode_expr_list;
+opcode_expr_list: | opcode_expr opcode_expr_list;
 
 opcode_expr: SFZ_OPCODE
              {
