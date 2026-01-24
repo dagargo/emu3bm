@@ -1796,9 +1796,24 @@ emu3_sfz_region_add (struct emu_file *file, int preset_num,
 					       region_opcodes,
 					       "pitch_keycenter");
 
-  if (!sample || !lokey || !hikey || !pitch_keycenter)
+  if (!sample)
     {
-      emu_error ("Incomplete region");
+      emu_error ("No sample found in region");
+      return;
+    }
+  if (!lokey)
+    {
+      emu_error ("No lokey found in region");
+      return;
+    }
+  if (!hikey)
+    {
+      emu_error ("No hikey found in region");
+      return;
+    }
+  if (!pitch_keycenter)
+    {
+      emu_error ("No pitch_keycenter found in region");
       return;
     }
 
