@@ -1788,6 +1788,8 @@ emu3_sfz_region_add (struct emu_file *file, int preset_num,
   struct emu3_zone_range zone_range;
   gchar *sample = emu3_get_opcode_val (global_opcodes, group_opcodes,
 				       region_opcodes, "sample");
+  gint *key = emu3_get_opcode_val (global_opcodes, group_opcodes,
+				   region_opcodes, "key");
   gint *hikey = emu3_get_opcode_val (global_opcodes, group_opcodes,
 				     region_opcodes, "hikey");
   gint *lokey = emu3_get_opcode_val (global_opcodes, group_opcodes,
@@ -1796,24 +1798,71 @@ emu3_sfz_region_add (struct emu_file *file, int preset_num,
 					       region_opcodes,
 					       "pitch_keycenter");
 
+  emu_debug (1,
+	     "Processing region for '%s' (key: %d; pitch_keycenter: %d; lokey: %d; hikey: %d)...",
+	     sample, key ? *key : -1, pitch_keycenter ? *pitch_keycenter : -1,
+	     lokey ? *lokey : -1, hikey ? *hikey : -1);
+
+  if (key)
+    {
+      if (lokey)
+	{
+	  if (*lokey != *key)
+	    {
+	      emu_error ("Ambiguous value of 'key' and 'lokey'");
+	      return;
+	    }
+	}
+      else
+	{
+	  lokey = key;
+	}
+
+      if (hikey)
+	{
+	  if (*hikey != *key)
+	    {
+	      emu_error ("Ambiguous value of 'key' and 'hikey'");
+	      return;
+	    }
+	}
+      else
+	{
+	  hikey = key;
+	}
+
+      if (pitch_keycenter)
+	{
+	  if (*pitch_keycenter != *key)
+	    {
+	      emu_error ("Ambiguous value of 'key' and 'pitch_keycenter'");
+	      return;
+	    }
+	}
+      else
+	{
+	  pitch_keycenter = key;
+	}
+    }
+
   if (!sample)
     {
-      emu_error ("No sample found in region");
+      emu_error ("No 'sample' found in region");
       return;
     }
   if (!lokey)
     {
-      emu_error ("No lokey found in region");
+      emu_error ("No 'lokey' found in region");
       return;
     }
   if (!hikey)
     {
-      emu_error ("No hikey found in region");
+      emu_error ("No 'hikey' found in region");
       return;
     }
   if (!pitch_keycenter)
     {
-      emu_error ("No pitch_keycenter found in region");
+      emu_error ("No 'pitch_keycenter' found in region");
       return;
     }
 
