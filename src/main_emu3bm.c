@@ -19,7 +19,6 @@
  */
 
 #define _GNU_SOURCE
-#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include "emu3bm.h"
@@ -40,27 +39,13 @@ static const struct option options[] = {
   {"pitch-bend-range", 1, NULL, 'b'},
   {"filter-q", 1, NULL, 'q'},
   {"real-time-controls", 1, NULL, 'r'},
+  {"max-sample-rate", 1, NULL, 'R'},
   {"extract-samples", 0, NULL, 'x'},
   {"extract-samples-with-num", 0, NULL, 'X'},
   {"verbosity", 0, NULL, 'v'},
   {"help", 0, NULL, 'h'},
   {NULL, 0, NULL, 0}
 };
-
-static int
-get_positive_int (char *str)
-{
-  char *endstr;
-
-  int value = (int) strtol (str, &endstr, 10);
-
-  if (errno || endstr == str || *endstr != '\0')
-    {
-      emu_error ("Value %s not valid", str);
-      value = -1;
-    }
-  return value;
-}
 
 static int
 parse_zone_params (char *zone_params, int *sample_num,
@@ -157,7 +142,7 @@ main (int argc, char *argv[])
   int zone_num;
 
   while ((opt = getopt_long (argc, argv,
-			     "hvd:nS:s:xXr:l:c:q:f:b:e:p:z:Z:y", options,
+			     "hvd:nS:s:xXr:R:l:c:q:f:b:e:p:z:Z:y", options,
 			     &long_index)) != -1)
     {
       switch (opt)
@@ -194,6 +179,15 @@ main (int argc, char *argv[])
 	case 'r':
 	  rt_controls = optarg;
 	  modflg++;
+	  break;
+	case 'R':
+	  max_sample_rate = get_positive_int_in_range (optarg,
+						       MIN_SAMPLE_RATE,
+						       MAX_SAMPLE_RATE);
+	  if (max_sample_rate < 0)
+	    {
+	      exit (err);
+	    }
 	  break;
 	case 'l':
 	  level = get_positive_int (optarg);

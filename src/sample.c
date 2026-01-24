@@ -32,6 +32,8 @@
 #define JUNK_CHUNK_ID "JUNK"
 #define SMPL_CHUNK_ID "smpl"
 
+int max_sample_rate = MAX_SAMPLE_RATE;
+
 static const uint8_t JUNK_CHUNK_DATA[] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -371,7 +373,7 @@ emu3_init_sample (struct emu3_sample *sample, int offset, int samplerate,
 
   sample->sample_rate = samplerate;
 
-  if (samplerate < MAX_SAMPLING_RATE)
+  if (samplerate < MAX_SAMPLE_RATE)
     {
       float f = -9799 + 1108 * logf (samplerate);
       sample->format = 0xf800 | ((int) f);
@@ -423,7 +425,7 @@ emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
   int16_t *output;
   double ratio;
 
-  if (sfinfo->samplerate <= MAX_SAMPLING_RATE)
+  if (sfinfo->samplerate <= max_sample_rate)
     {
       direct_read = 1;
       *samplerate = sfinfo->samplerate;
@@ -432,8 +434,8 @@ emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
   else
     {
       direct_read = 0;		//Requires resampling
-      *samplerate = MAX_SAMPLING_RATE;
-      ratio = MAX_SAMPLING_RATE / (double) sfinfo->samplerate;
+      *samplerate = max_sample_rate;
+      ratio = max_sample_rate / (double) sfinfo->samplerate;
     }
 
   //Set scale factor. See http://www.mega-nerd.com/libsndfile/api.html#note2

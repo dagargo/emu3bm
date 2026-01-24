@@ -18,6 +18,7 @@
  *   along with Overwitch. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -301,4 +302,49 @@ emu_filename_to_filename_wo_ext (const char *filename_, const char **ext)
 	}
     }
   return filename;
+}
+
+int
+get_positive_int (char *str)
+{
+  char *endstr;
+  int value = (int) strtol (str, &endstr, 10);
+
+  if (errno || endstr == str || *endstr != '\0')
+    {
+      emu_error ("Value '%s' not valid", str);
+      value = -1;
+    }
+  else
+    {
+      if (value < 0)
+	{
+	  emu_error ("Value '%s' is negative", str);
+	}
+    }
+
+  return value;
+}
+
+int
+get_positive_int_in_range (char *str, int min, int max)
+{
+  int v = get_positive_int (str);
+
+  if (v < 0)
+    {
+      return v;
+    }
+  else if (v < min)
+    {
+      emu_error ("Value '%d' not allowed (%d < %d)", v, v, min);
+      v = -1;
+    }
+  else if (v > max)
+    {
+      emu_error ("Value '%d' not allowed (%d > %d)", v, v, max);
+      v = -1;
+    }
+
+  return v;
 }

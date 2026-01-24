@@ -84,4 +84,8 @@ void emu3_cpystr (char *dst, const char *src);
 
 char *emu_filename_to_filename_wo_ext (const char *file, const char **ext);
 
+int get_positive_int (char *str);
+
+int get_positive_int_in_range (char *str, int min, int max);
+
 #endif

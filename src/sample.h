@@ -25,7 +25,8 @@
 #define SAMPLE_H
 
 #define SAMPLE_PARAMETERS 6
-#define MAX_SAMPLING_RATE 44100
+#define MIN_SAMPLE_RATE 7000
+#define MAX_SAMPLE_RATE 44100
 
 #define EMU3_SAMPLE_OPT_LOOP         0x00010000
 #define EMU3_SAMPLE_OPT_LOOP_RELEASE 0x00080000
@@ -94,4 +95,7 @@ int emu3_sample_get_smpl_chunk (SNDFILE * output,
 int
 emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
 		    const char *path, int offset);
+
+extern int max_sample_rate;
+
 #endif
