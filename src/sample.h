@@ -71,8 +71,8 @@ struct smpl_chunk_data
   uint32_t midi_pitch_fraction;
   uint32_t smpte_format;
   uint32_t smpte_offset;
-  uint32_t num_sampler_loops;
-  uint32_t sampler_data;
+  uint32_t num_sample_loops;
+  uint32_t sample_data;
   struct sample_loop
   {
     uint32_t cue_point_id;

@@ -236,10 +236,10 @@ emu3_process_sample (struct emu3_sample *sample, int num,
     htole32 ((uint32_t) round (tuning * 256 / 100.0));
   smpl_chunk_data.smpte_format = 0;
   smpl_chunk_data.smpte_offset = 0;
-  smpl_chunk_data.num_sampler_loops = htole32 (1);
-  smpl_chunk_data.sampler_data = 0;
-  smpl_chunk_data.sample_loop.cue_point_id = 0;
+  smpl_chunk_data.num_sample_loops = htole32 (1);
+  smpl_chunk_data.sample_data = 0;
 
+  smpl_chunk_data.sample_loop.cue_point_id = 0;
   smpl_chunk_data.sample_loop.type = htole32 (sample->format & EMU3_SAMPLE_OPT_LOOP ? 0 : 0x7f);	// as in midi sds, 0x00 = forward loop, 0x7F = no loop
   smpl_chunk_data.sample_loop.start = htole32 (loop_start);
   smpl_chunk_data.sample_loop.end = htole32 (loop_end);
