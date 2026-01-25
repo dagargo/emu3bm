@@ -96,10 +96,10 @@ emu3_emu3name_to_wav_name (const char *emu3name, int num, int ext_mode)
 static int
 emu3_get_sample_channels (struct emu3_sample *sample)
 {
-  if ((sample->format & EMU3_SAMPLE_OPT_STEREO) == EMU3_SAMPLE_OPT_STEREO)
+  if ((sample->options & EMU3_SAMPLE_OPT_STEREO) == EMU3_SAMPLE_OPT_STEREO)
     return 2;
-  else if ((sample->format & EMU3_SAMPLE_OPT_MONO_L) == EMU3_SAMPLE_OPT_MONO_L
-	   || (sample->format & EMU3_SAMPLE_OPT_MONO_R) ==
+  else if ((sample->options & EMU3_SAMPLE_OPT_MONO_L) == EMU3_SAMPLE_OPT_MONO_L
+	   || (sample->options & EMU3_SAMPLE_OPT_MONO_R) ==
 	   EMU3_SAMPLE_OPT_MONO_R)
     return 1;
   else
@@ -112,8 +112,6 @@ emu3_print_sample_info (struct emu3_sample *sample, int num,
 			uint32_t *loop_end)
 {
   uint32_t sample_start, sample_end, sample_loop_start, sample_loop_end;
-
-  emu_print (0, 0, "Sample %03d: %.*s\n", num, NAME_SIZE, sample->name);
 
   //Some samples might have only the right channel.
 
@@ -145,18 +143,11 @@ emu3_print_sample_info (struct emu3_sample *sample, int num,
   *loop_end =
     (sample_loop_end - sizeof (struct emu3_sample)) / sizeof (int16_t);
 
-  emu_print (1, 1, "Sample format: 0x%08x\n", sample->format);
+  emu_print (0, 0, "Sample %03d: %.*s\n", num, NAME_SIZE, sample->name);
   emu_print (1, 1, "Frames: %d\n", *frames);
   emu_print (1, 1, "Loop start: %d\n", *loop_start);
   emu_print (1, 1, "Loop end: %d\n", *loop_end);
   emu_print (1, 1, "Channels: %d\n", emu3_get_sample_channels (sample));
-  emu_print (1, 1, "Sample rate: %d Hz\n", sample->sample_rate);
-  emu_print (1, 1, "Loop enabled: %s\n",
-	     sample->format & EMU3_SAMPLE_OPT_LOOP ? "on" : "off");
-  emu_print (1, 1, "Loop in release: %s\n",
-	     sample->format & EMU3_SAMPLE_OPT_LOOP_RELEASE ? "on" : "off");
-
-  emu_print (2, 1, "Sample header: 0x%08x\n", sample->header);
   emu_print (2, 1, "Start L: %d\n", sample->start_l);
   emu_print (2, 1, "Start R: %d\n", sample->start_r);
   emu_print (2, 1, "End   L: %d\n", sample->end_l);
@@ -165,7 +156,13 @@ emu3_print_sample_info (struct emu3_sample *sample, int num,
   emu_print (2, 1, "Loop start R: %d\n", sample->loop_start_r);
   emu_print (2, 1, "Loop end   L: %d\n", sample->loop_end_l);
   emu_print (2, 1, "Loop end:  R: %d\n", sample->loop_end_r);
-
+  emu_print (1, 1, "Sample rate: %d Hz\n", sample->sample_rate);
+  emu_print (1, 1, "Options: 0x%08x\n", sample->options);
+  emu_print (1, 2, "Loop enabled: %s\n",
+	     sample->options & EMU3_SAMPLE_OPT_LOOP ? "on" : "off");
+  emu_print (1, 2, "Loop in release: %s\n",
+	     sample->options & EMU3_SAMPLE_OPT_LOOP_RELEASE ? "on" : "off");
+  emu_print (2, 1, "Header: 0x%08x\n", sample->header);
   emu_print (2, 1, "Sample data offset L: %d\n",
 	     sample->sample_data_offset_l);
   emu_print (2, 1, "Sample data offset R: %d\n",
@@ -243,7 +240,7 @@ emu3_process_sample (struct emu3_sample *sample, int num,
   smpl_chunk_data.sample_data = 0;
 
   smpl_chunk_data.sample_loop.cue_point_id = 0;
-  smpl_chunk_data.sample_loop.type = htole32 (sample->format & EMU3_SAMPLE_OPT_LOOP ? 0 : 0x7f);	// as in midi sds, 0x00 = forward loop, 0x7F = no loop
+  smpl_chunk_data.sample_loop.type = htole32 (sample->options & EMU3_SAMPLE_OPT_LOOP ? 0 : 0x7f);	// as in midi sds, 0x00 = forward loop, 0x7F = no loop
   smpl_chunk_data.sample_loop.start = htole32 (loop_start);
   smpl_chunk_data.sample_loop.end = htole32 (loop_end);
   smpl_chunk_data.sample_loop.fraction = 0;
@@ -321,7 +318,7 @@ emu3_init_sample_descriptor (struct emu3_sample_descriptor *sd,
 {
   sd->sample = sample;
   sd->l_channel = sample->frames;
-  if ((sample->format & EMU3_SAMPLE_OPT_STEREO) == EMU3_SAMPLE_OPT_STEREO)
+  if ((sample->options & EMU3_SAMPLE_OPT_STEREO) == EMU3_SAMPLE_OPT_STEREO)
     {
       sd->r_channel = sample->frames + frames;
     }
@@ -338,7 +335,7 @@ emu3_write_frame (struct emu3_sample_descriptor *sd, int16_t frame[])
   struct emu3_sample *sample = sd->sample;
   *sd->l_channel = frame[0];
   sd->l_channel++;
-  if ((sample->format & EMU3_SAMPLE_OPT_STEREO) == EMU3_SAMPLE_OPT_STEREO)
+  if ((sample->options & EMU3_SAMPLE_OPT_STEREO) == EMU3_SAMPLE_OPT_STEREO)
     {
       *sd->r_channel = frame[1];
       sd->r_channel++;
@@ -377,19 +374,19 @@ emu3_init_sample (struct emu3_sample *sample, int offset, int samplerate,
   if (samplerate < MAX_SAMPLE_RATE)
     {
       float f = -9799 + 1108 * logf (samplerate);
-      sample->format = 0xf800 | ((int) f);
+      sample->options = 0xf800 | ((int) f);
     }
   else
     {
-      sample->format = 0;
+      sample->options = 0;
     }
 
-  sample->format |= mono ? EMU3_SAMPLE_OPT_MONO_L : EMU3_SAMPLE_OPT_STEREO;
+  sample->options |= mono ? EMU3_SAMPLE_OPT_MONO_L : EMU3_SAMPLE_OPT_STEREO;
 
   if (loop)
     {
-      sample->format =
-	sample->format | EMU3_SAMPLE_OPT_LOOP | EMU3_SAMPLE_OPT_LOOP_RELEASE;
+      sample->options =
+	sample->options | EMU3_SAMPLE_OPT_LOOP | EMU3_SAMPLE_OPT_LOOP_RELEASE;
     }
 
   sample->sample_data_offset_l = offset + sample->start_l;
