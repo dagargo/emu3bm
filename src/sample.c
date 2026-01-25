@@ -385,8 +385,7 @@ emu3_init_sample (struct emu3_sample *sample, int offset, int samplerate,
 
   if (loop)
     {
-      sample->options =
-	sample->options | EMU3_SAMPLE_OPT_LOOP | EMU3_SAMPLE_OPT_LOOP_RELEASE;
+      sample->options |= EMU3_SAMPLE_OPT_LOOP | EMU3_SAMPLE_OPT_LOOP_RELEASE;
     }
 
   sample->sample_data_offset_l = offset + sample->start_l;
