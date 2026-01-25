@@ -88,6 +88,8 @@ Add a new preset from a SFZ file.
 $ emu3bm -S marimba.sfz
 ```
 
+When adding samples with any of these methods, it is possible to limit the sample rate with `-R` and to limit the bit depth with `B`.
+
 Create a new preset.
 
 ```
