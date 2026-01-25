@@ -371,7 +371,17 @@ emu3_init_sample (struct emu3_sample *sample, int offset, int samplerate,
 
   sample->sample_rate = samplerate;
 
-  sample->format = mono ? EMU3_SAMPLE_OPT_MONO_L : EMU3_SAMPLE_OPT_STEREO;
+  if (samplerate < MAX_SAMPLING_RATE)
+    {
+      float f = -9799 + 1108 * logf (samplerate);
+      sample->format = 0xf800 | ((int) f);
+    }
+  else
+    {
+      sample->format = 0;
+    }
+
+  sample->format |= mono ? EMU3_SAMPLE_OPT_MONO_L : EMU3_SAMPLE_OPT_STEREO;
 
   if (loop)
     {
