@@ -380,10 +380,7 @@ emu3_init_sample (struct emu3_sample *sample, int offset, int samplerate,
     }
 
   sample->sample_data_offset_l = offset + sample->start_l;
-  if (!mono)
-    {
-      sample->sample_data_offset_r = offset + sample->start_r;
-    }
+  sample->sample_data_offset_r = mono ? 0 : offset + sample->start_r;
 
   for (int i = 0; i < SAMPLE_PARAMETERS; i++)
     {
