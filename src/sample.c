@@ -33,6 +33,7 @@
 #define SMPL_CHUNK_ID "smpl"
 
 int max_sample_rate = MAX_SAMPLE_RATE;
+int bit_depth = MAX_BIT_DEPTH;
 
 static const uint8_t JUNK_CHUNK_DATA[] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -421,9 +422,12 @@ emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
 			     int *samplerate, int *frames, int *loop_start,
 			     int *loop_end, int *loop)
 {
+  double ratio;
   int direct_read;
   int16_t *output;
-  double ratio;
+  int smpl_chunk;
+  int total_gen_frames;
+  struct smpl_chunk_data smpl_chunk_data;
 
   if (sfinfo->samplerate <= max_sample_rate)
     {
@@ -443,7 +447,7 @@ emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
       (sfinfo->format & SF_FORMAT_DOUBLE) == SF_FORMAT_DOUBLE)
     {
       emu_debug (2,
-		 "Setting scale factor to ensure correct integer readings...\n");
+		 "Setting scale factor to ensure correct integer readings...");
       sf_command (sndfile, SFC_SET_SCALE_FLOAT_INT_READ, NULL, SF_TRUE);
     }
 
@@ -483,10 +487,26 @@ emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
 		 "Resampling done. Used frames: %ld; generated frames: %ld",
 		 srcdata.input_frames_used, srcdata.output_frames_gen);
 
-      output = malloc (sizeof (int16_t) * sfinfo->channels *
-		       srcdata.output_frames_gen);
-      src_float_to_short_array (srcdata.data_out, output,
-				sfinfo->channels * srcdata.output_frames_gen);
+      total_gen_frames = sfinfo->channels * srcdata.output_frames_gen;
+      output = malloc (sizeof (int16_t) * total_gen_frames);
+      src_float_to_short_array (srcdata.data_out, output, total_gen_frames);
+
+      if (bit_depth < MAX_BIT_DEPTH)
+	{
+	  uint16_t *v = (uint16_t *) output;
+	  uint16_t mask = 0x8000;
+	  for (int i = 1; i < bit_depth; i++)
+	    {
+	      mask = 0x8000 | (mask >> 1);
+	    }
+
+	  emu_debug (1, "Using bit mask '0x%4x'", mask);
+
+	  for (int i = 0; i < total_gen_frames; i++, v++)
+	    {
+	      *v = (*v & mask);
+	    }
+	}
 
       free ((float *) srcdata.data_in);
       free (srcdata.data_out);
@@ -497,9 +517,6 @@ emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
       // This fixes the ratio, which is used to calculate the loop points.
       ratio = srcdata.output_frames_gen / (double) sfinfo->frames;
     }
-
-  int smpl_chunk;
-  struct smpl_chunk_data smpl_chunk_data;
 
   smpl_chunk = emu3_sample_get_smpl_chunk (sndfile, &smpl_chunk_data);
   if (smpl_chunk)

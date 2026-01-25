@@ -24,6 +24,7 @@
 #include "emu3bm.h"
 
 static const struct option options[] = {
+  {"bit-depth", 1, NULL, 'B'},
   {"add-sample", 1, NULL, 's'},
   {"add-preset", 1, NULL, 'p'},
   {"add-zone", 1, NULL, 'z'},
@@ -142,7 +143,7 @@ main (int argc, char *argv[])
   int zone_num;
 
   while ((opt = getopt_long (argc, argv,
-			     "hvd:nS:s:xXr:R:l:c:q:f:b:e:p:z:Z:y", options,
+			     "hvB:d:nS:s:xXr:R:l:c:q:f:b:e:p:z:Z:y", options,
 			     &long_index)) != -1)
     {
       switch (opt)
@@ -152,6 +153,15 @@ main (int argc, char *argv[])
 	  exit (EXIT_SUCCESS);
 	case 'v':
 	  verbosity++;
+	  break;
+	case 'B':
+	  bit_depth = get_positive_int_in_range (optarg,
+						 MIN_BIT_DEPTH,
+						 MAX_BIT_DEPTH);
+	  if (bit_depth < 0)
+	    {
+	      exit (err);
+	    }
 	  break;
 	case 'd':
 	  dflg++;

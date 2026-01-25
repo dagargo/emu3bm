@@ -27,6 +27,8 @@
 #define SAMPLE_PARAMETERS 6
 #define MIN_SAMPLE_RATE 7000
 #define MAX_SAMPLE_RATE 44100
+#define MIN_BIT_DEPTH 2
+#define MAX_BIT_DEPTH 16
 
 #define EMU3_SAMPLE_OPT_LOOP         0x00010000
 #define EMU3_SAMPLE_OPT_LOOP_RELEASE 0x00080000
@@ -97,5 +99,6 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
 		    const char *path, int offset);
 
 extern int max_sample_rate;
+extern int bit_depth;
 
 #endif

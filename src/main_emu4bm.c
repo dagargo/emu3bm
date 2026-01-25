@@ -58,6 +58,7 @@ struct emu4_chunk
 };
 
 static const struct option options[] = {
+  {"bit-depth", 1, NULL, 'B'},
   {"new-bank", 1, NULL, 'n'},
   {"add-sample", 1, NULL, 's'},
   {"max-sample-rate", 1, NULL, 'R'},
@@ -263,10 +264,20 @@ main (int argc, char *argv[])
   struct emu_file *file;
 
   while ((opt =
-	  getopt_long (argc, argv, "hns:R:vxX", options, &long_index)) != -1)
+	  getopt_long (argc, argv, "B:hns:R:vxX", options,
+		       &long_index)) != -1)
     {
       switch (opt)
 	{
+	case 'B':
+	  bit_depth = get_positive_int_in_range (optarg,
+						 MIN_BIT_DEPTH,
+						 MAX_BIT_DEPTH);
+	  if (bit_depth < 0)
+	    {
+	      exit (err);
+	    }
+	  break;
 	case 'h':
 	  emu_print_help (argv[0], EMU4BM_PACKAGE_STRING, options);
 	  exit (EXIT_SUCCESS);
