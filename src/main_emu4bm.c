@@ -60,7 +60,6 @@ struct emu4_chunk
 static const struct option options[] = {
   {"new-bank", 1, NULL, 'n'},
   {"add-sample", 1, NULL, 's'},
-  {"add-sample-loop", 1, NULL, 'S'},
   {"extract-samples", 0, NULL, 'x'},
   {"extract-samples-with-num", 0, NULL, 'X'},
   {"verbosity", 0, NULL, 'v'},
