@@ -30,10 +30,10 @@
 #define MIN_BIT_DEPTH 2
 #define MAX_BIT_DEPTH 16
 
-#define EMU3_SAMPLE_OPT_LOOP         0x00010000
-#define EMU3_SAMPLE_OPT_LOOP_RELEASE 0x00080000
-#define EMU3_SAMPLE_OPT_MONO_L       0x00200000
-#define EMU3_SAMPLE_OPT_MONO_R       0x00400000
+#define EMU3_SAMPLE_OPT_LOOP         0x0001
+#define EMU3_SAMPLE_OPT_LOOP_RELEASE 0x0008
+#define EMU3_SAMPLE_OPT_MONO_L       0x0020
+#define EMU3_SAMPLE_OPT_MONO_R       0x0040
 #define EMU3_SAMPLE_OPT_STEREO       (EMU3_SAMPLE_OPT_MONO_L | EMU3_SAMPLE_OPT_MONO_R)
 
 #define EMU3_SAMPLE_HAS_CHANNEL_L(s) ((s)->options & EMU3_SAMPLE_OPT_MONO_L)
@@ -51,7 +51,8 @@ struct emu3_sample
   uint32_t loop_end_l;
   uint32_t loop_end_r;
   uint32_t sample_rate;
-  uint32_t options;
+  uint16_t playback_rate;
+  uint16_t options;
   uint32_t sample_data_offset_l;
   uint32_t sample_data_offset_r;
   uint32_t parameters[SAMPLE_PARAMETERS];

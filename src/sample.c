@@ -98,12 +98,34 @@ emu3_get_sample_channels (struct emu3_sample *sample)
 {
   if ((sample->options & EMU3_SAMPLE_OPT_STEREO) == EMU3_SAMPLE_OPT_STEREO)
     return 2;
-  else if ((sample->options & EMU3_SAMPLE_OPT_MONO_L) == EMU3_SAMPLE_OPT_MONO_L
+  else if ((sample->options & EMU3_SAMPLE_OPT_MONO_L) ==
+	   EMU3_SAMPLE_OPT_MONO_L
 	   || (sample->options & EMU3_SAMPLE_OPT_MONO_R) ==
 	   EMU3_SAMPLE_OPT_MONO_R)
     return 1;
   else
     return 1;
+}
+
+static uint16_t
+emu3_playback_rate_to_bin (int samplerate)
+{
+  float f = -9799 + 1108 * logf (samplerate);
+  return 0xf800 | ((int) f);
+}
+
+static int
+emu3_playback_rate_from_bin (uint16_t playback_rate, int sample_rate)
+{
+  if (sample_rate == MAX_SAMPLE_RATE) {
+          return MAX_SAMPLE_RATE;
+  } else {
+  int v = playback_rate & ~0xf800;
+  float f = v + 9799;
+  f /= 1108;
+  f = expf (f);
+  return f;
+  }
 }
 
 static void
@@ -157,7 +179,9 @@ emu3_print_sample_info (struct emu3_sample *sample, int num,
   emu_print (2, 1, "Loop end   L: %d\n", sample->loop_end_l);
   emu_print (2, 1, "Loop end:  R: %d\n", sample->loop_end_r);
   emu_print (1, 1, "Sample rate: %d Hz\n", sample->sample_rate);
-  emu_print (1, 1, "Options: 0x%08x\n", sample->options);
+  emu_print (1, 1, "Playback rate: %d Hz\n",
+	     emu3_playback_rate_from_bin (sample->playback_rate, sample->sample_rate));
+  emu_print (1, 1, "Options: 0x%04x\n", sample->options);
   emu_print (1, 2, "Loop enabled: %s\n",
 	     sample->options & EMU3_SAMPLE_OPT_LOOP ? "on" : "off");
   emu_print (1, 2, "Loop in release: %s\n",
@@ -373,12 +397,11 @@ emu3_init_sample (struct emu3_sample *sample, int offset, int samplerate,
 
   if (samplerate < MAX_SAMPLE_RATE)
     {
-      float f = -9799 + 1108 * logf (samplerate);
-      sample->options = 0xf800 | ((int) f);
+      sample->playback_rate = emu3_playback_rate_to_bin (samplerate);
     }
   else
     {
-      sample->options = 0;
+      sample->playback_rate = 0;
     }
 
   sample->options |= mono ? EMU3_SAMPLE_OPT_MONO_L : EMU3_SAMPLE_OPT_STEREO;
