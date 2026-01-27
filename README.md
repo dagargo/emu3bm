@@ -29,11 +29,13 @@ The package dependencies for Debian-based distributions are:
 - build-essential
 - libsndfile1-dev
 - libsamplerate0-dev
+- flex
+- bison
 
 You can easily install them by running this.
 
 ```
-sudo apt install automake libtool build-essential libsndfile1-dev libsamplerate0-dev`
+sudo apt install automake libtool build-essential libsndfile1-dev libsamplerate0-dev flex bison`
 ```
 
 ## Examples
