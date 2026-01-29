@@ -277,7 +277,7 @@ emu_print_help (char *executable_path, const char *name,
   option = options;
   while (option->name)
     {
-      fprintf (stderr, "  --%s, -%c", option->name, option->val);
+      fprintf (stderr, "  -%c, --%s", option->val, option->name);
       if (option->has_arg)
 	{
 	  fprintf (stderr, " value");
