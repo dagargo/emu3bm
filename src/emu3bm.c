@@ -1089,7 +1089,9 @@ emu3_process_preset (struct emu_file *file, int preset_num,
     }
 
   if (pbr != -1)
-    emu3_set_preset_pbr (preset, pbr);
+    {
+      emu3_set_preset_pbr (preset, pbr);
+    }
 
   emu3_print_preset_info (preset);
 
@@ -1812,7 +1814,10 @@ emu3_sfz_region_add (struct emu_file *file, int preset_num,
 		     GHashTable *region_opcodes, const gchar *sfz_dir)
 {
   int err, sample_num;
+  struct emu3_preset_zone *zone;
   struct emu3_zone_range zone_range;
+  struct emu3_preset *preset = emu3_get_preset (file, preset_num);
+
   gchar *sample = emu3_get_opcode_val (global_opcodes, group_opcodes,
 				       region_opcodes, "sample");
   gint *key = emu3_get_opcode_val (global_opcodes, group_opcodes,
@@ -1905,7 +1910,6 @@ emu3_sfz_region_add (struct emu_file *file, int preset_num,
   zone_range.lower_key = emu3_get_note_in_range (*lokey - 21);
   zone_range.higher_key = emu3_get_note_in_range (*hikey - 21);
 
-  struct emu3_preset_zone *zone;
   gchar *sample_path = g_strdup_printf ("%s/%s", sfz_dir, sample);
   gchar *c = sample_path;
   //Perhaps converting backslashes to slashes is not a good idea but it's practical.
@@ -1931,6 +1935,18 @@ emu3_sfz_region_add (struct emu_file *file, int preset_num,
     }
 
   // Use opcodes here
+
+  gint *bend = emu3_get_opcode_val (global_opcodes, group_opcodes,
+				    region_opcodes, "bend_up");
+  if (!bend)
+    {
+      emu3_get_opcode_val (global_opcodes, group_opcodes,
+			   region_opcodes, "bendup");
+    }
+  if (bend)
+    {
+      emu3_set_preset_pbr (preset, *bend / 100);
+    }
 }
 
 int
