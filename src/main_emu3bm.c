@@ -24,27 +24,27 @@
 #include "emu3bm.h"
 
 static const struct option options[] = {
+  {"pitch-bend-range", 1, NULL, 'b'},
   {"bit-depth", 1, NULL, 'B'},
-  {"add-sample", 1, NULL, 's'},
-  {"add-preset", 1, NULL, 'p'},
-  {"add-zone", 1, NULL, 'z'},
-  {"add-zone-with-num", 1, NULL, 'Z'},
-  {"delete-zone", 1, NULL, 'y'},
-  {"preset-to-edit", 1, NULL, 'e'},
   {"filter-cutoff", 1, NULL, 'c'},
+  {"device-type", 1, NULL, 'd'},
+  {"preset-to-edit", 1, NULL, 'e'},
   {"filter-type", 1, NULL, 'f'},
+  {"help", 0, NULL, 'h'},
   {"level", 1, NULL, 'l'},
   {"new-bank", 1, NULL, 'n'},
-  {"add-preset-from-sfz", 1, NULL, 'S'},
-  {"device-type", 1, NULL, 'd'},
-  {"pitch-bend-range", 1, NULL, 'b'},
+  {"add-preset", 1, NULL, 'p'},
   {"filter-q", 1, NULL, 'q'},
   {"real-time-controls", 1, NULL, 'r'},
   {"max-sample-rate", 1, NULL, 'R'},
+  {"add-sample", 1, NULL, 's'},
+  {"add-preset-from-sfz", 1, NULL, 'S'},
+  {"verbosity", 0, NULL, 'v'},
   {"extract-samples", 0, NULL, 'x'},
   {"extract-samples-with-num", 0, NULL, 'X'},
-  {"verbosity", 0, NULL, 'v'},
-  {"help", 0, NULL, 'h'},
+  {"delete-zone", 1, NULL, 'y'},
+  {"add-zone", 1, NULL, 'z'},
+  {"add-zone-with-num", 1, NULL, 'Z'},
   {NULL, 0, NULL, 0}
 };
 
@@ -143,16 +143,14 @@ main (int argc, char *argv[])
   int zone_num;
 
   while ((opt = getopt_long (argc, argv,
-			     "hvB:d:nS:s:xXr:R:l:c:q:f:b:e:p:z:Z:y", options,
+			     "b:B:c:d:e:f:hl:np:q:r:R:s:S:vxXy:z:Z:", options,
 			     &long_index)) != -1)
     {
       switch (opt)
 	{
-	case 'h':
-	  emu_print_help (argv[0], PACKAGE_STRING, options);
-	  exit (EXIT_SUCCESS);
-	case 'v':
-	  verbosity++;
+	case 'b':
+	  pbr = get_positive_int (optarg);
+	  modflg++;
 	  break;
 	case 'B':
 	  bit_depth = get_positive_int_in_range (optarg,
@@ -163,28 +161,38 @@ main (int argc, char *argv[])
 	      exit (err);
 	    }
 	  break;
+	case 'c':
+	  cutoff = get_positive_int (optarg);
+	  modflg++;
+	  break;
 	case 'd':
 	  dflg++;
 	  device = optarg;
 	  break;
-	case 's':
-	  sflg++;
-	  sample_name = optarg;
+	case 'e':
+	  preset_num = get_positive_int (optarg);
 	  break;
-	case 'x':
-	  xflg++;
-	  ext_mode = EMU3_EXT_MODE_NAME;
+	case 'f':
+	  filter = get_positive_int (optarg);
+	  modflg++;
 	  break;
-	case 'X':
-	  xflg++;
-	  ext_mode = EMU3_EXT_MODE_NAME_NUMBER;
+	case 'h':
+	  emu_print_help (argv[0], PACKAGE_STRING, options);
+	  exit (EXIT_SUCCESS);
+	case 'l':
+	  level = get_positive_int (optarg);
+	  modflg++;
 	  break;
 	case 'n':
 	  nflg++;
 	  break;
-	case 'S':
-	  sfzflg++;
-	  sfz_filename = optarg;
+	case 'p':
+	  preset_name = optarg;
+	  pflg++;
+	  break;
+	case 'q':
+	  q = get_positive_int (optarg);
+	  modflg++;
 	  break;
 	case 'r':
 	  rt_controls = optarg;
@@ -199,32 +207,28 @@ main (int argc, char *argv[])
 	      exit (err);
 	    }
 	  break;
-	case 'l':
-	  level = get_positive_int (optarg);
-	  modflg++;
+	case 's':
+	  sflg++;
+	  sample_name = optarg;
 	  break;
-	case 'c':
-	  cutoff = get_positive_int (optarg);
-	  modflg++;
+	case 'S':
+	  sfzflg++;
+	  sfz_filename = optarg;
 	  break;
-	case 'q':
-	  q = get_positive_int (optarg);
-	  modflg++;
+	case 'v':
+	  verbosity++;
 	  break;
-	case 'f':
-	  filter = get_positive_int (optarg);
-	  modflg++;
+	case 'x':
+	  xflg++;
+	  ext_mode = EMU3_EXT_MODE_NAME;
 	  break;
-	case 'b':
-	  pbr = get_positive_int (optarg);
-	  modflg++;
+	case 'X':
+	  xflg++;
+	  ext_mode = EMU3_EXT_MODE_NAME_NUMBER;
 	  break;
-	case 'e':
-	  preset_num = get_positive_int (optarg);
-	  break;
-	case 'p':
-	  preset_name = optarg;
-	  pflg++;
+	case 'y':
+	  zone_num = get_positive_int (optarg);
+	  yflg++;
 	  break;
 	case 'z':
 	case 'Z':
@@ -234,10 +238,6 @@ main (int argc, char *argv[])
 	  if (err)
 	    exit (err);
 	  zflg++;
-	  break;
-	case 'y':
-	  zone_num = get_positive_int (optarg);
-	  yflg++;
 	  break;
 	case '?':
 	  errflg++;

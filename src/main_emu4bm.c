@@ -59,13 +59,13 @@ struct emu4_chunk
 
 static const struct option options[] = {
   {"bit-depth", 1, NULL, 'B'},
+  {"help", 0, NULL, 'h'},
   {"new-bank", 1, NULL, 'n'},
-  {"add-sample", 1, NULL, 's'},
   {"max-sample-rate", 1, NULL, 'R'},
+  {"add-sample", 1, NULL, 's'},
+  {"verbosity", 0, NULL, 'v'},
   {"extract-samples", 0, NULL, 'x'},
   {"extract-samples-with-num", 0, NULL, 'X'},
-  {"verbosity", 0, NULL, 'v'},
-  {"help", 0, NULL, 'h'},
   {NULL, 0, NULL, 0}
 };
 
@@ -264,7 +264,7 @@ main (int argc, char *argv[])
   struct emu_file *file;
 
   while ((opt =
-	  getopt_long (argc, argv, "B:hns:R:vxX", options,
+	  getopt_long (argc, argv, "B:hnR:s:vxX", options,
 		       &long_index)) != -1)
     {
       switch (opt)
@@ -284,10 +284,6 @@ main (int argc, char *argv[])
 	case 'n':
 	  nflg++;
 	  break;
-	case 's':
-	  sflg++;
-	  sample_name = optarg;
-	  break;
 	case 'R':
 	  max_sample_rate = get_positive_int_in_range (optarg,
 						       MIN_SAMPLE_RATE,
@@ -296,6 +292,10 @@ main (int argc, char *argv[])
 	    {
 	      exit (err);
 	    }
+	  break;
+	case 's':
+	  sflg++;
+	  sample_name = optarg;
 	  break;
 	case 'v':
 	  verbosity++;
