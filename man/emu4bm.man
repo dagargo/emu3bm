@@ -10,25 +10,38 @@ emu4bm \- manage EMU3 banks
 Manage EIV banks, add and extract samples, create presets and set some preset and zone parameters.
 
 .SH OPTIONS
-.TP
-.BR \-n
-Create a new bank.
 
 .TP
-.BR \-s " sample"
-Add the sample to the bank, set the loop points as in the file and set the loop enabled as in the file. If the sample has no loop information ("smpl" chunk is missing), the loop points are set to lowest and highest allowed values and the loop enabled is set to "off".
+\fB\-B\fR, \fB\-\-bit-depth\fR=\fI\,bit_depth\/\fR
+use the given bit depth when importing samples
 
 .TP
-.BR \-v
-Increment the verbosity level.
+\fB\-h\fR, \fB\-\-help\fR
+show the available options
 
 .TP
-.BR \-x
-Extract all the bank samples in the current directory. Exporting samples always includes the loop points and the loop enabled ("on", "off") as stored in the bank.
+\fB\-n\fR, \fB\-\-new-bank\fR
+create a new bank
 
 .TP
-.BR \-X
-Same as \-x but prepending the sample number to the sample name.
+\fB\-R\fR, \fB\-\-max-sample-rate\fR=\fI\,bit_depth\/\fR
+resample samples at a sample rate higher than the given one when importing them
+
+.TP
+\fB\-s\sR, \fB\-\-add-sample\fR=\fI\,sample\/\fR
+add the sample to the bank, set the loop points as in the file and set the loop enabled as in the file. If the sample has no loop information ("smpl" chunk is missing), the loop points are set to lowest and highest allowed values and the loop enabled is set to "off".
+
+.TP
+\fB\-v\fR, \fB\-\-verbosity\fR
+increase the verbosity level
+
+.TP
+\fB\-x\fR, \fB\-\-extract-samples\fR
+extract all the bank samples in the current directory. Exporting samples always includes the loop points and the loop enabled ("on", "off") as stored in the bank.
+
+.TP
+\fB\-X\fR, \fB\-\-extract-samples-with-num\fR
+same as \-x but prepending the sample number to the sample name
 
 .RE
 Options \fB\-n\fR, \fB\-s\fR and \fB\-S\fR can not be used in conjuction with options \fB\-x\fR and \fB\-X\fR.

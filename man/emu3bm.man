@@ -10,73 +10,90 @@ emu3bm \- manage EMU3 banks
 Manage EIII banks, add and extract samples, create presets and set some preset and zone parameters.
 
 .SH OPTIONS
-.TP
-.BR \-s " sample"
-Add the sample to the bank, set the loop points as in the file and set the loop enabled as in the file. If the sample has no loop information ("smpl" chunk is missing), the loop points are set to lowest and highest allowed values and the loop enabled is set to "off".
 
 .TP
-.BR \-p " preset_name"
-Add a new preset with the given name.
+\fB\-b\fR, \fB\-\-pitch-bend-range\fR=\fI\,semitones\/\fR
+set the pitch bend range
 
 .TP
-.BR \-z " zone_parameters"
-Add a new zone to a preset using the format sample,[pri|sec],original_key,lower_key,higher_key where keys are note names from A-1 to C7. This must be used with \fB\-e\fR.
+\fB\-B\fR, \fB\-\-bit-depth\fR=\fI\,bit_depth\/\fR
+use the given bit depth when importing samples
 
 .TP
-.BR \-Z " zone_parameters"
-This option is similar to \fB\-z\fR but uses note numbers from 0 to 87.
+\fB\-c\fR, \fB\-\-filter-cutoff\fR=\fI\,filter_cutoff_frequency\/\fR
+set the cutoff frequency of the VCF for all the preset zones
 
 .TP
-.BR \-e " preset_to_edit"
-Specify the preset to edit. If no preset is specified all presets will be edited.
+\fB\-d\fR, \fB\-\-device-type\fR=\fI\,device_type\/\fR
+set the device type. Only 'esi2000' and 'emu3x' values are allowed. If not used, 'esi2000' is used as the device type.
 
 .TP
-.BR \-c " filter_cutoff_frequency"
-Set the cutoff frequency of the VCF for all the preset zones.
+\fB\-e\fR, \fB\-\-preset-to-edit\fR=\fI\,preset\/\fR
+specify the preset to edit. If no preset is specified all presets will be edited
 
 .TP
-.BR \-f " filter_type"
-Set the filter type of the VCF for all the preset zones.
+\fB\-f\fR, \fB\-\-filter-type\fR=\fI\,filter_type\/\fR
+set the filter type of the VCF for all the preset zones
 
 .TP
-.BR \-l " level"
-Set the level of the VCA for all the preset zones.
+\fB\-h\fR, \fB\-\-help\fR
+show the available options
 
 .TP
-.BR \-n
-Create a new bank. Use it with -d to set the device.
+\fB\-l\fR, \fB\-\-level\fR=\fI\,level\/\fR
+set the level of the VCA for all the preset zones
 
 .TP
-.BR \-S " sfz"
-Add a new preset from the SFZ file.
+\fB\-n\fR, \fB\-\-new-bank\fR
+create a new bank. Use it with -d to set the device.
 
 .TP
-.BR \-d
-Set the device type. Only 'esi2000' and 'emu3x' values are allowed. If not used, 'esi2000' is used as the device type.
+\fB\-p\fR, \fB\-\-add-preset\fR=\fI\,name\/\fR
+add a preset with the given name
 
 .TP
-.BR \-b " pitch_bend_range"
-Set the pitch bend range.
+\fB\-q\fR, \fB\-\-filter-q\fR=\fI\,Q\/\fR
+set the Q factor (resonance) of the VCF for all the preset zones
 
 .TP
-.BR \-q " filter_q"
-Set the Q of the VCF for all the preset zones.
+\fB\-r\fR, \fB\-\-real-time-controls\fR=\fI\,real_time_controls\/\fR
+set the 8 realtime controls sources separating them by commas
 
 .TP
-.BR \-r " realtime_controls"
-Set the 8 realtime controls sources separating them by commas.
+\fB\-R\fR, \fB\-\-max-sample-rate\fR=\fI\,bit_depth\/\fR
+resample samples at a sample rate higher than the given one when importing them
 
 .TP
-.BR \-v
-Increment the verbosity level.
+\fB\-s\sR, \fB\-\-add-sample\fR=\fI\,sample\/\fR
+add the sample to the bank, set the loop points as in the file and set the loop enabled as in the file. If the sample has no loop information ("smpl" chunk is missing), the loop points are set to lowest and highest allowed values and the loop enabled is set to "off".
 
 .TP
-.BR \-x
-Extract all the bank samples in the current directory. Exporting samples always includes the loop points and the loop enabled ("on", "off") as stored in the bank.
+\fB\-S\sR, \fB\-\-import-sfz\fR=\fI\,sfz_file\/\fR
+import preset from the given SFZ file
 
 .TP
-.BR \-X
-Same as \-x but prepending the sample number to the sample name.
+\fB\-v\fR, \fB\-\-verbosity\fR
+increase the verbosity level
+
+.TP
+\fB\-x\fR, \fB\-\-extract-samples\fR
+extract all the bank samples in the current directory. Exporting samples always includes the loop points and the loop enabled ("on", "off") as stored in the bank.
+
+.TP
+\fB\-X\fR, \fB\-\-extract-samples-with-num\fR
+same as \-x but prepending the sample number to the sample name
+
+.TP
+\fB\-y\sR, \fB\-\-delete-zone\fR=\fI\,zone_number\/\fR
+delete the zone with the given zone_number
+
+.TP
+\fB\-z\sR, \fB\-\-add-zone\fR=\fI\,zone_parameters\/\fR
+add a new zone to a preset using the format sample,[pri|sec],original_key,lower_key,higher_key where keys are note names from A-1 to C7. This must be used with \fB\-e\fR.
+
+.TP
+\fB\-Z\sR, \fB\-\-add-zone-with-num\fR=\fI\,zone_parameter\/\fR
+same as \fB\-z\fR but using note numbers from 0 to 87
 
 .RE
 Options \fB\-s\fR, \fB\-S\fR, \fB\-p\fR, \fB\-z\fR and \fB\-n\fR can not be used in conjuction with options \fB\-c\fR, \fB\-f\fR, \fB\-l\fR, \fB\-b\fR, \fB\-q\fR, \fB\-r\fR, \fB\-x\fR and \fB\-X\fR.

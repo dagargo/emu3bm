@@ -38,7 +38,7 @@ static const struct option options[] = {
   {"real-time-controls", 1, NULL, 'r'},
   {"max-sample-rate", 1, NULL, 'R'},
   {"add-sample", 1, NULL, 's'},
-  {"add-preset-from-sfz", 1, NULL, 'S'},
+  {"import-sfz", 1, NULL, 'S'},
   {"verbosity", 0, NULL, 'v'},
   {"extract-samples", 0, NULL, 'x'},
   {"extract-samples-with-num", 0, NULL, 'X'},
