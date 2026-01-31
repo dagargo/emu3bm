@@ -22,6 +22,7 @@
 #define UTILS_H
 
 #include <getopt.h>
+#include <glib.h>
 #include <libgen.h>
 #include <stdint.h>
 #include <unistd.h>

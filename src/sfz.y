@@ -20,13 +20,11 @@
   GHashTable *header_opcodes;
 
   struct emu_file *file;
-  int preset_num;
-  const char * sfz_dir;
+  struct emu_sfz_context *emu_sfz_context;
 
-  void sfz_parser_set_context (struct emu_file *file_, int preset_num_, const char * sfz_dir_) {
+  void sfz_parser_set_context (struct emu_file *file_, struct emu_sfz_context *emu_sfz_context_) {
     file = file_;
-    preset_num = preset_num_;
-    sfz_dir = sfz_dir_;
+    emu_sfz_context = emu_sfz_context_;
   }
 
 %}
@@ -81,7 +79,7 @@ header: SFZ_HEADER
             emu_debug (1, "SFZ header %s read", header);
           } else if (!strcmp("<region>", header)) {
             emu_debug (1, "SFZ header %s read", header);
-            emu3_sfz_region_add (file, preset_num, global_opcodes, group_opcodes, region_opcodes, sfz_dir);
+            emu3_sfz_region_add (file, emu_sfz_context, global_opcodes, group_opcodes, region_opcodes);
           }
           free (header);
         };

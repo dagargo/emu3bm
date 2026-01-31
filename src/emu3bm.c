@@ -61,8 +61,6 @@
 #define EMU3_BANK(f) ((struct emu3_bank *) ((f)->raw))
 
 extern void yyset_in (FILE * _in_str);
-extern void sfz_parser_set_context (struct emu_file *file, int preset_num,
-				    const char *sfz_dir);
 
 struct emu3_bank
 {
@@ -1809,14 +1807,16 @@ emu3_get_note_in_range (gint note)
 }
 
 void
-emu3_sfz_region_add (struct emu_file *file, int preset_num,
+emu3_sfz_region_add (struct emu_file *file,
+		     struct emu_sfz_context *emu_sfz_context,
 		     GHashTable *global_opcodes, GHashTable *group_opcodes,
-		     GHashTable *region_opcodes, const gchar *sfz_dir)
+		     GHashTable *region_opcodes)
 {
   int err, sample_num;
   struct emu3_preset_zone *zone;
   struct emu3_zone_range zone_range;
-  struct emu3_preset *preset = emu3_get_preset (file, preset_num);
+  struct emu3_preset *preset =
+    emu3_get_preset (file, emu_sfz_context->preset_num);
 
   gchar *sample = emu3_get_opcode_val (global_opcodes, group_opcodes,
 				       region_opcodes, "sample");
@@ -1910,7 +1910,8 @@ emu3_sfz_region_add (struct emu_file *file, int preset_num,
   zone_range.lower_key = emu3_get_note_in_range (*lokey - 21);
   zone_range.higher_key = emu3_get_note_in_range (*hikey - 21);
 
-  gchar *sample_path = g_strdup_printf ("%s/%s", sfz_dir, sample);
+  gchar *sample_path =
+    g_strdup_printf ("%s/%s", emu_sfz_context->sfz_dir, sample);
   gchar *c = sample_path;
   //Perhaps converting backslashes to slashes is not a good idea but it's practical.
   while (*c)
@@ -1929,7 +1930,8 @@ emu3_sfz_region_add (struct emu_file *file, int preset_num,
       return;
     }
 
-  if (emu3_add_preset_zone (file, preset_num, sample_num, &zone_range, &zone))
+  if (emu3_add_preset_zone
+      (file, emu_sfz_context->preset_num, sample_num, &zone_range, &zone))
     {
       return;
     }
@@ -1953,8 +1955,9 @@ int
 emu3_add_sfz (struct emu_file *file, const char *sfz_path)
 {
   FILE *sfz;
-  int err, preset_num;
   const char *ext;
+  int err, preset_num;
+  struct emu_sfz_context emu_sfz_context;
   char *sfz_name, *bnsfz, *preset_name, *sfz_dir, *bdsfz;
 
   bdsfz = strdup (sfz_path);
@@ -1983,7 +1986,10 @@ emu3_add_sfz (struct emu_file *file, const char *sfz_path)
 
   yyset_in (sfz);
 
-  sfz_parser_set_context (file, preset_num, sfz_dir);
+  emu_sfz_context.preset_num = preset_num;
+  emu_sfz_context.sfz_dir = sfz_dir;
+
+  sfz_parser_set_context (file, &emu_sfz_context);
 
   yyparse ();
 
