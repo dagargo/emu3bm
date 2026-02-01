@@ -46,7 +46,7 @@
 #define RT_CONTROLS_SIZE 10
 #define RT_CONTROLS_FS_SIZE 2
 #define PRESET_UNKNOWN_0_SIZE 16
-#define PRESET_UNKNOWN_1_SIZE 8
+#define PRESET_UNKNOWN_1_SIZE 2
 
 #define ESI_32_V3_DEF      "EMU SI-32 v3   "
 #define EMULATOR_3X_DEF    "EMULATOR 3X    "
@@ -85,8 +85,8 @@ struct emu3_bank
 
 struct emu3_preset_note_zone
 {
-  uint8_t unknown_1;
-  uint8_t unknown_2;
+  uint8_t options_lsb;
+  uint8_t options_msb;
   uint8_t pri_zone;
   uint8_t sec_zone;
 };
@@ -97,6 +97,12 @@ struct emu3_preset
   int8_t rt_controls[RT_CONTROLS_SIZE + RT_CONTROLS_FS_SIZE];
   int8_t unknown_0[PRESET_UNKNOWN_0_SIZE];
   int8_t pitch_bend_range;
+  int8_t velocity_range_pri_low;
+  int8_t velocity_range_pri_high;
+  int8_t velocity_range_sec_low;
+  int8_t velocity_range_sec_high;
+  int8_t link_preset_lsb;
+  int8_t link_preset_msb;
   int8_t unknown_1[PRESET_UNKNOWN_1_SIZE];
   int8_t note_zones;
   uint8_t note_zone_mappings[NOTES];
@@ -651,8 +657,31 @@ emu3_print_preset_info (struct emu3_preset *preset)
 				    [RT_CONTROLS_SIZE + i]]);
     }
   for (int i = 0; i < PRESET_UNKNOWN_0_SIZE; i++)
-    emu_print (2, 1, "Unknown_0 %d: %d\n", i, preset->unknown_0[i]);
+    {
+      emu_print (2, 1, "Unknown_0 %d: %d\n", i, preset->unknown_0[i]);
+    }
+
   emu_print (1, 1, "Pitch Bend Range: %d\n", preset->pitch_bend_range);
+
+  emu_print (1, 1, "Velocity Ranges:\n");
+  emu_print (1, 2, "Pri: %d to %d\n", preset->velocity_range_pri_low,
+	     preset->velocity_range_pri_high);
+  emu_print (1, 2, "Sec: %d to %d\n", preset->velocity_range_sec_low,
+	     preset->velocity_range_sec_high);
+  guint16 p = preset->link_preset_lsb | (preset->link_preset_msb << 8);
+  if (p == 0)
+    {
+      emu_print (1, 1, "Link Preset to: Off\n");
+    }
+  else
+    {
+      emu_print (1, 1, "Link Preset to: %03d\n", p - 1);
+    }
+
+  for (int i = 0; i < PRESET_UNKNOWN_1_SIZE; i++)
+    {
+      emu_print (2, 1, "Unknown_1 %d: %d\n", i, preset->unknown_1[i]);
+    }
 }
 
 static void
@@ -1053,6 +1082,9 @@ emu3_process_note_zone (struct emu_file *file,
 			struct emu3_preset_note_zone *note_zone, int level,
 			int cutoff, int q, int filter)
 {
+  emu_print (1, 2, "options: %02x %02x\n", note_zone->options_lsb,
+	     note_zone->options_msb);
+
   //If the zone is for pri, sec layer or both
   if (note_zone->pri_zone != 0xff)
     {
@@ -1096,9 +1128,6 @@ emu3_process_preset (struct emu_file *file, int preset_num,
 
   emu3_print_preset_info (preset);
 
-  note_zones = emu3_get_preset_note_zones (file, preset_num);
-  zones = emu3_get_preset_zones (file, preset_num);
-
   emu_print (1, 1, "Note mappings:\n");
   for (int j = 0; j < NOTES; j++)
     {
@@ -1106,6 +1135,9 @@ emu3_process_preset (struct emu_file *file, int preset_num,
 	emu_print (1, 2, "%-4s: %2d\n", emu_get_note_name (j),
 		   preset->note_zone_mappings[j]);
     }
+
+  note_zones = emu3_get_preset_note_zones (file, preset_num);
+  zones = emu3_get_preset_zones (file, preset_num);
 
   emu_print (1, 1, "Zones: %d\n", preset->note_zones);
   for (int j = 0; j < preset->note_zones; j++)
@@ -1377,8 +1409,8 @@ emu3_add_zones (struct emu_file *file, int preset_num, int zone_num,
 	}
 
       note_zone = zone_src;
-      note_zone->unknown_1 = 0;
-      note_zone->unknown_2 = 0;
+      note_zone->options_lsb = 0;
+      note_zone->options_msb = 0;
       note_zone->pri_zone = preset->note_zones;
       note_zone->sec_zone = 0xff;
 
@@ -1677,6 +1709,11 @@ emu3_add_preset (struct emu_file *file, char *preset_name, int *preset_num)
 	  RT_CONTROLS_SIZE + RT_CONTROLS_FS_SIZE);
   memset (new_preset->unknown_0, 0, PRESET_UNKNOWN_0_SIZE);
   new_preset->pitch_bend_range = 2;
+  new_preset->velocity_range_pri_low = 0;
+  new_preset->velocity_range_pri_high = 0;
+  new_preset->velocity_range_sec_low = 0;
+  new_preset->link_preset_lsb = 0;
+  new_preset->link_preset_msb = 0;
   memset (new_preset->unknown_1, 0, PRESET_UNKNOWN_1_SIZE);
   new_preset->note_zones = 0;
   memset (new_preset->note_zone_mappings, 0xff, NOTES);
@@ -1835,14 +1872,46 @@ emu_velocity_range_map_set (struct emu_velocity_range_map *vr, guint8 low,
   vr->preset_num = preset_num;
 }
 
+static void
+emu_get_preset_name_with_layer (const gchar *preset_name, gint layer_num,
+				gchar *name)
+{
+  snprintf (name, PATH_MAX, "%-12s L%02d", preset_name, layer_num);
+}
+
+static void
+emu_preset_set_velocity_range_on (struct emu_sfz_context *esctx)
+{
+  if (esctx->velocity_layer_num > 1)
+    {
+      for (gint i = 0; i < NOTES; i++)
+	{
+	  struct emu_velocity_range_map *vr =
+	    &esctx->emu_velocity_range_maps[i];
+	  struct emu3_preset *preset =
+	    emu3_get_preset (esctx->file, vr->preset_num);
+	  struct emu3_preset_note_zone *note_zone =
+	    emu3_get_preset_note_zones (esctx->file, vr->preset_num);
+	  for (int j = 0; j < preset->note_zones; j++)
+	    {
+	      // These magic numbers activate the Velocity Ranges in the Crossfade/Switch preset menu.
+	      note_zone->options_lsb = 0xc6;
+	      note_zone->options_msb = 0xf9;
+	      note_zone++;
+	    }
+	}
+    }
+}
+
 static gint
 emu_sfz_context_get_preset_by_velocity_range (struct emu_sfz_context *esctx,
 					      guint8 low, guint8 high)
 {
   gint err;
   gint new_preset_num;
-  gchar name[64];
-  struct emu_velocity_range_map *vr;
+  gchar name[PATH_MAX];
+  struct emu3_preset *preset;
+  struct emu_velocity_range_map *vr, *prev_vr;
 
   for (gint i = 0; i < NOTES; i++)
     {
@@ -1860,19 +1929,50 @@ emu_sfz_context_get_preset_by_velocity_range (struct emu_sfz_context *esctx,
       return -1;
     }
 
-  esctx->velocity_layer_num++;
-  snprintf (name, 64, "%-12s L%02d", esctx->preset_name,
-	    esctx->velocity_layer_num);
-  emu_debug (1, "Creating preset '%s' for velocity range [ %d, %d ]...", name,
-	     low, high);
+  if (esctx->velocity_layer_num == 0)
+    {
+      snprintf (name, PATH_MAX, "%s", esctx->preset_name);
+    }
+  else
+    {
+      emu_get_preset_name_with_layer (esctx->preset_name,
+				      esctx->velocity_layer_num + 1, name);
+    }
+  emu_debug (1, "Creating preset '%s' for velocity range [ %d, %d ]...",
+	     name, low, high);
   err = emu3_add_preset (esctx->file, name, &new_preset_num);
   if (err)
     {
       return err;
     }
 
+  preset = emu3_get_preset (esctx->file, new_preset_num);
+  preset->velocity_range_pri_low = low;
+  preset->velocity_range_pri_high = high;
   vr = &esctx->emu_velocity_range_maps[esctx->velocity_layer_num];
   emu_velocity_range_map_set (vr, low, high, new_preset_num);
+
+  // Link previous preset to the current one
+  if (esctx->velocity_layer_num > 0)
+    {
+      prev_vr =
+	&esctx->emu_velocity_range_maps[esctx->velocity_layer_num - 1];
+      gint prev_preset_num = prev_vr->preset_num;
+      preset = emu3_get_preset (esctx->file, prev_preset_num);
+      gint p = vr->preset_num + 1;
+      preset->link_preset_lsb = p & 0xff;
+      preset->link_preset_msb = (p >> 8) & 0xff;
+
+      //In case we have more than one preset, overwrite the name of the first one and set the Velocity Ranges on.
+      if (esctx->velocity_layer_num == 1)
+	{
+	  emu_get_preset_name_with_layer (esctx->preset_name,
+					  esctx->velocity_layer_num, name);
+	  memcpy (preset->name, name, NAME_SIZE);
+	}
+    }
+
+  esctx->velocity_layer_num++;
 
   return new_preset_num;
 }
@@ -2093,6 +2193,8 @@ emu3_add_sfz (struct emu_file *file, const gchar *sfz_path)
   sfz_parser_set_context (&esctx);
 
   yyparse ();
+
+  emu_preset_set_velocity_range_on (&esctx);
 
   fclose (sfz);
 
