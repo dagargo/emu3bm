@@ -62,8 +62,8 @@
 
 extern void yyset_in (FILE * _in_str);
 
-static gint LOVEL = 0;
-static gint HIVEL = 127;
+static gint LOWEST_I8_MIDI_VAL = 0;
+static gint HIGHEST_I8_MIDI_VAL = 127;
 
 struct emu3_bank
 {
@@ -1849,13 +1849,13 @@ emu3_get_note_in_range (gint note)
 static guint8
 emu3_get_vel_in_range (gint vel)
 {
-  if (vel < LOVEL)
+  if (vel < LOWEST_I8_MIDI_VAL)
     {
-      return LOVEL;
+      return LOWEST_I8_MIDI_VAL;
     }
-  else if (vel > HIVEL)
+  else if (vel > HIGHEST_I8_MIDI_VAL)
     {
-      return HIVEL;
+      return HIGHEST_I8_MIDI_VAL;
     }
   else
     {
@@ -2053,11 +2053,11 @@ emu3_sfz_region_add (struct emu_sfz_context *emu_sfz_context,
 
   if (!lovel)
     {
-      lovel = &LOVEL;
+      lovel = &LOWEST_I8_MIDI_VAL;
     }
   if (!hivel)
     {
-      hivel = &HIVEL;
+      hivel = &HIGHEST_I8_MIDI_VAL;
     }
 
   actual_preset =
@@ -2079,13 +2079,13 @@ emu3_sfz_region_add (struct emu_sfz_context *emu_sfz_context,
     }
   if (!lokey)
     {
-      emu_error ("No 'lokey' found in region");
-      return;
+      emu_debug (1, "No 'lokey' found in region. Using lowest...");
+      lokey = &LOWEST_I8_MIDI_VAL;
     }
   if (!hikey)
     {
-      emu_error ("No 'hikey' found in region");
-      return;
+      emu_debug (1, "No 'hikey' found in region. Using highest...");
+      hikey = &HIGHEST_I8_MIDI_VAL;
     }
   if (!pitch_keycenter)
     {
