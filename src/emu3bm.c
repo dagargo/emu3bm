@@ -1983,7 +1983,6 @@ emu3_sfz_region_add (struct emu_sfz_context *emu_sfz_context,
 		     GHashTable *region_opcodes)
 {
   gint err, sample_num, actual_preset;
-  struct emu3_preset *preset;
   struct emu3_preset_zone *zone;
   struct emu_zone_range zone_range;
 
@@ -2143,8 +2142,20 @@ emu3_sfz_region_add (struct emu_sfz_context *emu_sfz_context,
     }
   if (bend)
     {
-      preset = emu3_get_preset (emu_sfz_context->file, actual_preset);
-      emu3_set_preset_pbr (preset, *bend / 100);
+      gint pbr = *bend / 100;
+      struct emu3_preset *preset;
+      struct emu_velocity_range_map *vr;
+
+      for (gint i = 0; i < NOTES; i++)
+	{
+	  vr = &emu_sfz_context->emu_velocity_range_maps[i];
+	  if (vr->preset_num == -1)
+	    {
+	      break;
+	    }
+	  preset = emu3_get_preset (emu_sfz_context->file, vr->preset_num);
+	  emu3_set_preset_pbr (preset, pbr);
+	}
     }
 
   emu_sfz_context->region_num++;
