@@ -25,7 +25,9 @@
 #define DEVICE_ESI2000 "esi2000"
 #define DEVICE_EMU3X "emu3x"
 
-struct emu3_zone_range
+// This does not represent a native structure.
+
+struct emu_zone_range
 {
   unsigned char layer;
   unsigned char original_key;
@@ -132,7 +134,7 @@ int emu3_add_preset (struct emu_file *file, char *preset_name,
 
 int
 emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
-		      struct emu3_zone_range *zone_range,
+		      struct emu_zone_range *zone_range,
 		      struct emu3_preset_zone **zone);
 
 int emu3_del_preset_zone (struct emu_file *, int, int);

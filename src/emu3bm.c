@@ -1399,7 +1399,7 @@ emu3_add_zones (struct emu_file *file, int preset_num, int zone_num,
 
 int
 emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
-		      struct emu3_zone_range *zone_range,
+		      struct emu_zone_range *zone_range,
 		      struct emu3_preset_zone **zone_)
 {
   int sec_zone_id;
@@ -1814,7 +1814,7 @@ emu3_sfz_region_add (struct emu_file *file,
 {
   int err, sample_num;
   struct emu3_preset_zone *zone;
-  struct emu3_zone_range zone_range;
+  struct emu_zone_range zone_range;
   struct emu3_preset *preset =
     emu3_get_preset (file, emu_sfz_context->preset_num);
 

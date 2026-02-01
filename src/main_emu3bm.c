@@ -50,7 +50,7 @@ static const struct option options[] = {
 
 static int
 parse_zone_params (char *zone_params, int *sample_num,
-		   struct emu3_zone_range *zone_range, int is_num)
+		   struct emu_zone_range *zone_range, int is_num)
 {
   char *sample_str = strsep (&zone_params, ",");
   char *layer = strsep (&zone_params, ",");
@@ -139,7 +139,7 @@ main (int argc, char *argv[])
   extern int optind, optopt;
   int err = 0;
   int sample_num;
-  struct emu3_zone_range zone_range;
+  struct emu_zone_range zone_range;
   int zone_num;
 
   while ((opt = getopt_long (argc, argv,
