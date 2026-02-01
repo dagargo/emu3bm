@@ -62,6 +62,9 @@
 
 extern void yyset_in (FILE * _in_str);
 
+static gint LOVEL = 0;
+static gint HIVEL = 127;
+
 struct emu3_bank
 {
   char format[FORMAT_SIZE];
@@ -1806,34 +1809,105 @@ emu3_get_note_in_range (gint note)
     }
 }
 
+static guint8
+emu3_get_vel_in_range (gint vel)
+{
+  if (vel < LOVEL)
+    {
+      return LOVEL;
+    }
+  else if (vel > HIVEL)
+    {
+      return HIVEL;
+    }
+  else
+    {
+      return vel;
+    }
+}
+
+static void
+emu_velocity_range_map_set (struct emu_velocity_range_map *vr, guint8 low,
+			    guint8 high, gint preset_num)
+{
+  vr->low = low;
+  vr->high = high;
+  vr->preset_num = preset_num;
+}
+
+static gint
+emu_sfz_context_get_preset_by_velocity_range (struct emu_sfz_context *esctx,
+					      guint8 low, guint8 high)
+{
+  gint err;
+  gint new_preset_num;
+  gchar name[64];
+  struct emu_velocity_range_map *vr;
+
+  for (gint i = 0; i < NOTES; i++)
+    {
+      vr = &esctx->emu_velocity_range_maps[i];
+      if (vr->low == low && vr->high == high)
+	{
+	  emu_debug (1, "Using preset %d for velocity range [ %d, %d ]...",
+		     vr->preset_num, low, high);
+	  return vr->preset_num;
+	}
+    }
+
+  if (esctx->velocity_layer_num + 1 >= NOTES)
+    {
+      return -1;
+    }
+
+  esctx->velocity_layer_num++;
+  snprintf (name, 64, "%-12s L%02d", esctx->preset_name,
+	    esctx->velocity_layer_num);
+  emu_debug (1, "Creating preset '%s' for velocity range [ %d, %d ]...", name,
+	     low, high);
+  err = emu3_add_preset (esctx->file, name, &new_preset_num);
+  if (err)
+    {
+      return err;
+    }
+
+  vr = &esctx->emu_velocity_range_maps[esctx->velocity_layer_num];
+  emu_velocity_range_map_set (vr, low, high, new_preset_num);
+
+  return new_preset_num;
+}
+
 void
-emu3_sfz_region_add (struct emu_file *file,
-		     struct emu_sfz_context *emu_sfz_context,
+emu3_sfz_region_add (struct emu_sfz_context *emu_sfz_context,
 		     GHashTable *global_opcodes, GHashTable *group_opcodes,
 		     GHashTable *region_opcodes)
 {
-  int err, sample_num;
+  gint err, sample_num, actual_preset;
+  struct emu3_preset *preset;
   struct emu3_preset_zone *zone;
   struct emu_zone_range zone_range;
-  struct emu3_preset *preset =
-    emu3_get_preset (file, emu_sfz_context->preset_num);
 
   gchar *sample = emu3_get_opcode_val (global_opcodes, group_opcodes,
 				       region_opcodes, "sample");
   gint *key = emu3_get_opcode_val (global_opcodes, group_opcodes,
 				   region_opcodes, "key");
-  gint *hikey = emu3_get_opcode_val (global_opcodes, group_opcodes,
-				     region_opcodes, "hikey");
   gint *lokey = emu3_get_opcode_val (global_opcodes, group_opcodes,
 				     region_opcodes, "lokey");
+  gint *hikey = emu3_get_opcode_val (global_opcodes, group_opcodes,
+				     region_opcodes, "hikey");
   gint *pitch_keycenter = emu3_get_opcode_val (global_opcodes, group_opcodes,
 					       region_opcodes,
 					       "pitch_keycenter");
+  gint *lovel = emu3_get_opcode_val (global_opcodes, group_opcodes,
+				     region_opcodes, "lovel");
+  gint *hivel = emu3_get_opcode_val (global_opcodes, group_opcodes,
+				     region_opcodes, "hivel");
 
   emu_debug (1,
-	     "Processing region for '%s' (key: %d; pitch_keycenter: %d; lokey: %d; hikey: %d)...",
-	     sample, key ? *key : -1, pitch_keycenter ? *pitch_keycenter : -1,
-	     lokey ? *lokey : -1, hikey ? *hikey : -1);
+	     "Preprocessing region %02d for '%s' (key: %d; pitch_keycenter: %d; lokey: %d; hikey: %d; lovel: %d, hivel: %d)...",
+	     emu_sfz_context->region_num, sample, key ? *key : -1,
+	     pitch_keycenter ? *pitch_keycenter : -1, lokey ? *lokey : -1,
+	     hikey ? *hikey : -1, lovel ? *lovel : -1, hivel ? *hivel : -1);
 
   if (key)
     {
@@ -1877,6 +1951,27 @@ emu3_sfz_region_add (struct emu_file *file,
 	}
     }
 
+  if (!lovel)
+    {
+      lovel = &LOVEL;
+    }
+  if (!hivel)
+    {
+      hivel = &HIVEL;
+    }
+
+  actual_preset =
+    emu_sfz_context_get_preset_by_velocity_range (emu_sfz_context,
+						  emu3_get_vel_in_range
+						  (*lovel),
+						  emu3_get_vel_in_range
+						  (*hivel));
+  if (actual_preset < 0)
+    {
+      emu_error ("Error while getting the preset");
+      return;
+    }
+
   if (!sample)
     {
       emu_error ("No 'sample' found in region");
@@ -1898,8 +1993,9 @@ emu3_sfz_region_add (struct emu_file *file,
       return;
     }
 
-  emu_debug (1, "Adding region for '%s' centered at %d [%d, %d]...",
-	     sample, *pitch_keycenter, *lokey, *hikey);
+  emu_debug (1,
+	     "Adding region for '%s' centered at %d [ %d, %d ] with velocity in [ %d, %d ]...",
+	     sample, *pitch_keycenter, *lokey, *hikey, *lovel, *hivel);
 
   // Notice that SFZ states that MIDI notes go from C-1 to G9. See https://sfzformat.com/opcodes/sw_hikey/.
   // Therefore the lowest A on a piano is A0 in the SFZ format while it is A-1 in the E-mu.
@@ -1910,8 +2006,8 @@ emu3_sfz_region_add (struct emu_file *file,
   zone_range.lower_key = emu3_get_note_in_range (*lokey - 21);
   zone_range.higher_key = emu3_get_note_in_range (*hikey - 21);
 
-  gchar *sample_path =
-    g_strdup_printf ("%s/%s", emu_sfz_context->sfz_dir, sample);
+  gchar *sample_path = g_strdup_printf ("%s/%s", emu_sfz_context->sfz_dir,
+					sample);
   gchar *c = sample_path;
   //Perhaps converting backslashes to slashes is not a good idea but it's practical.
   while (*c)
@@ -1923,15 +2019,15 @@ emu3_sfz_region_add (struct emu_file *file,
       c++;
     }
 
-  err = emu3_add_sample (file, sample_path, &sample_num);
+  err = emu3_add_sample (emu_sfz_context->file, sample_path, &sample_num);
   g_free (sample_path);
   if (err)
     {
       return;
     }
 
-  if (emu3_add_preset_zone
-      (file, emu_sfz_context->preset_num, sample_num, &zone_range, &zone))
+  if (emu3_add_preset_zone (emu_sfz_context->file, actual_preset,
+			    sample_num, &zone_range, &zone))
     {
       return;
     }
@@ -1947,18 +2043,21 @@ emu3_sfz_region_add (struct emu_file *file,
     }
   if (bend)
     {
+      preset = emu3_get_preset (emu_sfz_context->file, actual_preset);
       emu3_set_preset_pbr (preset, *bend / 100);
     }
+
+  emu_sfz_context->region_num++;
 }
 
-int
-emu3_add_sfz (struct emu_file *file, const char *sfz_path)
+gint
+emu3_add_sfz (struct emu_file *file, const gchar *sfz_path)
 {
+  gint err;
   FILE *sfz;
-  const char *ext;
-  int err, preset_num;
-  struct emu_sfz_context emu_sfz_context;
-  char *sfz_name, *bnsfz, *preset_name, *sfz_dir, *bdsfz;
+  const gchar *ext;
+  struct emu_sfz_context esctx;
+  gchar *sfz_name, *bnsfz, *preset_name, *sfz_dir, *bdsfz;
 
   bdsfz = strdup (sfz_path);
   sfz_dir = dirname (bdsfz);
@@ -1968,12 +2067,6 @@ emu3_add_sfz (struct emu_file *file, const char *sfz_path)
   if (strcasecmp (ext, "sfz"))
     {
       emu_debug (1, "Unexpected extension \"%s\"", ext);
-    }
-
-  err = emu3_add_preset (file, preset_name, &preset_num);
-  if (err)
-    {
-      goto end;
     }
 
   sfz = fopen (sfz_path, "rb");
@@ -1986,10 +2079,18 @@ emu3_add_sfz (struct emu_file *file, const char *sfz_path)
 
   yyset_in (sfz);
 
-  emu_sfz_context.preset_num = preset_num;
-  emu_sfz_context.sfz_dir = sfz_dir;
+  esctx.file = file;
+  esctx.velocity_layer_num = 0;
+  esctx.preset_name = preset_name;
+  esctx.region_num = 0;
+  esctx.sfz_dir = sfz_dir;
+  for (gint i = 0; i < NOTES; i++)
+    {
+      struct emu_velocity_range_map *vr = &esctx.emu_velocity_range_maps[i];
+      emu_velocity_range_map_set (vr, 0xff, 0xff, -1);
+    }
 
-  sfz_parser_set_context (file, &emu_sfz_context);
+  sfz_parser_set_context (&esctx);
 
   yyparse ();
 

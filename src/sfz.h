@@ -20,17 +20,26 @@
 
 #include "utils.h"
 
-struct emu_sfz_context
+struct emu_velocity_range_map
 {
+  guint8 low;
+  guint8 high;
   gint preset_num;
-  const gchar *sfz_dir;
 };
 
-void emu3_sfz_region_add (struct emu_file *file,
-			  struct emu_sfz_context *emu_sfz_context,
+struct emu_sfz_context
+{
+  struct emu_file *file;
+  const gchar *preset_name;
+  gint velocity_layer_num;
+  gint region_num;
+  const gchar *sfz_dir;
+  struct emu_velocity_range_map emu_velocity_range_maps[NOTES];
+};
+
+void emu3_sfz_region_add (struct emu_sfz_context *emu_sfz_context,
 			  GHashTable * global_opcodes,
 			  GHashTable * group_opcodes,
 			  GHashTable * region_opcodes);
 
-extern void sfz_parser_set_context (struct emu_file *file,
-				    struct emu_sfz_context *emu_sfz_context);
+void sfz_parser_set_context (struct emu_sfz_context *emu_sfz_context);
