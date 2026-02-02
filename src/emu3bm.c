@@ -1943,7 +1943,7 @@ emu_get_preset_name_with_layer (const gchar *preset_name, gint layer_num,
 }
 
 static void
-emu_sfz_set_velocity_range_on (struct emu_sfz_context *esctx)
+emu3_sfz_set_velocity_range_on (struct emu_sfz_context *esctx)
 {
   if (esctx->velocity_layer_num > 1)
     {
@@ -1999,7 +1999,7 @@ emu_sfz_context_get_preset_by_velocity_range (struct emu_sfz_context *esctx,
   else
     {
       emu_get_preset_name_with_layer (esctx->preset_name,
-				      esctx->velocity_layer_num + 1, name);
+				      esctx->velocity_layer_num, name);
     }
   emu_debug (1, "Creating preset '%s' for velocity range [ %d, %d ]...",
 	     name, low, high);
@@ -2029,8 +2029,7 @@ emu_sfz_context_get_preset_by_velocity_range (struct emu_sfz_context *esctx,
       //In case we have more than one preset, overwrite the name of the first one and set the Velocity Ranges on.
       if (esctx->velocity_layer_num == 1)
 	{
-	  emu_get_preset_name_with_layer (esctx->preset_name,
-					  esctx->velocity_layer_num, name);
+	  emu_get_preset_name_with_layer (esctx->preset_name, 0, name);
 	  memcpy (preset->name, name, EMU3_NAME_SIZE);
 	}
     }
@@ -2056,7 +2055,7 @@ emu_replace_backslashes_in_path (gchar *sample_path)
 }
 
 void
-emu3_sfz_region_add (struct emu_sfz_context *esctx)
+emu3_sfz_add_region (struct emu_sfz_context *esctx)
 {
   gchar *sample_path;
   const gchar *sample;
@@ -2066,6 +2065,12 @@ emu3_sfz_region_add (struct emu_sfz_context *esctx)
   gint lokey, hikey, pitch_keycenter, lovel, hivel;
 
   sample = emu3_get_opcode_string_val (esctx, "sample", NULL, NULL);
+  if (!sample)
+    {
+      emu_error ("No 'sample' found in region");
+      return;
+    }
+
   lokey = emu3_get_opcode_integer_val (esctx, "lokey", "key",
 				       EMU3_LOWEST_MIDI_NOTE,
 				       EMU3_HIGHEST_MIDI_NOTE,
@@ -2090,12 +2095,6 @@ emu3_sfz_region_add (struct emu_sfz_context *esctx)
   if (actual_preset < 0)
     {
       emu_error ("Error while getting the preset");
-      return;
-    }
-
-  if (!sample)
-    {
-      emu_error ("No 'sample' found in region");
       return;
     }
 
@@ -2135,7 +2134,7 @@ emu3_sfz_region_add (struct emu_sfz_context *esctx)
 // This functions sets opcodes that in the hardware can only be set at preset level.
 
 static void
-emu_sfz_set_preset_opcodes (struct emu_sfz_context *esctx)
+emu3_sfz_set_preset_opcodes (struct emu_sfz_context *esctx)
 {
   gint bend_up, v;
   struct emu3_preset *preset;
@@ -2211,9 +2210,9 @@ emu3_add_sfz (struct emu_file *file, const gchar *sfz_path)
   // Process regions
   yyparse ();
 
-  emu_sfz_set_velocity_range_on (&esctx);
+  emu3_sfz_set_velocity_range_on (&esctx);
 
-  emu_sfz_set_preset_opcodes (&esctx);
+  emu3_sfz_set_preset_opcodes (&esctx);
 
   g_hash_table_unref (esctx.global_opcodes);
   g_hash_table_unref (esctx.group_opcodes);

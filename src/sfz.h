@@ -40,6 +40,6 @@ struct emu_sfz_context
   GHashTable *region_opcodes;
 };
 
-void emu3_sfz_region_add (struct emu_sfz_context *esctx);
+void emu3_sfz_add_region (struct emu_sfz_context *esctx);
 
 void sfz_parser_set_context (struct emu_sfz_context *esctx);

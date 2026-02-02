@@ -64,7 +64,7 @@ header: SFZ_HEADER
             emu_debug (1, "SFZ header %s read", header);
           } else if (!strcmp("<region>", header)) {
             emu_debug (1, "SFZ header %s read", header);
-            emu3_sfz_region_add (esctx);
+            emu3_sfz_add_region (esctx);
           }
           free (header);
         };
