@@ -205,8 +205,10 @@ static const char *AUX_ENV_DST[] = {
 
 static const int VCF_TYPE_SIZE = sizeof (VCF_TYPE) / sizeof (char *);
 
+static const char *OFF_ON[] = { "Off", "On" };
+
 // Percentage -100..100 from 0x00 to 0x7F
-const int TABLE_PERCENTAGE_SIGNED[] = {
+static const int TABLE_PERCENTAGE_SIGNED[] = {
   -100, -99, -97, -96, -94, -93, -91, -90, -88, -86, -85, -83, -82, -80, -79,
   -77, -75, -74, -72, -71, -69, -68, -66, -65, -63, -61, -60, -58, -57, -55,
   -54, -52, -50, -49, -47, -46, -44, -43, -41, -40, -38, -36, -35, -33, -32,
@@ -453,9 +455,9 @@ emu3_get_is_side_disabled (const uint8_t value)
   return 0;
 }
 
-//Level: [0, 0x7f] -> [0, 100]
+//Level: [-128, 127] -> [-100, 100]
 static int
-emu3_get_percent_value (const uint8_t value)
+emu3_get_percent_value (const int8_t value)
 {
   // return (int) ((value) * 100 / 127.0) ;
   const double percentage = (value * 100 / 127.0);
@@ -542,18 +544,12 @@ emu3_print_preset_zone_info (struct emu_file *file,
   //Cutoff: [0, 255] -> [26, 74040]
   int cutoff = zone->vcf_cutoff;
   emu_print (1, 4, "Cutoff: %d Hz\n", emu3_get_vcf_cutoff_frequency (cutoff));
-  //Filter Q might only work with ESI banks
-  //ESI Q: [0x80, 0xff] -> [0, 100]
-  //Other formats: [0, 0x7f]
-  int q = zone->vcf_q;
-  if (q & 0x80)
-    {
-      // This means that real time control VCF NoteOn Q is
-      // enabled. This is a binary flag. It can be disabled
-      // on the unit via Dynamic Processing / Realtime Enable
-      q = q - 0x80;
-    }
-  emu_print (1, 4, "Q: %d %%\n", emu3_get_percent_value (q));
+  // Filter Q might only work with ESI banks.
+  // ESI Q: [0x80, 0xff] -> [0, 100]
+  // Other formats: [0, 0x7f]
+  // The most significat bit is a flag to enable real time control VCof F NoteOn Q.
+  // It can be disabled on the unit via Dynamic Processing / Realtime Enable.
+  emu_print (1, 4, "Q: %d %%\n", emu3_get_percent_value (zone->vcf_q & 0x7f));
   emu_print (1, 4, "Tracking: %.2f\n",
 	     emu3_get_vcf_tracking (zone->vcf_tracking));
   emu_print (1, 4, "Envelope Amount: %d %%\n",
@@ -582,18 +578,23 @@ emu3_print_preset_zone_info (struct emu_file *file,
   emu3_print_envelope (&zone->aux_envelope);
 
   emu_print (1, 3, "Velocity to\n");
-  emu_print (1, 4, "Pitch: %d %%\n", zone->vel_to_pitch);
+  emu_print (1, 4, "Pitch: %d %%\n",
+	     emu3_get_percent_value (zone->vel_to_pitch));
   emu_print (1, 4, "VCA Level: %d %%\n",
 	     emu3_get_percent_value (zone->vel_to_vca_level));
-  emu_print (1, 4, "VCA Attack: %d %%\n", zone->vel_to_vca_attack);
-  emu_print (1, 4, "VCF Cutoff: %d %%\n", zone->vel_to_vcf_cutoff);
+  emu_print (1, 4, "VCA Attack: %d %%\n",
+	     emu3_get_percent_value (zone->vel_to_vca_attack));
+  emu_print (1, 4, "VCF Cutoff: %d %%\n",
+	     emu3_get_percent_value (zone->vel_to_vcf_cutoff));
   emu_print (1, 4, "VCF Q: %d %%\n",
 	     emu3_get_percent_value (zone->vel_to_vcf_q));
-  emu_print (1, 4, "VCF Attack: %d\n", zone->vel_to_vcf_attack);
-  emu_print (1, 4, "Pan: %d %%\n",
-	     emu3_get_percent_value (zone->vel_to_vca_pan));
-  emu_print (1, 4, "Sample Start: %d %%\n", zone->vel_to_sample_start);
-  emu_print (1, 4, "Auxiliary Envelope: %d %%\n", zone->vel_to_aux_env);
+  emu_print (1, 4, "VCF Attack: %d %%\n",
+	     emu3_get_percent_value (zone->vel_to_vcf_attack));
+  emu_print (1, 4, "Pan: %d %%\n", emu3_get_percent_value (zone->vel_to_pan));
+  emu_print (1, 4, "Sample Start: %d %%\n",
+	     emu3_get_percent_value (zone->vel_to_sample_start));
+  emu_print (1, 4, "Auxiliary Envelope: %d %%\n",
+	     emu3_get_percent_value (zone->vel_to_aux_env));
 
   emu_print (1, 3, "Keyboard Mode\n");
   emu_print (1, 4, "Keyboard Envelope mode: %s\n",
@@ -604,7 +605,6 @@ emu3_print_preset_zone_info (struct emu_file *file,
 	     emu3_get_is_nontranspose_enabled (zone->flags) ? "on" : "off");
 
   emu_print (1, 3, "Realtime Enable\n");
-  const char *OFF_ON[] = { "Off", "On" };
   emu_print (1, 4, "Pitch: %s\n",
 	     OFF_ON[emu3_get_is_rt_pitch_enabled (zone->rt_enable_flags)]);
   emu_print (1, 4, "VCF cutoff: %s\n",
@@ -1541,7 +1541,7 @@ emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
   zone->vel_to_vcf_q = 0;
   zone->vel_to_vcf_attack = 0;
   zone->vel_to_sample_start = 0;
-  zone->vel_to_vca_pan = 0;
+  zone->vel_to_pan = 0;
   zone->lfo_to_pitch = 0;
   zone->lfo_to_vca = 0;
   zone->lfo_to_cutoff = 0;

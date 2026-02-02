@@ -56,20 +56,20 @@ struct emu3_preset_zone
   uint8_t lfo_variation;
   uint8_t vcf_cutoff;
   uint8_t vcf_q;		// 10000000b/0x80 bit flags that rt-vcf-noteon-q is enabled
-  uint8_t vcf_envelope_amount;
+  int8_t vcf_envelope_amount;
   struct emu3_envelope vcf_envelope;
   struct emu3_envelope aux_envelope;
   int8_t aux_envelope_amount;
   uint8_t aux_envelope_dest;
+  int8_t vel_to_aux_env;
   int8_t vel_to_vca_level;
   int8_t vel_to_vca_attack;
-  int8_t vel_to_vcf_cutoff;
   int8_t vel_to_pitch;
-  int8_t vel_to_aux_env;
+  int8_t vel_to_pan;
+  int8_t vel_to_vcf_cutoff;
   int8_t vel_to_vcf_q;
   int8_t vel_to_vcf_attack;
   int8_t vel_to_sample_start;
-  int8_t vel_to_vca_pan;
   int8_t lfo_to_pitch;
   int8_t lfo_to_vca;
   int8_t lfo_to_cutoff;
