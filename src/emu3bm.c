@@ -468,6 +468,12 @@ emu3_get_percent_value (const int8_t value)
   return (int) (percentage + 0.5);
 }
 
+static int8_t
+emu3_get_value_from_percent (gfloat v)
+{
+  return (v * 127.0) / 100.0;
+}
+
 // Level: [0x00, 0x40, 0x7f] -> [-100, 0, +100]
 static int
 emu3_get_percent_value_signed (const int8_t value)
@@ -1867,7 +1873,7 @@ emu3_get_opcode_integer_val (struct emu_sfz_context *esctx, const gchar *key,
 	{
 	  emu_debug (1,
 		     "Value %d for opcode '%s' (alias or fallback '%s') outside range [ %d, %d ]. Using %d...",
-		     v, key, alias, min, max, def);
+		     v, key, alias, min, max, v);
 	}
     }
   else
@@ -1899,7 +1905,7 @@ emu3_get_opcode_float_val (struct emu_sfz_context *esctx, const gchar *key,
 	{
 	  emu_debug (1,
 		     "Value %.2f for opcode '%s' (alias or fallback '%s') outside range [ %.2f, %.2f ]. Using %.2f...",
-		     v, key, alias, min, max, def);
+		     v, key, alias, min, max, v);
 	}
     }
   else
@@ -2058,6 +2064,7 @@ void
 emu3_sfz_add_region (struct emu_sfz_context *esctx)
 {
   gchar *sample_path;
+  gfloat amp_veltrack;
   const gchar *sample;
   struct emu3_preset_zone *zone;
   struct emu_zone_range zone_range;
@@ -2127,6 +2134,10 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
     }
 
   // Here, use region opcodes that can be set in a zone.
+
+  amp_veltrack = emu3_get_opcode_float_val (esctx, "amp_veltrack", NULL, -100,
+					    100, 100);
+  zone->vel_to_vca_level = emu3_get_s8_val_from_float (amp_veltrack);
 
   esctx->region_num++;
 }
