@@ -331,6 +331,20 @@ emu3_get_time_163_69 (const uint8_t index)
   return 0.0f;
 }
 
+static uint8_t
+emu3_get_u8_from_time_163_69 (gfloat v)
+{
+  for (uint8_t i = 0; i < 127; i++)
+    {
+      if (TABLE_TIME_163_69_FLOAT[i] <= v &&
+	  v < TABLE_TIME_163_69_FLOAT[i + 1])
+	{
+	  return i;
+	}
+    }
+  return 127;
+}
+
 static inline float
 emu3_get_time_21_69 (const uint8_t index)
 {
@@ -469,7 +483,7 @@ emu3_get_percent_value (const int8_t value)
 }
 
 static int8_t
-emu3_get_value_from_percent (gfloat v)
+emu3_get_s8_from_percent (gfloat v)
 {
   return (v * 127.0) / 100.0;
 }
@@ -2064,12 +2078,13 @@ void
 emu3_sfz_add_region (struct emu_sfz_context *esctx)
 {
   gchar *sample_path;
-  gfloat amp_veltrack;
   const gchar *sample;
   struct emu3_preset_zone *zone;
   struct emu_zone_range zone_range;
   gint err, sample_num, actual_preset;
   gint lokey, hikey, pitch_keycenter, lovel, hivel;
+  gfloat amp_veltrack, ampeg_attack, ampeg_decay, ampeg_hold, ampeg_sustain,
+    ampeg_release;
 
   sample = emu3_get_opcode_string_val (esctx, "sample", NULL, NULL);
   if (!sample)
@@ -2137,7 +2152,23 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
 
   amp_veltrack = emu3_get_opcode_float_val (esctx, "amp_veltrack", NULL, -100,
 					    100, 100);
-  zone->vel_to_vca_level = emu3_get_s8_val_from_float (amp_veltrack);
+  zone->vel_to_vca_level = emu3_get_s8_from_percent (amp_veltrack);
+
+  ampeg_attack = emu3_get_opcode_float_val (esctx, "ampeg_attack", NULL, 0,
+					    100, 0);
+  zone->vca_envelope.attack = emu3_get_u8_from_time_163_69 (ampeg_attack);
+  ampeg_hold = emu3_get_opcode_float_val (esctx, "ampeg_hold", NULL, 0,
+					  100, 0);
+  zone->vca_envelope.hold = emu3_get_u8_from_time_163_69 (ampeg_hold);
+  ampeg_decay = emu3_get_opcode_float_val (esctx, "ampeg_decay", NULL, 0,
+					   100, 0);
+  zone->vca_envelope.decay = emu3_get_u8_from_time_163_69 (ampeg_decay);
+  ampeg_sustain = emu3_get_opcode_float_val (esctx, "ampeg_sustain", NULL, 0,
+					     100, 100);
+  zone->vca_envelope.sustain = emu3_get_s8_from_percent (ampeg_sustain);
+  ampeg_release = emu3_get_opcode_float_val (esctx, "ampeg_release", NULL, 0,
+					     100, 0.001);
+  zone->vca_envelope.release = emu3_get_u8_from_time_163_69 (ampeg_release);
 
   esctx->region_num++;
 }
