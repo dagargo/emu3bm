@@ -1813,20 +1813,19 @@ emu3_write_file (struct emu_file *file)
 }
 
 static gpointer
-emu3_get_opcode_val (GHashTable *global_opcodes, GHashTable *group_opcodes,
-		     GHashTable *region_opcodes, const gchar *key)
+emu3_get_opcode_val (struct emu_sfz_context *esctx, const gchar *key)
 {
-  gchar *v = g_hash_table_lookup (region_opcodes, key);
+  gchar *v = g_hash_table_lookup (esctx->region_opcodes, key);
   if (v)
     {
       return v;
     }
-  v = g_hash_table_lookup (group_opcodes, key);
+  v = g_hash_table_lookup (esctx->group_opcodes, key);
   if (v)
     {
       return v;
     }
-  return g_hash_table_lookup (global_opcodes, key);
+  return g_hash_table_lookup (esctx->global_opcodes, key);
 }
 
 static guint8
@@ -1978,29 +1977,19 @@ emu_sfz_context_get_preset_by_velocity_range (struct emu_sfz_context *esctx,
 }
 
 void
-emu3_sfz_region_add (struct emu_sfz_context *esctx,
-		     GHashTable *global_opcodes, GHashTable *group_opcodes,
-		     GHashTable *region_opcodes)
+emu3_sfz_region_add (struct emu_sfz_context *esctx)
 {
   gint err, sample_num, actual_preset;
   struct emu3_preset_zone *zone;
   struct emu_zone_range zone_range;
 
-  gchar *sample = emu3_get_opcode_val (global_opcodes, group_opcodes,
-				       region_opcodes, "sample");
-  gint *key = emu3_get_opcode_val (global_opcodes, group_opcodes,
-				   region_opcodes, "key");
-  gint *lokey = emu3_get_opcode_val (global_opcodes, group_opcodes,
-				     region_opcodes, "lokey");
-  gint *hikey = emu3_get_opcode_val (global_opcodes, group_opcodes,
-				     region_opcodes, "hikey");
-  gint *pitch_keycenter = emu3_get_opcode_val (global_opcodes, group_opcodes,
-					       region_opcodes,
-					       "pitch_keycenter");
-  gint *lovel = emu3_get_opcode_val (global_opcodes, group_opcodes,
-				     region_opcodes, "lovel");
-  gint *hivel = emu3_get_opcode_val (global_opcodes, group_opcodes,
-				     region_opcodes, "hivel");
+  gchar *sample = emu3_get_opcode_val (esctx, "sample");
+  gint *key = emu3_get_opcode_val (esctx, "key");
+  gint *lokey = emu3_get_opcode_val (esctx, "lokey");
+  gint *hikey = emu3_get_opcode_val (esctx, "hikey");
+  gint *pitch_keycenter = emu3_get_opcode_val (esctx, "pitch_keycenter");
+  gint *lovel = emu3_get_opcode_val (esctx, "lovel");
+  gint *hivel = emu3_get_opcode_val (esctx, "hivel");
 
   emu_debug (1,
 	     "Preprocessing region %02d for '%s' (key: %d; pitch_keycenter: %d; lokey: %d; hikey: %d; lovel: %d, hivel: %d)...",
@@ -2132,12 +2121,10 @@ emu3_sfz_region_add (struct emu_sfz_context *esctx,
 
   // Use opcodes here
 
-  gint *bend = emu3_get_opcode_val (global_opcodes, group_opcodes,
-				    region_opcodes, "bend_up");
+  gint *bend = emu3_get_opcode_val (esctx, "bend_up");
   if (!bend)
     {
-      emu3_get_opcode_val (global_opcodes, group_opcodes,
-			   region_opcodes, "bendup");
+      emu3_get_opcode_val (esctx, "bendup");
     }
   if (bend)
     {
@@ -2194,6 +2181,12 @@ emu3_add_sfz (struct emu_file *file, const gchar *sfz_path)
   esctx.preset_name = preset_name;
   esctx.region_num = 0;
   esctx.sfz_dir = sfz_dir;
+  esctx.global_opcodes =
+    g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+  esctx.group_opcodes =
+    g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+  esctx.region_opcodes =
+    g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
   for (gint i = 0; i < NOTES; i++)
     {
       struct emu_velocity_range_map *vr = &esctx.emu_velocity_range_maps[i];
@@ -2205,6 +2198,10 @@ emu3_add_sfz (struct emu_file *file, const gchar *sfz_path)
   yyparse ();
 
   emu_preset_set_velocity_range_on (&esctx);
+
+  g_hash_table_unref (esctx.global_opcodes);
+  g_hash_table_unref (esctx.group_opcodes);
+  g_hash_table_unref (esctx.region_opcodes);
 
   fclose (sfz);
 

@@ -14,15 +14,12 @@
   char *header;
   char *opcode;
   gpointer value;
-  GHashTable *global_opcodes = NULL;
-  GHashTable *group_opcodes = NULL;
-  GHashTable *region_opcodes = NULL;
   GHashTable *header_opcodes;
 
-  struct emu_sfz_context *emu_sfz_context;
+  struct emu_sfz_context *esctx;
 
-  void sfz_parser_set_context (struct emu_sfz_context *emu_sfz_context_) {
-    emu_sfz_context = emu_sfz_context_;
+  void sfz_parser_set_context (struct emu_sfz_context *emu_sfz_context) {
+    esctx = emu_sfz_context;
   }
 
 %}
@@ -38,17 +35,7 @@
 
 %%
 
-sfz: {
-       global_opcodes = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
-       group_opcodes = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
-       region_opcodes = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
-     }
-     headers
-     {
-       g_hash_table_unref (global_opcodes);
-       g_hash_table_unref (group_opcodes);
-       g_hash_table_unref (region_opcodes);
-     };
+sfz: headers;
 
 headers: | header headers;
 
@@ -56,14 +43,14 @@ header: SFZ_HEADER
         {
           header = strdup (yytext);
           if (!strcmp("<global>", header)) {
-            g_hash_table_remove_all (global_opcodes);
-            header_opcodes = global_opcodes;
+            g_hash_table_remove_all (esctx->global_opcodes);
+            header_opcodes = esctx->global_opcodes;
           } else if (!strcmp("<group>", header)) {
-            g_hash_table_remove_all (group_opcodes);
-            header_opcodes = group_opcodes;
+            g_hash_table_remove_all (esctx->group_opcodes);
+            header_opcodes = esctx->group_opcodes;
           } else if (!strcmp("<region>", header)) {
-            g_hash_table_remove_all (region_opcodes);
-            header_opcodes = region_opcodes;
+            g_hash_table_remove_all (esctx->region_opcodes);
+            header_opcodes = esctx->region_opcodes;
           } else {
             emu_debug (1, "SFZ header %s not supported. Skipping...", header);
             header_opcodes = NULL;
@@ -77,7 +64,7 @@ header: SFZ_HEADER
             emu_debug (1, "SFZ header %s read", header);
           } else if (!strcmp("<region>", header)) {
             emu_debug (1, "SFZ header %s read", header);
-            emu3_sfz_region_add (emu_sfz_context, global_opcodes, group_opcodes, region_opcodes);
+            emu3_sfz_region_add (esctx);
           }
           free (header);
         };

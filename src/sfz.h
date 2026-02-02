@@ -35,11 +35,11 @@ struct emu_sfz_context
   gint region_num;
   const gchar *sfz_dir;
   struct emu_velocity_range_map emu_velocity_range_maps[NOTES];
+  GHashTable *global_opcodes;
+  GHashTable *group_opcodes;
+  GHashTable *region_opcodes;
 };
 
-void emu3_sfz_region_add (struct emu_sfz_context *emu_sfz_context,
-			  GHashTable * global_opcodes,
-			  GHashTable * group_opcodes,
-			  GHashTable * region_opcodes);
+void emu3_sfz_region_add (struct emu_sfz_context *esctx);
 
-void sfz_parser_set_context (struct emu_sfz_context *emu_sfz_context);
+void sfz_parser_set_context (struct emu_sfz_context *esctx);
