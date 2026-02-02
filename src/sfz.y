@@ -85,7 +85,7 @@ opcode_expr: SFZ_OPCODE
              };
 
 opcode_val: SFZ_FLOAT   { value = g_malloc(sizeof(gfloat)); *(gfloat *)value = atof (yytext); emu_debug (2, "SFZ float '%f' read", *(gfloat *)value); } |
-            SFZ_INTEGER { value = g_malloc(sizeof(gint)); *(gint *)value = atoi (yytext); emu_debug (2, "SFZ integer '%d' read", *(gint *)value); } |
+            SFZ_INTEGER { value = g_malloc(sizeof(gfloat)); *(gfloat *)value = atoi (yytext); emu_debug (2, "SFZ integer '%d' read", (gint) *(gfloat *)value); } |
             SFZ_STRING  { value = g_strdup (yytext); g_strchomp (value); emu_debug (2, "SFZ string '%s' read", (gchar *)value);
                           if (!strcmp(opcode, "key") || !strcmp(opcode, "pitch_keycenter") || !strcmp(opcode, "lokey") || !strcmp(opcode, "hikey")) {
                             gint note_num = emu_reverse_note_search (value) + 21; // Conversion of emu3 notes to MIDI notes

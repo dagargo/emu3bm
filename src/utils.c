@@ -172,8 +172,8 @@ emu_open_file (const char *name)
   file = (struct emu_file *) malloc (sizeof (struct emu_file));
 
   file->name = name;
-  file->raw = malloc (MEM_SIZE);
-  file->size = fread (file->raw, 1, MEM_SIZE, fd);
+  file->raw = malloc (EMU3_MEM_SIZE);
+  file->size = fread (file->raw, 1, EMU3_MEM_SIZE, fd);
   fclose (fd);
 
   return file;
@@ -213,14 +213,14 @@ emu_init_file (const char *name)
   struct emu_file *file = malloc (sizeof (struct emu_file));
   file->name = name;
   file->size = 0;
-  file->raw = malloc (MEM_SIZE);
+  file->raw = malloc (EMU3_MEM_SIZE);
   return file;
 }
 
 int
 emu_reverse_note_search (char *note_name)
 {
-  for (int i = 0; i < NOTES; i++)
+  for (int i = 0; i < EMU3_NOTES; i++)
     if (strcasecmp (NOTE_NAMES[i], note_name) == 0)
       return i;
 
@@ -239,8 +239,8 @@ char *
 emu3_str_to_emu3name (const char *src)
 {
   size_t len = strlen (src);
-  if (len > NAME_SIZE)
-    len = NAME_SIZE;
+  if (len > EMU3_NAME_SIZE)
+    len = EMU3_NAME_SIZE;
 
   char *emu3name = strndup (src, len);
 
@@ -256,11 +256,11 @@ void
 emu3_cpystr (char *dst, const char *src)
 {
   size_t len = strlen (src);
-  if (len > NAME_SIZE)
-    len = NAME_SIZE;
+  if (len > EMU3_NAME_SIZE)
+    len = EMU3_NAME_SIZE;
 
-  memcpy (dst, src, NAME_SIZE);
-  memset (&dst[len], ' ', NAME_SIZE - len);
+  memcpy (dst, src, EMU3_NAME_SIZE);
+  memset (&dst[len], ' ', EMU3_NAME_SIZE - len);
 }
 
 void

@@ -62,13 +62,10 @@
 
 extern void yyset_in (FILE * _in_str);
 
-static gint LOWEST_I8_MIDI_VAL = 0;
-static gint HIGHEST_I8_MIDI_VAL = 127;
-
 struct emu3_bank
 {
   char format[FORMAT_SIZE];
-  char name[NAME_SIZE];
+  char name[EMU3_NAME_SIZE];
   uint32_t objects;
   uint32_t padding[3];
   uint32_t next_preset;
@@ -78,7 +75,7 @@ struct emu3_bank
   uint32_t sample_blocks;
   uint32_t unknown_1;
   uint32_t total_blocks;
-  char name_copy[NAME_SIZE];
+  char name_copy[EMU3_NAME_SIZE];
   uint32_t selected_preset;
   uint32_t parameters[BANK_PARAMETERS];
 };
@@ -93,7 +90,7 @@ struct emu3_preset_note_zone
 
 struct emu3_preset
 {
-  char name[NAME_SIZE];
+  char name[EMU3_NAME_SIZE];
   int8_t rt_controls[RT_CONTROLS_SIZE + RT_CONTROLS_FS_SIZE];
   int8_t unknown_0[PRESET_UNKNOWN_0_SIZE];
   int8_t pitch_bend_range;
@@ -105,7 +102,7 @@ struct emu3_preset
   int8_t link_preset_msb;
   int8_t unknown_1[PRESET_UNKNOWN_1_SIZE];
   int8_t note_zones;
-  uint8_t note_zone_mappings[NOTES];
+  uint8_t note_zone_mappings[EMU3_NOTES];
 };
 
 static const int8_t DEFAULT_RT_CONTROLS[RT_CONTROLS_SIZE +
@@ -1029,7 +1026,7 @@ emu3_open_file (const char *name)
       return NULL;
     }
 
-  emu_print (1, 0, "Bank name: %.*s\n", NAME_SIZE, bank->name);
+  emu_print (1, 0, "Bank name: %.*s\n", EMU3_NAME_SIZE, bank->name);
   emu_print (1, 0, "Bank size: %zuB\n", file->size);
   emu_print (1, 0, "Bank format: %s\n", bank->format);
 
@@ -1042,7 +1039,7 @@ emu3_open_file (const char *name)
       emu_error ("Block sum error\n");
     }
 
-  if (strncmp (bank->name, bank->name_copy, NAME_SIZE))
+  if (strncmp (bank->name, bank->name_copy, EMU3_NAME_SIZE))
     emu_print (2, 1, "Bank name is different than previously found.\n");
 
   emu_print (2, 1, "Selected preset: %d\n", bank->selected_preset);
@@ -1111,7 +1108,7 @@ emu3_process_preset (struct emu_file *file, int preset_num,
   struct emu3_preset_zone *zones;
   struct emu3_preset_note_zone *note_zones;
 
-  emu_print (0, 0, "Preset %03d: %.*s\n", preset_num, NAME_SIZE,
+  emu_print (0, 0, "Preset %03d: %.*s\n", preset_num, EMU3_NAME_SIZE,
 	     preset->name);
 
   if (rt_controls)
@@ -1129,7 +1126,7 @@ emu3_process_preset (struct emu_file *file, int preset_num,
   emu3_print_preset_info (preset);
 
   emu_print (1, 1, "Note mappings:\n");
-  for (int j = 0; j < NOTES; j++)
+  for (int j = 0; j < EMU3_NOTES; j++)
     {
       if (preset->note_zone_mappings[j] != 0xff)
 	emu_print (1, 2, "%-4s: %2d\n", emu_get_note_name (j),
@@ -1365,7 +1362,7 @@ emu3_add_zones (struct emu_file *file, int preset_num, int zone_num,
   if (zone_num == -1)
     inc_size += sizeof (struct emu3_preset_note_zone);
 
-  if (file->size + inc_size > MEM_SIZE)
+  if (file->size + inc_size > EMU3_MEM_SIZE)
     return -1;
 
   bank = EMU3_BANK (file);
@@ -1631,7 +1628,7 @@ emu3_del_preset_zone (struct emu_file *file, int preset_num, int zone_num)
   bank->next_preset -= dec_size_note_zone + dec_size_zone;
   file->size -= dec_size_note_zone + dec_size_zone;
 
-  for (int i = 0; i < NOTES; i++)
+  for (int i = 0; i < EMU3_NOTES; i++)
     {
       if (preset->note_zone_mappings[i] == zone_num)
 	preset->note_zone_mappings[i] = 0xff;
@@ -1693,7 +1690,7 @@ emu3_add_preset (struct emu_file *file, char *preset_name, int *preset_num)
 
   size_t size = next_sample_addr - copy_start_addr;
 
-  if (file->size + size > MEM_SIZE)
+  if (file->size + size > EMU3_MEM_SIZE)
     {
       emu_error ("Bank is full");
       return EXIT_FAILURE;
@@ -1716,7 +1713,7 @@ emu3_add_preset (struct emu_file *file, char *preset_name, int *preset_num)
   new_preset->link_preset_msb = 0;
   memset (new_preset->unknown_1, 0, PRESET_UNKNOWN_1_SIZE);
   new_preset->note_zones = 0;
-  memset (new_preset->note_zone_mappings, 0xff, NOTES);
+  memset (new_preset->note_zone_mappings, 0xff, EMU3_NOTES);
 
   bank->objects = objects;
   bank->next_preset += sizeof (struct emu3_preset);
@@ -1828,38 +1825,96 @@ emu3_get_opcode_val (struct emu_sfz_context *esctx, const gchar *key)
   return g_hash_table_lookup (esctx->global_opcodes, key);
 }
 
-static guint8
-emu3_get_note_in_range (gint note)
+static gpointer
+emu3_get_opcode_val_with_alias (struct emu_sfz_context *esctx,
+				const gchar *key, const gchar *alias)
 {
-  if (note < 0)
+  gpointer v = emu3_get_opcode_val (esctx, key);
+  if (!v && alias)
     {
-      return 0;
+      v = emu3_get_opcode_val (esctx, alias);
     }
-  else if (note >= NOTES)
-    {
-      return NOTES - 1;
-    }
-  else
-    {
-      return note;
-    }
+  return v;
 }
 
-static guint8
-emu3_get_vel_in_range (gint vel)
+static gint
+emu3_get_opcode_integer_val (struct emu_sfz_context *esctx, const gchar *key,
+			     const gchar *alias, gint min, gint max, gint def)
 {
-  if (vel < LOWEST_I8_MIDI_VAL)
+  gint v;
+  gfloat *val = emu3_get_opcode_val_with_alias (esctx, key, alias);
+  if (val)
     {
-      return LOWEST_I8_MIDI_VAL;
-    }
-  else if (vel > HIGHEST_I8_MIDI_VAL)
-    {
-      return HIGHEST_I8_MIDI_VAL;
+      v = *val;
+      if (v < min)
+	{
+	  v = min;
+	}
+      else if (v > max)
+	{
+	  v = max;
+	}
+      if (v != *val)
+	{
+	  emu_debug (1,
+		     "Value %d for opcode '%s' (alias or fallback '%s') outside range [ %d, %d ]. Using %d...",
+		     v, key, alias, min, max, def);
+	}
     }
   else
     {
-      return vel;
+      v = def;
     }
+  return v;
+}
+
+static gfloat
+emu3_get_opcode_float_val (struct emu_sfz_context *esctx, const gchar *key,
+			   const gchar *alias, gfloat min, gfloat max,
+			   gfloat def)
+{
+  gfloat v;
+  gfloat *val = emu3_get_opcode_val_with_alias (esctx, key, alias);
+  if (val)
+    {
+      v = *val;
+      if (v < min)
+	{
+	  v = min;
+	}
+      else if (v > max)
+	{
+	  v = max;
+	}
+      if (v != *val)
+	{
+	  emu_debug (1,
+		     "Value %.2f for opcode '%s' (alias or fallback '%s') outside range [ %.2f, %.2f ]. Using %.2f...",
+		     v, key, alias, min, max, def);
+	}
+    }
+  else
+    {
+      v = def;
+    }
+  return v;
+}
+
+static const gchar *
+emu3_get_opcode_string_val (struct emu_sfz_context *esctx, const gchar *key,
+			    const gchar *alias, const gchar *def)
+{
+  const gchar *v;
+  gchar *val = emu3_get_opcode_val_with_alias (esctx, key, alias);
+  if (val)
+    {
+      v = val;
+    }
+  else
+    {
+      v = def;
+    }
+  return v;
 }
 
 static void
@@ -1879,11 +1934,11 @@ emu_get_preset_name_with_layer (const gchar *preset_name, gint layer_num,
 }
 
 static void
-emu_preset_set_velocity_range_on (struct emu_sfz_context *esctx)
+emu_sfz_set_velocity_range_on (struct emu_sfz_context *esctx)
 {
   if (esctx->velocity_layer_num > 1)
     {
-      for (gint i = 0; i < NOTES; i++)
+      for (gint i = 0; i < EMU3_NOTES; i++)
 	{
 	  struct emu_velocity_range_map *vr =
 	    &esctx->emu_velocity_range_maps[i];
@@ -1912,7 +1967,7 @@ emu_sfz_context_get_preset_by_velocity_range (struct emu_sfz_context *esctx,
   struct emu3_preset *preset;
   struct emu_velocity_range_map *vr, *prev_vr;
 
-  for (gint i = 0; i < NOTES; i++)
+  for (gint i = 0; i < EMU3_NOTES; i++)
     {
       vr = &esctx->emu_velocity_range_maps[i];
       if (vr->low == low && vr->high == high)
@@ -1923,7 +1978,7 @@ emu_sfz_context_get_preset_by_velocity_range (struct emu_sfz_context *esctx,
 	}
     }
 
-  if (esctx->velocity_layer_num + 1 >= NOTES)
+  if (esctx->velocity_layer_num + 1 >= EMU3_NOTES)
     {
       return -1;
     }
@@ -1967,7 +2022,7 @@ emu_sfz_context_get_preset_by_velocity_range (struct emu_sfz_context *esctx,
 	{
 	  emu_get_preset_name_with_layer (esctx->preset_name,
 					  esctx->velocity_layer_num, name);
-	  memcpy (preset->name, name, NAME_SIZE);
+	  memcpy (preset->name, name, EMU3_NAME_SIZE);
 	}
     }
 
@@ -1976,83 +2031,53 @@ emu_sfz_context_get_preset_by_velocity_range (struct emu_sfz_context *esctx,
   return new_preset_num;
 }
 
+static void
+emu_replace_backslashes_in_path (gchar *sample_path)
+{
+  gchar *c = sample_path;
+//Perhaps converting backslashes to slashes is not a good idea but it's practical.
+  while (*c)
+    {
+      if (*c == '\\')
+	{
+	  *c = '/';
+	}
+      c++;
+    }
+}
+
 void
 emu3_sfz_region_add (struct emu_sfz_context *esctx)
 {
-  gint err, sample_num, actual_preset;
+  gchar *sample_path;
+  const gchar *sample;
   struct emu3_preset_zone *zone;
   struct emu_zone_range zone_range;
+  gint err, sample_num, actual_preset;
+  gint lokey, hikey, pitch_keycenter, lovel, hivel;
 
-  gchar *sample = emu3_get_opcode_val (esctx, "sample");
-  gint *key = emu3_get_opcode_val (esctx, "key");
-  gint *lokey = emu3_get_opcode_val (esctx, "lokey");
-  gint *hikey = emu3_get_opcode_val (esctx, "hikey");
-  gint *pitch_keycenter = emu3_get_opcode_val (esctx, "pitch_keycenter");
-  gint *lovel = emu3_get_opcode_val (esctx, "lovel");
-  gint *hivel = emu3_get_opcode_val (esctx, "hivel");
+  sample = emu3_get_opcode_string_val (esctx, "sample", NULL, NULL);
+  lokey = emu3_get_opcode_integer_val (esctx, "lokey", "key",
+				       EMU3_LOWEST_MIDI_NOTE,
+				       EMU3_HIGHEST_MIDI_NOTE,
+				       EMU3_LOWEST_MIDI_NOTE);
+  hikey = emu3_get_opcode_integer_val (esctx, "hikey", "key",
+				       EMU3_LOWEST_MIDI_NOTE,
+				       EMU3_HIGHEST_MIDI_NOTE,
+				       EMU3_HIGHEST_MIDI_NOTE);
+  pitch_keycenter = emu3_get_opcode_integer_val (esctx, "pitch_keycenter",
+						 "key", EMU3_LOWEST_MIDI_NOTE,
+						 EMU3_HIGHEST_MIDI_NOTE, 60);
+  lovel = emu3_get_opcode_integer_val (esctx, "lovel", NULL, 1, 127, 1);
+  hivel = emu3_get_opcode_integer_val (esctx, "hivel", NULL, 1, 127, 127);
 
   emu_debug (1,
-	     "Preprocessing region %02d for '%s' (key: %d; pitch_keycenter: %d; lokey: %d; hikey: %d; lovel: %d, hivel: %d)...",
-	     esctx->region_num, sample, key ? *key : -1,
-	     pitch_keycenter ? *pitch_keycenter : -1, lokey ? *lokey : -1,
-	     hikey ? *hikey : -1, lovel ? *lovel : -1, hivel ? *hivel : -1);
+	     "Processing region %02d for '%s' (pitch_keycenter: %d; lokey: %d; hikey: %d; lovel: %d, hivel: %d)...",
+	     esctx->region_num, sample, pitch_keycenter, lokey, hikey, lovel,
+	     hivel);
 
-  if (key)
-    {
-      if (lokey)
-	{
-	  if (*lokey != *key)
-	    {
-	      emu_error ("Ambiguous value of 'key' and 'lokey'");
-	      return;
-	    }
-	}
-      else
-	{
-	  lokey = key;
-	}
-
-      if (hikey)
-	{
-	  if (*hikey != *key)
-	    {
-	      emu_error ("Ambiguous value of 'key' and 'hikey'");
-	      return;
-	    }
-	}
-      else
-	{
-	  hikey = key;
-	}
-
-      if (pitch_keycenter)
-	{
-	  if (*pitch_keycenter != *key)
-	    {
-	      emu_error ("Ambiguous value of 'key' and 'pitch_keycenter'");
-	      return;
-	    }
-	}
-      else
-	{
-	  pitch_keycenter = key;
-	}
-    }
-
-  if (!lovel)
-    {
-      lovel = &LOWEST_I8_MIDI_VAL;
-    }
-  if (!hivel)
-    {
-      hivel = &HIGHEST_I8_MIDI_VAL;
-    }
-
-  actual_preset = emu_sfz_context_get_preset_by_velocity_range (esctx,
-								emu3_get_vel_in_range
-								(*lovel),
-								emu3_get_vel_in_range
-								(*hivel));
+  actual_preset = emu_sfz_context_get_preset_by_velocity_range (esctx, lovel,
+								hivel);
   if (actual_preset < 0)
     {
       emu_error ("Error while getting the preset");
@@ -2064,48 +2089,22 @@ emu3_sfz_region_add (struct emu_sfz_context *esctx)
       emu_error ("No 'sample' found in region");
       return;
     }
-  if (!lokey)
-    {
-      emu_debug (1, "No 'lokey' found in region. Using lowest...");
-      lokey = &LOWEST_I8_MIDI_VAL;
-    }
-  if (!hikey)
-    {
-      emu_debug (1, "No 'hikey' found in region. Using highest...");
-      hikey = &HIGHEST_I8_MIDI_VAL;
-    }
-  if (!pitch_keycenter)
-    {
-      emu_error ("No 'pitch_keycenter' found in region");
-      return;
-    }
 
   emu_debug (1,
 	     "Adding region for '%s' centered at %d [ %d, %d ] with velocity in [ %d, %d ]...",
-	     sample, *pitch_keycenter, *lokey, *hikey, *lovel, *hivel);
+	     sample, pitch_keycenter, lokey, hikey, lovel, hivel);
 
-  // Notice that SFZ states that MIDI notes go from C-1 to G9. See https://sfzformat.com/opcodes/sw_hikey/.
+  // Notice that SFZ states that MIDI EMU3_NOTES go from C-1 to G9. See https://sfzformat.com/opcodes/sw_hikey/.
   // Therefore the lowest A on a piano is A0 in the SFZ format while it is A-1 in the E-mu.
   // 0 is A-1
 
   zone_range.layer = 1;		//Always using pri layer
-  zone_range.original_key = emu3_get_note_in_range (*pitch_keycenter - 21);
-  zone_range.lower_key = emu3_get_note_in_range (*lokey - 21);
-  zone_range.higher_key = emu3_get_note_in_range (*hikey - 21);
+  zone_range.original_key = pitch_keycenter - EMU3_MIDI_NOTE_OFFSET;
+  zone_range.lower_key = lokey - EMU3_MIDI_NOTE_OFFSET;
+  zone_range.higher_key = hikey - EMU3_MIDI_NOTE_OFFSET;
 
-  gchar *sample_path = g_strdup_printf ("%s/%s", esctx->sfz_dir,
-					sample);
-  gchar *c = sample_path;
-  //Perhaps converting backslashes to slashes is not a good idea but it's practical.
-  while (*c)
-    {
-      if (*c == '\\')
-	{
-	  *c = '/';
-	}
-      c++;
-    }
-
+  sample_path = g_strdup_printf ("%s/%s", esctx->sfz_dir, sample);
+  emu_replace_backslashes_in_path (sample_path);
   err = emu3_add_sample (esctx->file, sample_path, &sample_num);
   g_free (sample_path);
   if (err)
@@ -2119,32 +2118,37 @@ emu3_sfz_region_add (struct emu_sfz_context *esctx)
       return;
     }
 
-  // Use opcodes here
-
-  gint *bend = emu3_get_opcode_val (esctx, "bend_up");
-  if (!bend)
-    {
-      emu3_get_opcode_val (esctx, "bendup");
-    }
-  if (bend)
-    {
-      gint pbr = *bend / 100;
-      struct emu3_preset *preset;
-      struct emu_velocity_range_map *vr;
-
-      for (gint i = 0; i < NOTES; i++)
-	{
-	  vr = &esctx->emu_velocity_range_maps[i];
-	  if (vr->preset_num == -1)
-	    {
-	      break;
-	    }
-	  preset = emu3_get_preset (esctx->file, vr->preset_num);
-	  emu3_set_preset_pbr (preset, pbr);
-	}
-    }
+  // Here, use region opcodes that can be set in a zone.
 
   esctx->region_num++;
+}
+
+// This functions sets opcodes that in the hardware can only be set at preset level.
+
+static void
+emu_sfz_set_preset_opcodes (struct emu_sfz_context *esctx)
+{
+  gint bend_up, v;
+  struct emu3_preset *preset;
+  struct emu_velocity_range_map *vr;
+
+  // This is required to not ignore the opcodes from the last read region.
+  g_hash_table_remove_all (esctx->region_opcodes);
+
+  bend_up = emu3_get_opcode_integer_val (esctx, "bend_up", "bendup",
+					 -9600, 9600, 200);
+  v = bend_up / 100;
+
+  for (gint i = 0; i < EMU3_NOTES; i++)
+    {
+      vr = &esctx->emu_velocity_range_maps[i];
+      if (vr->preset_num == -1)
+	{
+	  break;
+	}
+      preset = emu3_get_preset (esctx->file, vr->preset_num);
+      emu3_set_preset_pbr (preset, v);
+    }
 }
 
 gint
@@ -2181,13 +2185,13 @@ emu3_add_sfz (struct emu_file *file, const gchar *sfz_path)
   esctx.preset_name = preset_name;
   esctx.region_num = 0;
   esctx.sfz_dir = sfz_dir;
-  esctx.global_opcodes =
-    g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
-  esctx.group_opcodes =
-    g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
-  esctx.region_opcodes =
-    g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
-  for (gint i = 0; i < NOTES; i++)
+  esctx.global_opcodes = g_hash_table_new_full (g_str_hash, g_str_equal,
+						g_free, g_free);
+  esctx.group_opcodes = g_hash_table_new_full (g_str_hash, g_str_equal,
+					       g_free, g_free);
+  esctx.region_opcodes = g_hash_table_new_full (g_str_hash, g_str_equal,
+						g_free, g_free);
+  for (gint i = 0; i < EMU3_NOTES; i++)
     {
       struct emu_velocity_range_map *vr = &esctx.emu_velocity_range_maps[i];
       emu_velocity_range_map_set (vr, 0xff, 0xff, -1);
@@ -2195,9 +2199,12 @@ emu3_add_sfz (struct emu_file *file, const gchar *sfz_path)
 
   sfz_parser_set_context (&esctx);
 
+  // Process regions
   yyparse ();
 
-  emu_preset_set_velocity_range_on (&esctx);
+  emu_sfz_set_velocity_range_on (&esctx);
+
+  emu_sfz_set_preset_opcodes (&esctx);
 
   g_hash_table_unref (esctx.global_opcodes);
   g_hash_table_unref (esctx.group_opcodes);

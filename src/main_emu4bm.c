@@ -93,7 +93,7 @@ emu4_chunk_print (struct emu4_chunk *chunk, char *content_name)
   if (content_name)
     {
       emu_print (1, 0, "chunk %.4s: %.*s (%u B)\n", chunk->name,
-		 NAME_SIZE, content_name, emu4_chunk_get_size (chunk));
+		 EMU3_NAME_SIZE, content_name, emu4_chunk_get_size (chunk));
     }
   else
     {

@@ -54,9 +54,9 @@ emu3_emu3name_to_name (const char *objname)
 {
   int i, size;
   char *fname;
-  const char *index = &objname[NAME_SIZE - 1];
+  const char *index = &objname[EMU3_NAME_SIZE - 1];
 
-  for (size = NAME_SIZE; size > 0; size--)
+  for (size = EMU3_NAME_SIZE; size > 0; size--)
     {
       if (*index != ' ')
 	break;
@@ -168,7 +168,7 @@ emu3_print_sample_info (struct emu3_sample *sample, int num,
   *loop_end =
     (sample_loop_end - sizeof (struct emu3_sample)) / sizeof (int16_t);
 
-  emu_print (0, 0, "Sample %03d: %.*s\n", num, NAME_SIZE, sample->name);
+  emu_print (0, 0, "Sample %03d: %.*s\n", num, EMU3_NAME_SIZE, sample->name);
   emu_print (1, 1, "Frames: %d\n", *frames);
   emu_print (1, 1, "Loop start: %d\n", *loop_start);
   emu_print (1, 1, "Loop end: %d\n", *loop_end);
@@ -632,7 +632,7 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
   size = emu3_init_sample (sample, offset, samplerate, frames,
 			   sfinfo.channels == 1, loop_start, loop_end, loop);
 
-  if (file->size + size > MEM_SIZE)
+  if (file->size + size > EMU3_MEM_SIZE)
     {
       emu_error ("Bank is full");
       size = -1;
@@ -641,7 +641,7 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
 
   char *basec = strdup (path);
   filename = basename (basec);
-  emu_print (0, 0, "Appending sample %s (%d frames, %d channels)...\n",
+  emu_print (0, 0, "Appending sample '%s' (%d frames, %d channels)...\n",
 	     filename, frames, sfinfo.channels);
   //Sample header initialization
   char *name = emu_filename_to_filename_wo_ext (filename, NULL);

@@ -40,7 +40,7 @@
 
 struct emu3_sample
 {
-  char name[NAME_SIZE];
+  char name[EMU3_NAME_SIZE];
   uint32_t header;
   uint32_t start_l;		//always equals sizeof (struct emu3_sample)
   uint32_t start_r;

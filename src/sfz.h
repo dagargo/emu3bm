@@ -34,7 +34,7 @@ struct emu_sfz_context
   gint velocity_layer_num;
   gint region_num;
   const gchar *sfz_dir;
-  struct emu_velocity_range_map emu_velocity_range_maps[NOTES];
+  struct emu_velocity_range_map emu_velocity_range_maps[EMU3_NOTES];
   GHashTable *global_opcodes;
   GHashTable *group_opcodes;
   GHashTable *region_opcodes;

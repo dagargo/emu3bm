@@ -27,10 +27,14 @@
 #include <stdint.h>
 #include <unistd.h>
 
-#define MEM_SIZE 0x08000000	//128 MiB
-#define NAME_SIZE 16
+#define EMU3_MEM_SIZE 0x08000000	//128 MiB
+#define EMU3_NAME_SIZE 16
 #define SAMPLE_EXT ".wav"
-#define NOTES 88		// 0x58
+#define EMU3_NOTES 88		// 0x58
+
+#define EMU3_MIDI_NOTE_OFFSET 21
+#define EMU3_LOWEST_MIDI_NOTE EMU3_MIDI_NOTE_OFFSET
+#define EMU3_HIGHEST_MIDI_NOTE (EMU3_NOTES - 1 + EMU3_MIDI_NOTE_OFFSET)
 
 struct emu_file
 {

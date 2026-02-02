@@ -71,7 +71,7 @@ parse_zone_params (char *zone_params, int *sample_num,
     orig_key_int = strtol (original_key, &endtoken, 10);
   else
     orig_key_int = emu_reverse_note_search (original_key);
-  if (orig_key_int == -1 || orig_key_int < 0 || orig_key_int >= NOTES)
+  if (orig_key_int == -1 || orig_key_int < 0 || orig_key_int >= EMU3_NOTES)
     {
       emu_error ("Invalid original key %s", original_key);
       return EXIT_FAILURE;
@@ -83,7 +83,7 @@ parse_zone_params (char *zone_params, int *sample_num,
     lower_key_int = strtol (lower_key, &endtoken, 10);
   else
     lower_key_int = emu_reverse_note_search (lower_key);
-  if (lower_key_int == -1 || lower_key_int < 0 || lower_key_int >= NOTES)
+  if (lower_key_int == -1 || lower_key_int < 0 || lower_key_int >= EMU3_NOTES)
     {
       emu_error ("Invalid lower key %s", lower_key);
       return EXIT_FAILURE;
@@ -95,7 +95,8 @@ parse_zone_params (char *zone_params, int *sample_num,
     higher_key_int = strtol (higher_key, &endtoken, 10);
   else
     higher_key_int = emu_reverse_note_search (higher_key);
-  if (higher_key_int == -1 || higher_key_int < 0 || higher_key_int >= NOTES)
+  if (higher_key_int == -1 || higher_key_int < 0 ||
+      higher_key_int >= EMU3_NOTES)
     {
       emu_error ("Invalid higher key %s", higher_key);
       return EXIT_FAILURE;
