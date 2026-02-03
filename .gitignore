@@ -33,6 +33,7 @@ test-driver
 *.lo
 *.gcno
 *.gcda
+.dirstamp
 src/emu3bm
 src/emu4bm
 src/*~
@@ -41,4 +42,5 @@ test/*.trs
 src/sfz.yy.c
 src/sfz.tab.h
 src/sfz.tab.c
+test/tests_emu3bm
 .vs/
