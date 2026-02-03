@@ -96,6 +96,7 @@ Some notes on SFZ support
   - `ampeg_attack`, `ampeg_decay`, `ampeg_hold`, `ampeg_release` and `ampeg_sustain`
   - `amp_veltrack`
   - `bend_up` and `bendup` (alias)
+  - `fileg_attack`, `fileg_decay`, `fileg_hold`, `fileg_release` and `fileg_sustain`
   - `hivel` and `lovel`
   - `key`, `lokey`, `hikey` and `pitch_keycenter`
   - `sample`

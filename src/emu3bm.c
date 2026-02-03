@@ -2058,17 +2058,38 @@ emu_replace_backslashes_in_path (gchar *sample_path)
     }
 }
 
+static void
+emu3_sfz_set_envelope (struct emu_sfz_context *esctx, struct emu3_envelope *e,
+		       const gchar *attack_opcode,
+		       const gchar *hold_opcode,
+		       const gchar *decay_opcode,
+		       const gchar *sustain_opcode,
+		       const gchar *release_opcode)
+{
+  float v;
+
+  v = emu3_get_opcode_float_val (esctx, attack_opcode, NULL, 0, 100, 0);
+  e->attack = emu3_get_u8_from_time_163_69 (v);
+  v = emu3_get_opcode_float_val (esctx, hold_opcode, NULL, 0, 100, 0);
+  e->hold = emu3_get_u8_from_time_163_69 (v);
+  v = emu3_get_opcode_float_val (esctx, decay_opcode, NULL, 0, 100, 0);
+  e->decay = emu3_get_u8_from_time_163_69 (v);
+  v = emu3_get_opcode_float_val (esctx, sustain_opcode, NULL, 0, 100, 100);
+  e->sustain = emu3_get_s8_from_percent (v);
+  v = emu3_get_opcode_float_val (esctx, release_opcode, NULL, 0, 100, 0.001);
+  e->release = emu3_get_u8_from_time_163_69 (v);
+}
+
 void
 emu3_sfz_add_region (struct emu_sfz_context *esctx)
 {
   gchar *sample_path;
+  gfloat amp_veltrack;
   const gchar *sample;
   struct emu3_preset_zone *zone;
   struct emu_zone_range zone_range;
   gint err, sample_num, actual_preset;
   gint lokey, hikey, pitch_keycenter, lovel, hivel;
-  gfloat amp_veltrack, ampeg_attack, ampeg_decay, ampeg_hold, ampeg_sustain,
-    ampeg_release;
 
   sample = emu3_get_opcode_string_val (esctx, "sample", NULL, NULL);
   if (!sample)
@@ -2138,21 +2159,12 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
 					    100, 100);
   zone->vel_to_vca_level = emu3_get_s8_from_percent (amp_veltrack);
 
-  ampeg_attack = emu3_get_opcode_float_val (esctx, "ampeg_attack", NULL, 0,
-					    100, 0);
-  zone->vca_envelope.attack = emu3_get_u8_from_time_163_69 (ampeg_attack);
-  ampeg_hold = emu3_get_opcode_float_val (esctx, "ampeg_hold", NULL, 0,
-					  100, 0);
-  zone->vca_envelope.hold = emu3_get_u8_from_time_163_69 (ampeg_hold);
-  ampeg_decay = emu3_get_opcode_float_val (esctx, "ampeg_decay", NULL, 0,
-					   100, 0);
-  zone->vca_envelope.decay = emu3_get_u8_from_time_163_69 (ampeg_decay);
-  ampeg_sustain = emu3_get_opcode_float_val (esctx, "ampeg_sustain", NULL, 0,
-					     100, 100);
-  zone->vca_envelope.sustain = emu3_get_s8_from_percent (ampeg_sustain);
-  ampeg_release = emu3_get_opcode_float_val (esctx, "ampeg_release", NULL, 0,
-					     100, 0.001);
-  zone->vca_envelope.release = emu3_get_u8_from_time_163_69 (ampeg_release);
+  emu3_sfz_set_envelope (esctx, &zone->vca_envelope, "ampeg_attack",
+			 "ampeg_hold", "ampeg_decay", "ampeg_sustain",
+			 "ampeg_release");
+  emu3_sfz_set_envelope (esctx, &zone->vcf_envelope, "fileg_attack",
+			 "fileg_hold", "fileg_decay", "fileg_sustain",
+			 "fileg_release");
 
   esctx->region_num++;
 }
