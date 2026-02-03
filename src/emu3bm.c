@@ -1866,41 +1866,10 @@ emu3_get_opcode_val_with_alias (struct emu_sfz_context *esctx,
   return v;
 }
 
-static gint
-emu3_get_opcode_integer_val (struct emu_sfz_context *esctx, const gchar *key,
-			     const gchar *alias, gint min, gint max, gint def)
-{
-  gint v;
-  gfloat *val = emu3_get_opcode_val_with_alias (esctx, key, alias);
-  if (val)
-    {
-      v = *val;
-      if (v < min)
-	{
-	  v = min;
-	}
-      else if (v > max)
-	{
-	  v = max;
-	}
-      if (v != *val)
-	{
-	  emu_debug (1,
-		     "Value %d for opcode '%s' (alias or fallback '%s') outside range [ %d, %d ]. Using %d...",
-		     v, key, alias, min, max, v);
-	}
-    }
-  else
-    {
-      v = def;
-    }
-  return v;
-}
-
 static gfloat
-emu3_get_opcode_float_val (struct emu_sfz_context *esctx, const gchar *key,
-			   const gchar *alias, gfloat min, gfloat max,
-			   gfloat def)
+emu3_get_opcode_number_val (struct emu_sfz_context *esctx, const gchar *key,
+			    const gchar *alias, gfloat min, gfloat max,
+			    gfloat def, gint decimals)
 {
   gfloat v;
   gfloat *val = emu3_get_opcode_val_with_alias (esctx, key, alias);
@@ -1918,8 +1887,9 @@ emu3_get_opcode_float_val (struct emu_sfz_context *esctx, const gchar *key,
       if (v != *val)
 	{
 	  emu_debug (1,
-		     "Value %.2f for opcode '%s' (alias or fallback '%s') outside range [ %.2f, %.2f ]. Using %.2f...",
-		     v, key, alias, min, max, v);
+		     "Value %.*f for opcode '%s' (alias or fallback '%s') outside range [ %.*f, %.*f ]. Using %.*f...",
+		     decimals, v, key, alias, decimals, min, decimals, max,
+		     decimals, v);
 	}
     }
   else
@@ -1927,6 +1897,20 @@ emu3_get_opcode_float_val (struct emu_sfz_context *esctx, const gchar *key,
       v = def;
     }
   return v;
+}
+
+static gint
+emu3_get_opcode_integer_val (struct emu_sfz_context *esctx, const gchar *key,
+			     const gchar *alias, gint min, gint max, gint def)
+{
+  return emu3_get_opcode_number_val (esctx, key, alias, min, max, def, 0);
+}
+
+static gfloat
+emu3_get_opcode_float_val (struct emu_sfz_context *esctx, const gchar *key,
+			   const gchar *alias, gfloat min, gfloat max, gfloat def)
+{
+  return emu3_get_opcode_number_val (esctx, key, alias, min, max, def, 2);
 }
 
 static const gchar *
