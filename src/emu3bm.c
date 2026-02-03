@@ -323,7 +323,7 @@ emu3_get_lfo_rate (const int8_t value)
 }
 
 static inline float
-emu3_get_time_163_69 (const uint8_t index)
+emu3_get_time_163_69_from_u8 (const uint8_t index)
 {
   if (index <= 127)
     return TABLE_TIME_163_69_FLOAT[index];
@@ -514,15 +514,15 @@ emu3_print_envelope (struct emu3_envelope *envelope)
 {
   emu_print (1, 4, "Envelope\n");
   emu_print (1, 5, "Attack:  %.02f s\n",
-	     emu3_get_time_163_69 (envelope->attack));
+	     emu3_get_time_163_69_from_u8 (envelope->attack));
   emu_print (1, 5, "Hold:    %.02f s\n",
-	     emu3_get_time_163_69 (envelope->hold));
+	     emu3_get_time_163_69_from_u8 (envelope->hold));
   emu_print (1, 5, "Decay:   %.02f s\n",
-	     emu3_get_time_163_69 (envelope->decay));
+	     emu3_get_time_163_69_from_u8 (envelope->decay));
   emu_print (1, 5, "Sustain:  %3d %%\n",
 	     emu3_get_percent_value (envelope->sustain));
   emu_print (1, 5, "Release: %.02f s\n",
-	     emu3_get_time_163_69 (envelope->release));
+	     emu3_get_time_163_69_from_u8 (envelope->release));
 }
 
 static int
