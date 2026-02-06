@@ -1,3 +1,5 @@
+.NOTPARALLEL:
+
 check_PROGRAMS = tests_emu3bm
 
 AM_CPPFLAGS = -DDATADIR='"$(datadir)"'
