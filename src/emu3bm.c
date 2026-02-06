@@ -2110,6 +2110,7 @@ emu3_sfz_set_envelope (struct emu_sfz_context *esctx, struct emu3_envelope *e,
 void
 emu3_sfz_add_region (struct emu_sfz_context *esctx)
 {
+  gfloat f;
   gchar *sample_path;
   const gchar *sample;
   struct emu_file *file;
@@ -2117,7 +2118,6 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
   struct emu3_preset_zone *zone;
   struct emu_zone_range zone_range;
   gint err, sample_num, actual_preset;
-  gfloat amp_veltrack, cutoff, resonance;
   gint lokey, hikey, pitch_keycenter, lovel, hivel;
 
   sample = emu3_get_opcode_string_val (esctx, "sample", NULL, NULL);
@@ -2187,30 +2187,37 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
 
   // Here, use region opcodes that can be set in a zone.
 
-  amp_veltrack = emu3_get_opcode_float_val (esctx, "amp_veltrack", NULL, -100,
-					    100, 100);
-  zone->vel_to_vca_level = emu3_get_s8_from_percent (amp_veltrack);
+  // VCA
+
+  f = emu3_get_opcode_float_val (esctx, "amp_veltrack", NULL, -100, 100, 100);
+  zone->vel_to_vca_level = emu3_get_s8_from_percent (f);
 
   emu3_sfz_set_envelope (esctx, &zone->vca_envelope, "ampeg_attack",
 			 "ampeg_hold", "ampeg_decay", "ampeg_sustain",
 			 "ampeg_release");
 
+  // VCF
+
+  f = emu3_get_opcode_float_val (esctx, "cutoff", NULL,
+				 TABLE_VCF_CUTOFF_FREQUENCY[0],
+				 TABLE_VCF_CUTOFF_FREQUENCY[255],
+				 emu3_get_vcf_cutoff_frequency_from_u8
+				 (DEFAULT_CUTOFF_U8));
+  zone->vcf_cutoff = emu3_get_u8_from_vcf_cutoff_frequency (f);
+
+  // Probably, the value mapping is not right as the whole SFZ range, which is
+  // [ 0, 40 ] dB, is mapped to the whole output range, which is a percentage.
+  f = emu3_get_opcode_float_val (esctx, "resonance", NULL, 0, 40, 0);
+  zone->vcf_q = emu3_get_s8_from_percent (f * 2.5) |
+    (strcmp (ESI_32_V3_DEF, bank->format) == 0 ? 0x80 : 0);
+
   emu3_sfz_set_envelope (esctx, &zone->vcf_envelope, "fileg_attack",
 			 "fileg_hold", "fileg_decay", "fileg_sustain",
 			 "fileg_release");
 
-  cutoff = emu3_get_opcode_float_val (esctx, "cutoff", NULL,
-				      TABLE_VCF_CUTOFF_FREQUENCY[0],
-				      TABLE_VCF_CUTOFF_FREQUENCY[255],
-				      emu3_get_vcf_cutoff_frequency_from_u8
-				      (DEFAULT_CUTOFF_U8));
-  zone->vcf_cutoff = emu3_get_u8_from_vcf_cutoff_frequency (cutoff);
-
-  // Probably, the value mapping is not right as the whole SFZ range, which is
-  // [ 0, 40 ] dB, is mapped to the whole output range, which is a percentage.
-  resonance = emu3_get_opcode_float_val (esctx, "resonance", NULL, 0, 40, 0);
-  zone->vcf_q = emu3_get_s8_from_percent (resonance * 2.5) |
-    (strcmp (ESI_32_V3_DEF, bank->format) == 0 ? 0x80 : 0);
+  // The value mapping is just an approximation as the device uses a percentage.
+  f = emu3_get_opcode_float_val (esctx, "fil_veltrack", NULL, -9600, 9600, 0);
+  zone->vel_to_vcf_cutoff = emu3_get_s8_from_percent (f / 96.0);
 
   esctx->region_num++;
 }

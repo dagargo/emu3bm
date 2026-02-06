@@ -98,6 +98,7 @@ Some notes on SFZ support
   - `cutoff` and `resonance`
   - `bend_up` and `bendup` (alias)
   - `fileg_attack`, `fileg_decay`, `fileg_hold`, `fileg_release` and `fileg_sustain`
+  - `fil_veltrack`
   - `hivel` and `lovel`
   - `key`, `lokey`, `hikey` and `pitch_keycenter`
   - `sample`
