@@ -3,6 +3,6 @@ ACLOCAL_AMFLAGS=-I m4
 SUBDIRS=src res man test
 
 format:
-	indent src/*.[ch]
+	indent src/*.[ch] test/*.[ch]
 
 .PHONY: format
