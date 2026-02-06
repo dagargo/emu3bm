@@ -2,13 +2,16 @@
 #include <CUnit/Basic.h>
 #include "../src/emu3bm.h"
 
-gfloat emu3_get_time_163_69_from_u8 (uint8_t v);
-uint8_t emu3_get_u8_from_time_163_69 (gfloat v);
+gfloat emu3_get_time_163_69_from_u8 (guint8 v);
+guint8 emu3_get_u8_from_time_163_69 (gfloat v);
 
-int emu3_get_percent_s8 (const int8_t v);
-int8_t emu3_get_s8_from_percent (int v);
+gint emu3_get_percent_s8 (const gint8 v);
+gint8 emu3_get_s8_from_percent (gint v);
 
-void
+gint emu3_get_vcf_cutoff_frequency_from_u8 (const guint8 v);
+guint8 emu3_get_u8_from_vcf_cutoff_frequency (const gint v);
+
+static void
 test_time_163_69 ()
 {
   guint8 i;
@@ -26,7 +29,7 @@ test_time_163_69 ()
   CU_ASSERT_EQUAL (emu3_get_time_163_69_from_u8 (128), 163.69f);
 }
 
-void
+static void
 test_percent ()
 {
   printf ("\n");
@@ -38,6 +41,19 @@ test_percent ()
   CU_ASSERT_EQUAL (emu3_get_s8_from_percent (-100), -127);
   CU_ASSERT_EQUAL (emu3_get_s8_from_percent (0), 0);
   CU_ASSERT_EQUAL (emu3_get_s8_from_percent (100), 127);
+}
+
+void
+test_vcf_cutoff_frequency ()
+{
+  guint8 i;
+  gint cutoff;
+
+  printf ("\n");
+
+  cutoff = emu3_get_vcf_cutoff_frequency_from_u8 (100);
+  i = emu3_get_u8_from_vcf_cutoff_frequency (cutoff);
+  CU_ASSERT_EQUAL (i, 100);
 }
 
 gint
@@ -57,12 +73,17 @@ main (gint argc, gchar *argv[])
       goto cleanup;
     }
 
-  if (!CU_add_test (suite, "test_time_163_69", test_time_163_69))
+  if (!CU_add_test (suite, "time_163_69", test_time_163_69))
     {
       goto cleanup;
     }
 
-  if (!CU_add_test (suite, "test_percent", test_percent))
+  if (!CU_add_test (suite, "percent", test_percent))
+    {
+      goto cleanup;
+    }
+
+  if (!CU_add_test (suite, "vcf_cutoff_frequency", test_vcf_cutoff_frequency))
     {
       goto cleanup;
     }

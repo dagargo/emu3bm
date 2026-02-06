@@ -58,6 +58,8 @@
 
 #define EMU3_BLOCK_SIZE 512
 
+#define DEFAULT_CUTOFF_U8 0xef
+
 #define EMU3_BANK(f) ((struct emu3_bank *) ((f)->raw))
 
 extern void yyset_in (FILE * _in_str);
@@ -307,11 +309,30 @@ static float TABLE_TIME_163_69_FLOAT[] = {
   142.36f, 163.69f
 };
 
-static inline int
-emu3_get_vcf_cutoff_frequency (const uint8_t value)
+gint
+emu3_get_vcf_cutoff_frequency_from_u8 (const guint8 v)
 {
-  return TABLE_VCF_CUTOFF_FREQUENCY[value];
+  return TABLE_VCF_CUTOFF_FREQUENCY[v];
 }
+
+guint8
+emu3_get_u8_from_vcf_cutoff_frequency (const gint v)
+{
+  if (v < TABLE_VCF_CUTOFF_FREQUENCY[0])
+    {
+      return 0;
+    }
+  for (guint8 i = 0; i < 254; i++)
+    {
+      if (TABLE_VCF_CUTOFF_FREQUENCY[i] <= v &&
+	  v < TABLE_VCF_CUTOFF_FREQUENCY[i + 1])
+	{
+	  return i;
+	}
+    }
+  return 255;
+}
+
 
 static inline float
 emu3_get_lfo_rate (const int8_t value)
@@ -323,7 +344,7 @@ emu3_get_lfo_rate (const int8_t value)
 }
 
 gfloat
-emu3_get_time_163_69_from_u8 (uint8_t v)
+emu3_get_time_163_69_from_u8 (guint8 v)
 {
   if (v > 127)
     {
@@ -332,14 +353,14 @@ emu3_get_time_163_69_from_u8 (uint8_t v)
   return TABLE_TIME_163_69_FLOAT[v];
 }
 
-uint8_t
+guint8
 emu3_get_u8_from_time_163_69 (gfloat v)
 {
-  if (v < 0)
+  if (v < TABLE_TIME_163_69_FLOAT[0])
     {
       return 0;
     }
-  for (uint8_t i = 0; i < 127; i++)
+  for (guint8 i = 0; i < 127; i++)
     {
       if (TABLE_TIME_163_69_FLOAT[i] <= v &&
 	  v < TABLE_TIME_163_69_FLOAT[i + 1])
@@ -477,8 +498,8 @@ emu3_get_is_side_disabled (const uint8_t value)
 }
 
 //Level: [-127, 127] -> [-100, 100]
-int
-emu3_get_percent_s8 (const int8_t v)
+gint
+emu3_get_percent_s8 (const gint8 v)
 {
   const double percentage = (v * 100 / 127.0);
   if (percentage < 0.0)
@@ -486,8 +507,8 @@ emu3_get_percent_s8 (const int8_t v)
   return (int) (percentage + 0.5);
 }
 
-int8_t
-emu3_get_s8_from_percent (int v)
+gint8
+emu3_get_s8_from_percent (gint v)
 {
   return (v * 127.0) / 100.0;
 }
@@ -569,7 +590,7 @@ emu3_print_preset_zone_info (struct emu_file *file,
   //Cutoff: [0, 255] -> [26, 74040]
   int cutoff = zone->vcf_cutoff;
   emu_print (1, 4, "Cutoff:       %d Hz\n",
-	     emu3_get_vcf_cutoff_frequency (cutoff));
+	     emu3_get_vcf_cutoff_frequency_from_u8 (cutoff));
   // Filter Q might only work with ESI banks.
   // ESI Q: [0x80, 0xff] -> [0, 100]
   // Other formats: [0, 0x7f]
@@ -1558,7 +1579,7 @@ emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
   zone->lfo_rate = 0x41;
   zone->lfo_delay = 0x00;
   zone->lfo_variation = 0;
-  zone->vcf_cutoff = 0xef;
+  zone->vcf_cutoff = DEFAULT_CUTOFF_U8;
   zone->vcf_q = strcmp (ESI_32_V3_DEF, bank->format) == 0 ? 0x80 : 0;
   zone->vcf_envelope_amount = 0;
   emu3_reset_envelope (&zone->vcf_envelope);
@@ -1911,7 +1932,8 @@ emu3_get_opcode_integer_val (struct emu_sfz_context *esctx, const gchar *key,
 
 static gfloat
 emu3_get_opcode_float_val (struct emu_sfz_context *esctx, const gchar *key,
-			   const gchar *alias, gfloat min, gfloat max, gfloat def)
+			   const gchar *alias, gfloat min, gfloat max,
+			   gfloat def)
 {
   return emu3_get_opcode_number_val (esctx, key, alias, min, max, def, 2);
 }
@@ -2087,8 +2109,8 @@ void
 emu3_sfz_add_region (struct emu_sfz_context *esctx)
 {
   gchar *sample_path;
-  gfloat amp_veltrack;
   const gchar *sample;
+  gfloat amp_veltrack, cutoff;
   struct emu3_preset_zone *zone;
   struct emu_zone_range zone_range;
   gint err, sample_num, actual_preset;
@@ -2168,6 +2190,13 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
   emu3_sfz_set_envelope (esctx, &zone->vcf_envelope, "fileg_attack",
 			 "fileg_hold", "fileg_decay", "fileg_sustain",
 			 "fileg_release");
+
+  cutoff = emu3_get_opcode_float_val (esctx, "cutoff", NULL,
+				      TABLE_VCF_CUTOFF_FREQUENCY[0],
+				      TABLE_VCF_CUTOFF_FREQUENCY[255],
+				      emu3_get_vcf_cutoff_frequency_from_u8
+				      (DEFAULT_CUTOFF_U8));
+  zone->vcf_cutoff = emu3_get_u8_from_vcf_cutoff_frequency (cutoff);
 
   esctx->region_num++;
 }
