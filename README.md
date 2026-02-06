@@ -95,7 +95,7 @@ Some notes on SFZ support
 * Implemented opcodes:
   - `ampeg_attack`, `ampeg_decay`, `ampeg_hold`, `ampeg_release` and `ampeg_sustain`
   - `amp_veltrack`
-  - `cutoff`
+  - `cutoff` and `resonance`
   - `bend_up` and `bendup` (alias)
   - `fileg_attack`, `fileg_decay`, `fileg_hold`, `fileg_release` and `fileg_sustain`
   - `hivel` and `lovel`
