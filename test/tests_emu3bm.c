@@ -11,6 +11,9 @@ gint8 emu3_get_s8_from_percent (gint v);
 gint emu3_get_vcf_cutoff_frequency_from_u8 (const guint8 v);
 guint8 emu3_get_u8_from_vcf_cutoff_frequency (const gint v);
 
+gint emu3_get_percent_signed_from_s8 (gint8 v);
+gint8 emu3_get_s8_from_percent_signed (gint v);
+
 static void
 test_time_163_69 ()
 {
@@ -56,6 +59,24 @@ test_vcf_cutoff_frequency ()
   CU_ASSERT_EQUAL (i, 100);
 }
 
+static void
+test_percent_signed ()
+{
+  printf ("\n");
+
+  CU_ASSERT_EQUAL (emu3_get_percent_signed_from_s8 (-127), -100);
+  CU_ASSERT_EQUAL (emu3_get_percent_signed_from_s8 (-1), -100);
+  CU_ASSERT_EQUAL (emu3_get_percent_signed_from_s8 (0), -100);
+  CU_ASSERT_EQUAL (emu3_get_percent_signed_from_s8 (0x40), 0);
+  CU_ASSERT_EQUAL (emu3_get_percent_signed_from_s8 (127), 100);
+
+  CU_ASSERT_EQUAL (emu3_get_s8_from_percent_signed (-200), 0);
+  CU_ASSERT_EQUAL (emu3_get_s8_from_percent_signed (-100), 0);
+  CU_ASSERT_EQUAL (emu3_get_s8_from_percent_signed (0), 0x40);
+  CU_ASSERT_EQUAL (emu3_get_s8_from_percent_signed (100), 127);
+  CU_ASSERT_EQUAL (emu3_get_s8_from_percent_signed (200), 127);
+}
+
 gint
 main (gint argc, gchar *argv[])
 {
@@ -84,6 +105,11 @@ main (gint argc, gchar *argv[])
     }
 
   if (!CU_add_test (suite, "vcf_cutoff_frequency", test_vcf_cutoff_frequency))
+    {
+      goto cleanup;
+    }
+
+  if (!CU_add_test (suite, "percent_signed", test_percent_signed))
     {
       goto cleanup;
     }

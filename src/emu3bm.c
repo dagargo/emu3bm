@@ -514,12 +514,32 @@ emu3_get_s8_from_percent (gint v)
 }
 
 // Level: [0x00, 0x40, 0x7f] -> [-100, 0, +100]
-static int
-emu3_get_percent_value_signed (const int8_t value)
+gint
+emu3_get_percent_signed_from_s8 (gint8 v)
 {
-  if (value < 128)
-    return TABLE_PERCENTAGE_SIGNED[value];
-  return 0;
+  if (v < 0)
+    {
+      v = 0;
+    }
+  return TABLE_PERCENTAGE_SIGNED[v];
+}
+
+gint8
+emu3_get_s8_from_percent_signed (gint v)
+{
+  if (v < 0)
+    {
+      return 0;
+    }
+  for (guint8 i = 0; i < 126; i++)
+    {
+      if (TABLE_PERCENTAGE_SIGNED[i] <= v &&
+	  v < TABLE_PERCENTAGE_SIGNED[i + 1])
+	{
+	  return i;
+	}
+    }
+  return 127;
 }
 
 // [-127, 0, 127] to [-2.0, 0, 2.0]
@@ -578,7 +598,7 @@ emu3_print_preset_zone_info (struct emu_file *file,
   emu_print (1, 3, "VCA\n");
   emu_print (1, 4, "Level: %d %%\n", emu3_get_percent_s8 (zone->vca_level));
   emu_print (1, 4, "Pan:   %d %%\n",
-	     emu3_get_percent_value_signed (zone->vca_pan));
+	     emu3_get_percent_signed_from_s8 (zone->vca_pan));
   emu3_print_envelope (&zone->vca_envelope);
 
   emu_print (1, 3, "VCF\n");
@@ -2187,7 +2207,7 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
 
   // Here, use region opcodes that can be set in a zone.
 
-  // VCA
+  // VCA and pan
 
   f = emu3_get_opcode_float_val (esctx, "amp_veltrack", NULL, -100, 100, 100);
   zone->vel_to_vca_level = emu3_get_s8_from_percent (f);
@@ -2195,6 +2215,12 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
   emu3_sfz_set_envelope (esctx, &zone->vca_envelope, "ampeg_attack",
 			 "ampeg_hold", "ampeg_decay", "ampeg_sustain",
 			 "ampeg_release");
+
+  f = emu3_get_opcode_float_val (esctx, "pan", NULL, -100, 100, 0);
+  zone->vca_pan = emu3_get_s8_from_percent_signed (f);
+
+  f = emu3_get_opcode_float_val (esctx, "pan_veltrack", NULL, -100, 100, 0);
+  zone->vel_to_pan = emu3_get_s8_from_percent (f);
 
   // VCF
 
