@@ -18,7 +18,6 @@
  *   along with emu3bm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <inttypes.h>
 #include <libgen.h>
 #include <math.h>
 #include <samplerate.h>
@@ -32,8 +31,8 @@
 #define JUNK_CHUNK_ID "JUNK"
 #define SMPL_CHUNK_ID "smpl"
 
-int max_sample_rate = MAX_SAMPLE_RATE;
-int bit_depth = MAX_BIT_DEPTH;
+gint max_sample_rate = MAX_SAMPLE_RATE;
+gint bit_depth = MAX_BIT_DEPTH;
 
 static const uint8_t JUNK_CHUNK_DATA[] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -44,17 +43,17 @@ static const uint8_t JUNK_CHUNK_DATA[] = {
 
 struct emu3_sample_descriptor
 {
-  int16_t *l_channel;
-  int16_t *r_channel;
+  gint16 *l_channel;
+  gint16 *r_channel;
   struct emu3_sample *sample;
 };
 
-static char *
-emu3_emu3name_to_name (const char *objname)
+static gchar *
+emu3_emu3name_to_name (const gchar *objname)
 {
-  int i, size;
-  char *fname;
-  const char *index = &objname[EMU3_NAME_SIZE - 1];
+  gint i, size;
+  gchar *fname;
+  const gchar *index = &objname[EMU3_NAME_SIZE - 1];
 
   for (size = EMU3_NAME_SIZE; size > 0; size--)
     {
@@ -63,7 +62,7 @@ emu3_emu3name_to_name (const char *objname)
       index--;
     }
 
-  fname = (char *) malloc (size + 1);
+  fname = (gchar *) malloc (size + 1);
   if (size)
     {
       strncpy (fname, objname, size);
@@ -77,11 +76,11 @@ emu3_emu3name_to_name (const char *objname)
   return fname;
 }
 
-static char *
-emu3_emu3name_to_wav_name (const char *emu3name, int num, int ext_mode)
+static gchar *
+emu3_emu3name_to_wav_name (const gchar *emu3name, gint num, gint ext_mode)
 {
-  char *fname = emu3_emu3name_to_name (emu3name);
-  char *wname = malloc (strlen (fname) + 9);
+  gchar *fname = emu3_emu3name_to_name (emu3name);
+  gchar *wname = malloc (strlen (fname) + 9);
 
   if (ext_mode == EMU3_EXT_MODE_NAME_NUMBER)
     sprintf (wname, "%03d-%s%s", num, fname, SAMPLE_EXT);
@@ -93,7 +92,7 @@ emu3_emu3name_to_wav_name (const char *emu3name, int num, int ext_mode)
   return wname;
 }
 
-static int
+static gint
 emu3_get_sample_channels (struct emu3_sample *sample)
 {
   if ((sample->options & EMU3_SAMPLE_OPT_STEREO) == EMU3_SAMPLE_OPT_STEREO)
@@ -107,15 +106,15 @@ emu3_get_sample_channels (struct emu3_sample *sample)
     return 1;
 }
 
-static uint16_t
-emu3_playback_rate_to_bin (int samplerate)
+static guint16
+emu3_playback_rate_to_bin (gint samplerate)
 {
-  float f = -9799 + 1108 * logf (samplerate);
-  return 0xf800 | ((int) f);
+  gfloat f = -9799 + 1108 * logf (samplerate);
+  return 0xf800 | ((gint) f);
 }
 
-static int
-emu3_playback_rate_from_bin (uint16_t playback_rate, int sample_rate)
+static gint
+emu3_playback_rate_from_bin (guint16 playback_rate, gint sample_rate)
 {
   if (sample_rate == MAX_SAMPLE_RATE)
     {
@@ -123,8 +122,8 @@ emu3_playback_rate_from_bin (uint16_t playback_rate, int sample_rate)
     }
   else
     {
-      int v = playback_rate & ~0xf800;
-      float f = v + 9799;
+      gint v = playback_rate & ~0xf800;
+      gfloat f = v + 9799;
       f /= 1108;
       f = expf (f);
       return f;
@@ -132,11 +131,11 @@ emu3_playback_rate_from_bin (uint16_t playback_rate, int sample_rate)
 }
 
 static void
-emu3_print_sample_info (struct emu3_sample *sample, int num,
-			uint32_t *frames, uint32_t *loop_start,
-			uint32_t *loop_end)
+emu3_print_sample_info (struct emu3_sample *sample, gint num,
+			guint32 *frames, guint32 *loop_start,
+			guint32 *loop_end)
 {
-  uint32_t sample_start, sample_end, sample_loop_start, sample_loop_end;
+  guint32 sample_start, sample_end, sample_loop_start, sample_loop_end;
 
   //Some samples might have only the right channel.
 
@@ -160,13 +159,13 @@ emu3_print_sample_info (struct emu3_sample *sample, int num,
       emu_error ("Unexpected sample start: %d", sample_start);
     }
 
-  *frames = ((sample_end + sizeof (int16_t) -
-	      sizeof (struct emu3_sample)) / sizeof (int16_t));
+  *frames = ((sample_end + sizeof (gint16) -
+	      sizeof (struct emu3_sample)) / sizeof (gint16));
 
   *loop_start =
-    (sample_loop_start - sizeof (struct emu3_sample)) / sizeof (int16_t);
+    (sample_loop_start - sizeof (struct emu3_sample)) / sizeof (gint16);
   *loop_end =
-    (sample_loop_end - sizeof (struct emu3_sample)) / sizeof (int16_t);
+    (sample_loop_end - sizeof (struct emu3_sample)) / sizeof (gint16);
 
   emu_print (0, 0, "Sample %03d: %.*s\n", num, EMU3_NAME_SIZE, sample->name);
   emu_print (1, 1, "Frames: %d\n", *frames);
@@ -197,23 +196,23 @@ emu3_print_sample_info (struct emu3_sample *sample, int num,
 	     sample->sample_data_offset_r);
 
   emu_print (2, 1, "Sample parameters:\n");
-  for (int i = 0; i < SAMPLE_PARAMETERS; i++)
+  for (gint i = 0; i < SAMPLE_PARAMETERS; i++)
     emu_print (2, 2, "0x%08x (%d)\n", sample->parameters[i],
 	       sample->parameters[i]);
 }
 
 void
-emu3_process_sample (struct emu3_sample *sample, int num,
-		     emu3_ext_mode_t ext_mode, uint8_t original_key,
-		     float tuning)
+emu3_process_sample (struct emu3_sample *sample, gint num,
+		     emu3_ext_mode_t ext_mode, guint8 original_key,
+		     gfloat tuning)
 {
   SF_INFO sfinfo;
   SNDFILE *output;
-  char *wav_file;
-  short *l_channel, *r_channel;
-  short frame[2];
+  gchar *wav_file;
+  gint16 *l_channel, *r_channel;
+  gint16 frame[2];
   uint32_t frames, loop_start, loop_end;
-  int channels = emu3_get_sample_channels (sample);
+  gint channels = emu3_get_sample_channels (sample);
   struct SF_CHUNK_INFO smpl_chunk_info;
   struct SF_CHUNK_INFO junk_chunk_info;
   struct smpl_chunk_data smpl_chunk_data;
@@ -288,7 +287,7 @@ emu3_process_sample (struct emu3_sample *sample, int num,
     r_channel = sample->frames + frames;
   else
     r_channel = l_channel;
-  for (int i = 0; i < frames; i++)
+  for (gint i = 0; i < frames; i++)
     {
       frame[0] = *l_channel;
       l_channel++;
@@ -308,11 +307,11 @@ emu3_process_sample (struct emu3_sample *sample, int num,
   sf_close (output);
 }
 
-int
+gint
 emu3_sample_get_smpl_chunk (SNDFILE *input,
 			    struct smpl_chunk_data *smpl_chunk_data)
 {
-  int loop;
+  gint loop;
   struct SF_CHUNK_INFO chunk_info;
   SF_CHUNK_ITERATOR *chunk_iter;
 
@@ -342,7 +341,7 @@ emu3_sample_get_smpl_chunk (SNDFILE *input,
 
 static void
 emu3_init_sample_descriptor (struct emu3_sample_descriptor *sd,
-			     struct emu3_sample *sample, int frames)
+			     struct emu3_sample *sample, gint frames)
 {
   sd->sample = sample;
   sd->l_channel = sample->frames;
@@ -358,7 +357,7 @@ emu3_init_sample_descriptor (struct emu3_sample_descriptor *sd,
 }
 
 static void
-emu3_write_frame (struct emu3_sample_descriptor *sd, int16_t frame[])
+emu3_write_frame (struct emu3_sample_descriptor *sd, gint16 frame[])
 {
   struct emu3_sample *sample = sd->sample;
   *sd->l_channel = frame[0];
@@ -370,32 +369,32 @@ emu3_write_frame (struct emu3_sample_descriptor *sd, int16_t frame[])
     }
 }
 
-static int
-emu3_init_sample (struct emu3_sample *sample, int offset, int samplerate,
-		  int frames, int mono, int loop_start, int loop_end,
-		  int loop)
+static gint
+emu3_init_sample (struct emu3_sample *sample, gint offset, gint samplerate,
+		  gint frames, gint mono, gint loop_start, gint loop_end,
+		  gint loop)
 {
-  int mono_size, data_size, size;
+  gint mono_size, data_size, size;
 
-  data_size = sizeof (int16_t) * frames;
+  data_size = sizeof (gint16) * frames;
   mono_size = sizeof (struct emu3_sample) + data_size;
   size = mono_size + (mono ? 0 : data_size);
 
   sample->header = 0;
   sample->start_l = sizeof (struct emu3_sample);
   sample->start_r = mono ? 0 : mono_size;
-  sample->end_l = mono_size - sizeof (int16_t);
-  sample->end_r = mono ? 0 : size - sizeof (int16_t);
+  sample->end_l = mono_size - sizeof (gint16);
+  sample->end_r = mono ? 0 : size - sizeof (gint16);
 
-  int loop_start_bytes = loop_start * sizeof (int16_t);
+  gint loop_start_bytes = loop_start * sizeof (gint16);
   sample->loop_start_l = loop_start_bytes + sizeof (struct emu3_sample);
   sample->loop_start_r = mono ? 0 :
-    sample->loop_start_l + frames * sizeof (int16_t);
+    sample->loop_start_l + frames * sizeof (gint16);
 
-  int loop_end_bytes = loop_end * sizeof (int16_t);
+  gint loop_end_bytes = loop_end * sizeof (gint16);
   sample->loop_end_l = loop_end_bytes + sizeof (struct emu3_sample);
   sample->loop_end_r = mono ? 0 :
-    sample->loop_end_l + frames * sizeof (int16_t);
+    sample->loop_end_l + frames * sizeof (gint16);
 
   sample->sample_rate = samplerate;
 
@@ -418,7 +417,7 @@ emu3_init_sample (struct emu3_sample *sample, int offset, int samplerate,
   sample->sample_data_offset_l = offset + sample->start_l;
   sample->sample_data_offset_r = mono ? 0 : offset + sample->start_r;
 
-  for (int i = 0; i < SAMPLE_PARAMETERS; i++)
+  for (gint i = 0; i < SAMPLE_PARAMETERS; i++)
     {
       sample->parameters[i] = 0;
     }
@@ -428,7 +427,7 @@ emu3_init_sample (struct emu3_sample *sample, int offset, int samplerate,
 
 // These additional fixes are needed by the ESI.
 static void
-emu3_check_and_fix_loop_point (int *loop_point, int frames)
+emu3_check_and_fix_loop_point (gint *loop_point, gint frames)
 {
   if (*loop_point < 6)
     {
@@ -440,16 +439,16 @@ emu3_check_and_fix_loop_point (int *loop_point, int frames)
     }
 }
 
-static int16_t *
+static gint16 *
 emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
-			     int *samplerate, int *frames, int *loop_start,
-			     int *loop_end, int *loop)
+			     gint *samplerate, gint *frames, gint *loop_start,
+			     gint *loop_end, gint *loop)
 {
-  double ratio;
-  int direct_read;
-  int16_t *output;
-  int smpl_chunk;
-  int total_gen_frames;
+  gdouble ratio;
+  gint direct_read;
+  gint16 *output;
+  gint smpl_chunk;
+  gint total_gen_frames;
   struct smpl_chunk_data smpl_chunk_data;
 
   if (sfinfo->samplerate <= max_sample_rate)
@@ -462,7 +461,7 @@ emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
     {
       direct_read = 0;		//Requires resampling
       *samplerate = max_sample_rate;
-      ratio = max_sample_rate / (double) sfinfo->samplerate;
+      ratio = max_sample_rate / (gdouble) sfinfo->samplerate;
     }
 
   //Set scale factor. See http://www.mega-nerd.com/libsndfile/api.html#note2
@@ -476,7 +475,7 @@ emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
 
   if (direct_read)
     {
-      output = malloc (sizeof (int16_t) * sfinfo->channels * sfinfo->frames);
+      output = malloc (sizeof (gint16) * sfinfo->channels * sfinfo->frames);
       sf_readf_short (sndfile, output, sfinfo->frames);
       *frames = sfinfo->frames;
     }
@@ -490,18 +489,18 @@ emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
       srcdata.input_frames = sfinfo->frames;
       srcdata.output_frames = ceil (ratio * sfinfo->frames);
       srcdata.data_in =
-	malloc (sizeof (float) * sfinfo->channels * sfinfo->frames);
+	malloc (sizeof (gfloat) * sfinfo->channels * sfinfo->frames);
       srcdata.data_out =
-	malloc (sizeof (float) * sfinfo->channels * srcdata.output_frames);
+	malloc (sizeof (gfloat) * sfinfo->channels * srcdata.output_frames);
 
-      sf_readf_float (sndfile, (float *) srcdata.data_in, sfinfo->frames);
+      sf_readf_float (sndfile, (gfloat *) srcdata.data_in, sfinfo->frames);
 
-      int err = src_simple (&srcdata, SRC_SINC_BEST_QUALITY,
-			    sfinfo->channels);
+      gint err = src_simple (&srcdata, SRC_SINC_BEST_QUALITY,
+			     sfinfo->channels);
       if (err)
 	{
 	  emu_error ("Error while resampling: %s", src_strerror (err));
-	  free ((float *) srcdata.data_in);
+	  free ((gfloat *) srcdata.data_in);
 	  free (srcdata.data_out);
 	  return NULL;
 	}
@@ -511,34 +510,34 @@ emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
 		 srcdata.input_frames_used, srcdata.output_frames_gen);
 
       total_gen_frames = sfinfo->channels * srcdata.output_frames_gen;
-      output = malloc (sizeof (int16_t) * total_gen_frames);
+      output = malloc (sizeof (gint16) * total_gen_frames);
       src_float_to_short_array (srcdata.data_out, output, total_gen_frames);
 
       if (bit_depth < MAX_BIT_DEPTH)
 	{
-	  uint16_t *v = (uint16_t *) output;
-	  uint16_t mask = 0x8000;
-	  for (int i = 1; i < bit_depth; i++)
+	  guint16 *v = (guint16 *) output;
+	  guint16 mask = 0x8000;
+	  for (gint i = 1; i < bit_depth; i++)
 	    {
 	      mask = 0x8000 | (mask >> 1);
 	    }
 
 	  emu_debug (1, "Using bit mask '0x%4x'", mask);
 
-	  for (int i = 0; i < total_gen_frames; i++, v++)
+	  for (gint i = 0; i < total_gen_frames; i++, v++)
 	    {
 	      *v = (*v & mask);
 	    }
 	}
 
-      free ((float *) srcdata.data_in);
+      free ((gfloat *) srcdata.data_in);
       free (srcdata.data_out);
 
       *frames = srcdata.output_frames_gen;
 
       // Sometimes libsamplerate returns less frames less than expected.
       // This fixes the ratio, which is used to calculate the loop points.
-      ratio = srcdata.output_frames_gen / (double) sfinfo->frames;
+      ratio = srcdata.output_frames_gen / (gdouble) sfinfo->frames;
     }
 
   smpl_chunk = emu3_sample_get_smpl_chunk (sndfile, &smpl_chunk_data);
@@ -594,16 +593,16 @@ emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
 }
 
 //returns the sample size in bytes that the the sample takes in the bank
-int
+gint
 emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
-		    const char *path, int offset)
+		    const gchar *path, gint offset)
 {
   SF_INFO sfinfo;
   SNDFILE *sndfile;
-  int loop, size, loop_start, loop_end, frames, samplerate;
-  int16_t *f, *data = NULL;
-  int16_t zero[2] = { 0, 0 };
-  const char *filename;
+  gint loop, size, loop_start, loop_end, frames, samplerate;
+  gint16 *f, *data = NULL;
+  gint16 zero[2] = { 0, 0 };
+  const gchar *filename;
   struct emu3_sample_descriptor sd;
 
   if (access (path, R_OK) != 0)
@@ -639,13 +638,13 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
       goto close;
     }
 
-  char *basec = strdup (path);
+  gchar *basec = strdup (path);
   filename = basename (basec);
   emu_print (0, 0, "Appending sample '%s' (%d frames, %d channels)...\n",
 	     filename, frames, sfinfo.channels);
   //Sample header initialization
-  char *name = emu_filename_to_filename_wo_ext (filename, NULL);
-  char *emu3name = emu3_str_to_emu3name (name);
+  gchar *name = emu_filename_to_filename_wo_ext (filename, NULL);
+  gchar *emu3name = emu3_str_to_emu3name (name);
   emu3_cpystr (sample->name, emu3name);
 
   free (basec);
@@ -655,7 +654,7 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
   emu3_init_sample_descriptor (&sd, sample, frames);
 
   f = data;
-  for (int i = 0; i < frames; i++, f += sfinfo.channels)
+  for (gint i = 0; i < frames; i++, f += sfinfo.channels)
     {
       // First 2 and last 2 frames must be set to 0.
       // Without this, the sampler will complain with a "Mono Start Zero!!!001" error message.

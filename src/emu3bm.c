@@ -66,52 +66,52 @@ extern void yyset_in (FILE * _in_str);
 
 struct emu3_bank
 {
-  char format[FORMAT_SIZE];
-  char name[EMU3_NAME_SIZE];
-  uint32_t objects;
-  uint32_t padding[3];
-  uint32_t next_preset;
-  uint32_t next_sample;
-  uint32_t unknown_0;
-  uint32_t preset_blocks;
-  uint32_t sample_blocks;
-  uint32_t unknown_1;
-  uint32_t total_blocks;
-  char name_copy[EMU3_NAME_SIZE];
-  uint32_t selected_preset;
-  uint32_t parameters[BANK_PARAMETERS];
+  gchar format[FORMAT_SIZE];
+  gchar name[EMU3_NAME_SIZE];
+  guint32 objects;
+  guint32 padding[3];
+  guint32 next_preset;
+  guint32 next_sample;
+  guint32 unknown_0;
+  guint32 preset_blocks;
+  guint32 sample_blocks;
+  guint32 unknown_1;
+  guint32 total_blocks;
+  gchar name_copy[EMU3_NAME_SIZE];
+  guint32 selected_preset;
+  guint32 parameters[BANK_PARAMETERS];
 };
 
 struct emu3_preset_note_zone
 {
-  uint8_t options_lsb;
-  uint8_t options_msb;
-  uint8_t pri_zone;
-  uint8_t sec_zone;
+  guint8 options_lsb;
+  guint8 options_msb;
+  guint8 pri_zone;
+  guint8 sec_zone;
 };
 
 struct emu3_preset
 {
-  char name[EMU3_NAME_SIZE];
-  int8_t rt_controls[RT_CONTROLS_SIZE + RT_CONTROLS_FS_SIZE];
-  int8_t unknown_0[PRESET_UNKNOWN_0_SIZE];
-  int8_t pitch_bend_range;
-  int8_t velocity_range_pri_low;
-  int8_t velocity_range_pri_high;
-  int8_t velocity_range_sec_low;
-  int8_t velocity_range_sec_high;
-  int8_t link_preset_lsb;
-  int8_t link_preset_msb;
-  int8_t unknown_1[PRESET_UNKNOWN_1_SIZE];
-  int8_t note_zones;
-  uint8_t note_zone_mappings[EMU3_NOTES];
+  gchar name[EMU3_NAME_SIZE];
+  gint8 rt_controls[RT_CONTROLS_SIZE + RT_CONTROLS_FS_SIZE];
+  gint8 unknown_0[PRESET_UNKNOWN_0_SIZE];
+  gint8 pitch_bend_range;
+  gint8 velocity_range_pri_low;
+  gint8 velocity_range_pri_high;
+  gint8 velocity_range_sec_low;
+  gint8 velocity_range_sec_high;
+  gint8 link_preset_lsb;
+  gint8 link_preset_msb;
+  gint8 unknown_1[PRESET_UNKNOWN_1_SIZE];
+  gint8 note_zones;
+  guint8 note_zone_mappings[EMU3_NOTES];
 };
 
-static const int8_t DEFAULT_RT_CONTROLS[RT_CONTROLS_SIZE +
-					RT_CONTROLS_FS_SIZE] =
+static const gint8 DEFAULT_RT_CONTROLS[RT_CONTROLS_SIZE +
+				       RT_CONTROLS_FS_SIZE] =
   { 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 8 };
 
-static const char *RT_CONTROLS_SRC[] = {
+static const gchar *RT_CONTROLS_SRC[] = {
   "Pitch Control",
   "Mod Control",
   "Pressure Control",
@@ -120,10 +120,10 @@ static const char *RT_CONTROLS_SRC[] = {
   "MIDI B Control"
 };
 
-static const int RT_CONTROLS_SRC_SIZE =
-  sizeof (RT_CONTROLS_SRC) / sizeof (char *);
+static const gint RT_CONTROLS_SRC_SIZE =
+  sizeof (RT_CONTROLS_SRC) / sizeof (gchar *);
 
-static const char *RT_CONTROLS_DST[] = {
+static const gchar *RT_CONTROLS_DST[] = {
   "Off",
   "Pitch",
   "VCF Cutoff",
@@ -137,18 +137,18 @@ static const char *RT_CONTROLS_DST[] = {
   "VCF NoteOn Q"
 };
 
-static const int RT_CONTROLS_DST_SIZE =
-  sizeof (RT_CONTROLS_DST) / sizeof (char *);
+static const gint RT_CONTROLS_DST_SIZE =
+  sizeof (RT_CONTROLS_DST) / sizeof (gchar *);
 
-static const char *RT_CONTROLS_FS_SRC[] = {
+static const gchar *RT_CONTROLS_FS_SRC[] = {
   "Footswitch 1",
   "Footswitch 2",
 };
 
-static const int RT_CONTROLS_FS_SRC_SIZE =
-  sizeof (RT_CONTROLS_FS_SRC) / sizeof (char *);
+static const gint RT_CONTROLS_FS_SRC_SIZE =
+  sizeof (RT_CONTROLS_FS_SRC) / sizeof (gchar *);
 
-static const char *RT_CONTROLS_FS_DST[] = {
+static const gchar *RT_CONTROLS_FS_DST[] = {
   "Off",
   "Sustain",
   "Cross-Switch",
@@ -161,17 +161,17 @@ static const char *RT_CONTROLS_FS_DST[] = {
   "Preset Decrement"
 };
 
-static const int RT_CONTROLS_FS_DST_SIZE =
-  sizeof (RT_CONTROLS_FS_DST) / sizeof (int8_t *);
+static const gint RT_CONTROLS_FS_DST_SIZE =
+  sizeof (RT_CONTROLS_FS_DST) / sizeof (gint8 *);
 
-static const char *LFO_SHAPE[] = {
+static const gchar *LFO_SHAPE[] = {
   "triangle",
   "sine",
   "sawtooth",
   "square"
 };
 
-static const char *VCF_TYPE[] = {
+static const gchar *VCF_TYPE[] = {
   "2 Pole Lowpass",
   "4 Pole Lowpass",
   "6 Pole Lowpass",
@@ -194,7 +194,7 @@ static const char *VCF_TYPE[] = {
   "Unknown"
 };
 
-static const char *AUX_ENV_DST[] = {
+static const gchar *AUX_ENV_DST[] = {
   "Off",
   "Pitch",
   "Pan",
@@ -205,14 +205,14 @@ static const char *AUX_ENV_DST[] = {
   "LFO -> Pan"
 };
 
-static const int VCF_TYPE_SIZE = sizeof (VCF_TYPE) / sizeof (char *);
+static const gint VCF_TYPE_SIZE = sizeof (VCF_TYPE) / sizeof (gchar *);
 
-static const char *OFF_ON[] = { "Off", "On" };
+static const gchar *OFF_ON[] = { "Off", "On" };
 
-static const char *SIDES_DISABLED[] = { "left", "off", "right" };
+static const gchar *SIDES_DISABLED[] = { "left", "off", "right" };
 
 // Percentage -100..100 from 0x00 to 0x7F
-static const int TABLE_PERCENTAGE_SIGNED[] = {
+static const gint TABLE_PERCENTAGE_SIGNED[] = {
   -100, -99, -97, -96, -94, -93, -91, -90, -88, -86, -85, -83, -82, -80, -79,
   -77, -75, -74, -72, -71, -69, -68, -66, -65, -63, -61, -60, -58, -57, -55,
   -54, -52, -50, -49, -47, -46, -44, -43, -41, -40, -38, -36, -35, -33, -32,
@@ -225,7 +225,7 @@ static const int TABLE_PERCENTAGE_SIGNED[] = {
 };
 
 // LFO rate table.
-static const float TABLE_LFO_RATE_FLOAT[] = {
+static const gfloat TABLE_LFO_RATE_FLOAT[] = {
   0.08f, 0.11f, 0.15f, 0.18f, 0.21f, 0.25f, 0.28f, 0.32f, 0.35f,
   0.39f, 0.42f, 0.46f, 0.50f, 0.54f, 0.58f, 0.63f, 0.67f, 0.71f,
   0.76f, 0.80f, 0.85f, 0.90f, 0.94f, 0.99f, 1.04f, 1.10f, 1.15f,
@@ -244,7 +244,7 @@ static const float TABLE_LFO_RATE_FLOAT[] = {
 };
 
 // VCF cutoff frequency table.
-static const int TABLE_VCF_CUTOFF_FREQUENCY[] = {
+static const gint TABLE_VCF_CUTOFF_FREQUENCY[] = {
   26, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
   36, 37, 39, 40, 41, 42, 44, 45, 47, 48, 50,
   51, 53, 55, 56, 58, 60, 62, 64, 66, 68, 70,
@@ -272,7 +272,7 @@ static const int TABLE_VCF_CUTOFF_FREQUENCY[] = {
 };
 
 // 0..21.69
-static float TABLE_TIME_21_69_FLOAT[] = {
+static gfloat TABLE_TIME_21_69_FLOAT[] = {
   0.00f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.06f, 0.07f, 0.08f,
   0.09f, 0.10f, 0.11f, 0.12f, 0.13f, 0.14f, 0.15f, 0.16f, 0.17f,
   0.18f, 0.19f, 0.20f, 0.21f, 0.22f, 0.23f, 0.24f, 0.25f, 0.26f,
@@ -291,7 +291,7 @@ static float TABLE_TIME_21_69_FLOAT[] = {
 };
 
 // 0..163.69
-static float TABLE_TIME_163_69_FLOAT[] = {
+static gfloat TABLE_TIME_163_69_FLOAT[] = {
   0.00f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.06f, 0.07f, 0.08f,
   0.09f, 0.10f, 0.11f, 0.12f, 0.13f, 0.14f, 0.15f, 0.16f, 0.17f,
   0.18f, 0.19f, 0.20f, 0.21f, 0.22f, 0.23f, 0.25f, 0.26f, 0.28f,
@@ -334,8 +334,8 @@ emu3_get_u8_from_vcf_cutoff_frequency (const gint v)
 }
 
 
-static inline float
-emu3_get_lfo_rate (const int8_t value)
+static inline gfloat
+emu3_get_lfo_rate (const gint8 value)
 {
   if (value >= 0 && value <= 127)
     return TABLE_LFO_RATE_FLOAT[value];
@@ -371,8 +371,8 @@ emu3_get_u8_from_time_163_69 (gfloat v)
   return 127;
 }
 
-static inline float
-emu3_get_time_21_69 (const uint8_t index)
+static inline gfloat
+emu3_get_time_21_69 (const guint8 index)
 {
   if (index <= 127)
     return TABLE_TIME_21_69_FLOAT[index];
@@ -380,113 +380,113 @@ emu3_get_time_21_69 (const uint8_t index)
   return 0.0f;
 }
 
-static inline float
-emu3_get_note_on_delay (const uint8_t value)
+static inline gfloat
+emu3_get_note_on_delay (const guint8 value)
 {
-  return (float) value *0.006f;
+  return (gfloat) value *0.006f;
 }
 
 // [-64, 0, +64] to -100, 0, 100
-static inline float
-emu3_get_note_tuning (const int8_t value)
+static inline gfloat
+emu3_get_note_tuning (const gint8 value)
 {
-  return (float) value *1.5625f;
+  return (gfloat) value *1.5625f;
 }
 
 // `rt_enable_flags`
-static inline int
-emu3_get_is_rt_pitch_enabled (const uint8_t value)
+static inline gint
+emu3_get_is_rt_pitch_enabled (const guint8 value)
 {
   return (value & 0x01) ? 1 : 0;
 }
 
-static inline int
-emu3_get_is_rt_vcf_cutoff_enabled (const uint8_t value)
+static inline gint
+emu3_get_is_rt_vcf_cutoff_enabled (const guint8 value)
 {
   return (value & 0x02) ? 1 : 0;
 }
 
-static inline int
-emu3_get_is_rt_vca_level_enabled (const uint8_t value)
+static inline gint
+emu3_get_is_rt_vca_level_enabled (const guint8 value)
 {
   return (value & 0x04) ? 1 : 0;
 }
 
-static inline int
-emu3_get_is_rt_lfo_pitch_enabled (const uint8_t value)
+static inline gint
+emu3_get_is_rt_lfo_pitch_enabled (const guint8 value)
 {
   return (value & 0x08) ? 1 : 0;
 }
 
-static inline int
-emu3_get_is_rt_lfo_vcf_cutoff_enabled (const uint8_t value)
+static inline gint
+emu3_get_is_rt_lfo_vcf_cutoff_enabled (const guint8 value)
 {
   return (value & 0x10) ? 1 : 0;
 }
 
-static inline int
-emu3_get_is_rt_lfo_vca_enabled (const uint8_t value)
+static inline gint
+emu3_get_is_rt_lfo_vca_enabled (const guint8 value)
 {
   return (value & 0x20) ? 1 : 0;
 }
 
-static inline int
-emu3_get_is_rt_attack_enabled (const uint8_t value)
+static inline gint
+emu3_get_is_rt_attack_enabled (const guint8 value)
 {
   return (value & 0x40) ? 1 : 0;
 }
 
-static inline int
-emu3_get_is_rt_pan_enabled (const uint8_t value)
+static inline gint
+emu3_get_is_rt_pan_enabled (const guint8 value)
 {
   return (value & 0x80) ? 1 : 0;
 }
 
 // `zone->vcf_q`
-static inline int
-emu3_get_is_rt_note_on_q_enabled (const uint8_t value)
+static inline gint
+emu3_get_is_rt_note_on_q_enabled (const guint8 value)
 {
   return (value & 0x80) ? 1 : 0;
 }
 
 // `zone->flags`
-static inline int
-emu3_get_is_chorus_enabled (const uint8_t value)
+static inline gint
+emu3_get_is_chorus_enabled (const guint8 value)
 {
   return (value & 0x08) ? 1 : 0;
 }
 
 // `zone->flags`
-static inline int
-emu3_get_is_loop_disabled (const uint8_t value)
+static inline gint
+emu3_get_is_loop_disabled (const guint8 value)
 {
   return (value & 0x20) ? 1 : 0;
 }
 
 // `zone->flags`
-static inline int
-emu3_get_env_mode_trigger (const uint8_t value)
+static inline gint
+emu3_get_env_mode_trigger (const guint8 value)
 {
   return (value & 0x04) ? 1 : 0;
 }
 
 // `zone->flags`
-static inline int
-emu3_get_is_nontranspose_enabled (const uint8_t value)
+static inline gint
+emu3_get_is_nontranspose_enabled (const guint8 value)
 {
   return (value & 0x02) ? 1 : 0;
 }
 
 // `zone->flags`
-static inline int
-emu3_get_is_solo_enabled (const uint8_t value)
+static inline gint
+emu3_get_is_solo_enabled (const guint8 value)
 {
   return (value & 0x10) ? 1 : 0;
 }
 
 // `zone->flags`, returns -1 if left disabled, +1 if right disabled, else 0.
-static inline int
-emu3_get_is_side_disabled (const uint8_t value)
+static inline gint
+emu3_get_is_side_disabled (const guint8 value)
 {
   if (value & 0x80)
     return 1;
@@ -501,10 +501,10 @@ emu3_get_is_side_disabled (const uint8_t value)
 gint
 emu3_get_percent_s8 (const gint8 v)
 {
-  const double percentage = (v * 100 / 127.0);
+  const gdouble percentage = (v * 100 / 127.0);
   if (percentage < 0.0)
-    return (int) (percentage - 0.5);
-  return (int) (percentage + 0.5);
+    return (gint) (percentage - 0.5);
+  return (gint) (percentage + 0.5);
 }
 
 gint8
@@ -543,15 +543,16 @@ emu3_get_s8_from_percent_signed (gint v)
 }
 
 // [-127, 0, 127] to [-2.0, 0, 2.0]
-static float
-emu3_get_vcf_tracking (const int8_t value)
+static gfloat
+emu3_get_vcf_tracking (const gint8 value)
 {
-  static const float range = 4.0f / 254.0f;
-  static const float out_min = -2.0f;
-  static const float in_min = -127.0f;
-  const double as_double = 100 * (out_min + ((float) value - in_min) * range);
-  const int as_int = (int) as_double;
-  return (float) as_int / 100.0f;
+  static const gfloat range = 4.0f / 254.0f;
+  static const gfloat out_min = -2.0f;
+  static const gfloat in_min = -127.0f;
+  const gdouble as_double =
+    100 * (out_min + ((gfloat) value - in_min) * range);
+  const gint as_int = (gint) as_double;
+  return (gfloat) as_int / 100.0f;
 }
 
 static void
@@ -570,7 +571,7 @@ emu3_print_envelope (struct emu3_envelope *envelope)
 	     emu3_get_time_163_69_from_u8 (envelope->release));
 }
 
-static int
+static gint
 emu3_get_sample_num (struct emu3_preset_zone *zone)
 {
   return (zone->sample_id_msb << 8) + zone->sample_id_lsb;
@@ -603,12 +604,12 @@ emu3_print_preset_zone_info (struct emu_file *file,
 
   emu_print (1, 3, "VCF\n");
   //Filter type might only work with ESI banks
-  int vcf_type = zone->vcf_type_lfo_shape >> 3;
+  gint vcf_type = zone->vcf_type_lfo_shape >> 3;
   if (vcf_type > VCF_TYPE_SIZE - 1)
     vcf_type = VCF_TYPE_SIZE - 1;
   emu_print (1, 4, "Type: %16s\n", VCF_TYPE[vcf_type]);
   //Cutoff: [0, 255] -> [26, 74040]
-  int cutoff = zone->vcf_cutoff;
+  gint cutoff = zone->vcf_cutoff;
   emu_print (1, 4, "Cutoff:       %d Hz\n",
 	     emu3_get_vcf_cutoff_frequency_from_u8 (cutoff));
   // Filter Q might only work with ESI banks.
@@ -705,10 +706,10 @@ emu3_print_preset_zone_info (struct emu_file *file,
 static void
 emu3_print_preset_info (struct emu3_preset *preset)
 {
-  for (int i = 0; i < RT_CONTROLS_SRC_SIZE; i++)
+  for (gint i = 0; i < RT_CONTROLS_SRC_SIZE; i++)
     {
-      int dst = 0;
-      for (int j = 0; j < RT_CONTROLS_SIZE; j++)
+      gint dst = 0;
+      for (gint j = 0; j < RT_CONTROLS_SIZE; j++)
 	{
 	  if (preset->rt_controls[j] == i + 1)
 	    {
@@ -719,14 +720,14 @@ emu3_print_preset_info (struct emu3_preset *preset)
       emu_print (1, 1, "Mapping: %s - %s\n", RT_CONTROLS_SRC[i],
 		 RT_CONTROLS_DST[dst]);
     }
-  for (int i = 0; i < RT_CONTROLS_FS_SIZE; i++)
+  for (gint i = 0; i < RT_CONTROLS_FS_SIZE; i++)
     {
       emu_print (1, 1, "Mapping: %s - %s\n",
 		 RT_CONTROLS_FS_SRC[i],
 		 RT_CONTROLS_FS_DST[preset->rt_controls
 				    [RT_CONTROLS_SIZE + i]]);
     }
-  for (int i = 0; i < PRESET_UNKNOWN_0_SIZE; i++)
+  for (gint i = 0; i < PRESET_UNKNOWN_0_SIZE; i++)
     {
       emu_print (2, 1, "Unknown_0 %d: %d\n", i, preset->unknown_0[i]);
     }
@@ -748,14 +749,14 @@ emu3_print_preset_info (struct emu3_preset *preset)
       emu_print (1, 1, "Link Preset to: %03d\n", p - 1);
     }
 
-  for (int i = 0; i < PRESET_UNKNOWN_1_SIZE; i++)
+  for (gint i = 0; i < PRESET_UNKNOWN_1_SIZE; i++)
     {
       emu_print (2, 1, "Unknown_1 %d: %d\n", i, preset->unknown_1[i]);
     }
 }
 
 static void
-emu3_set_preset_rt_control (struct emu3_preset *preset, int src, int dst)
+emu3_set_preset_rt_control (struct emu3_preset *preset, gint src, gint dst)
 {
   if (dst >= 0 && dst < RT_CONTROLS_DST_SIZE)
     {
@@ -763,7 +764,7 @@ emu3_set_preset_rt_control (struct emu3_preset *preset, int src, int dst)
 		 RT_CONTROLS_SRC[src], RT_CONTROLS_DST[dst]);
       if (dst >= 0)
 	{
-	  for (int i = 0; i < RT_CONTROLS_SIZE; i++)
+	  for (gint i = 0; i < RT_CONTROLS_SIZE; i++)
 	    if (preset->rt_controls[i] == src + 1)
 	      preset->rt_controls[i] = 0;
 	  if (dst > 0)
@@ -775,7 +776,7 @@ emu3_set_preset_rt_control (struct emu3_preset *preset, int src, int dst)
 }
 
 static void
-emu3_set_preset_rt_control_fs (struct emu3_preset *preset, int src, int dst)
+emu3_set_preset_rt_control_fs (struct emu3_preset *preset, gint src, gint dst)
 {
   if (dst >= 0 && dst < RT_CONTROLS_FS_DST_SIZE)
     {
@@ -788,7 +789,7 @@ emu3_set_preset_rt_control_fs (struct emu3_preset *preset, int src, int dst)
 }
 
 static void
-emu3_set_preset_zone_level (struct emu3_preset_zone *zone, int level)
+emu3_set_preset_zone_level (struct emu3_preset_zone *zone, gint level)
 {
   if (level < 0 || level > 100)
     {
@@ -797,12 +798,12 @@ emu3_set_preset_zone_level (struct emu3_preset_zone *zone, int level)
   else
     {
       emu_debug (1, "Setting level to %d...", level);
-      zone->vca_level = (uint8_t) (level * 127 / 100);
+      zone->vca_level = (guint8) (level * 127 / 100);
     }
 }
 
 static void
-emu3_set_preset_zone_cutoff (struct emu3_preset_zone *zone, int cutoff)
+emu3_set_preset_zone_cutoff (struct emu3_preset_zone *zone, gint cutoff)
 {
   if (cutoff < 0 || cutoff > 255)
     {
@@ -811,13 +812,13 @@ emu3_set_preset_zone_cutoff (struct emu3_preset_zone *zone, int cutoff)
   else
     {
       emu_debug (1, "Setting cutoff to %d...", cutoff);
-      zone->vcf_cutoff = (uint8_t) cutoff;
+      zone->vcf_cutoff = (guint8) cutoff;
     }
 }
 
 static void
 emu3_set_preset_zone_q (struct emu_file *file, struct emu3_preset_zone *zone,
-			int q)
+			gint q)
 {
   if (q < 0 || q > 100)
     {
@@ -845,7 +846,7 @@ emu3_set_preset_zone_q (struct emu_file *file, struct emu3_preset_zone *zone,
 }
 
 static void
-emu3_set_preset_zone_filter (struct emu3_preset_zone *zone, int filter)
+emu3_set_preset_zone_filter (struct emu3_preset_zone *zone, gint filter)
 {
   if (filter < 0 || filter > VCF_TYPE_SIZE - 2)
     {
@@ -856,17 +857,17 @@ emu3_set_preset_zone_filter (struct emu3_preset_zone *zone, int filter)
     {
       emu_debug (1, "Setting filter to %s...", VCF_TYPE[filter]);
       zone->vcf_type_lfo_shape =
-	(((uint8_t) filter) << 3) | (zone->vcf_type_lfo_shape & 0x3);
+	(((guint8) filter) << 3) | (zone->vcf_type_lfo_shape & 0x3);
     }
 }
 
 static void
-emu3_set_preset_rt_controls (struct emu3_preset *preset, char *rt_controls)
+emu3_set_preset_rt_controls (struct emu3_preset *preset, gchar *rt_controls)
 {
-  char *token;
-  char *endtoken;
-  int i;
-  int controller;
+  gchar *token;
+  gchar *endtoken;
+  gint i;
+  gint controller;
 
   if (rt_controls == NULL)
     return;
@@ -903,7 +904,7 @@ emu3_set_preset_rt_controls (struct emu3_preset *preset, char *rt_controls)
 }
 
 static void
-emu3_set_preset_pbr (struct emu3_preset *preset, int pbr)
+emu3_set_preset_pbr (struct emu3_preset *preset, gint pbr)
 {
   if (pbr < 0 || pbr > 36)
     {
@@ -916,24 +917,24 @@ emu3_set_preset_pbr (struct emu3_preset *preset, int pbr)
     }
 }
 
-static uint32_t *
+static guint32 *
 emu3_get_preset_addresses (struct emu3_bank *bank)
 {
-  char *raw = (char *) bank;
+  gchar *raw = (gchar *) bank;
 
   if (strcmp (EMULATOR_3X_DEF, bank->format) == 0 ||
       strcmp (ESI_32_V3_DEF, bank->format) == 0)
-    return (uint32_t *) & raw[PRESET_SIZE_ADDR_START_EMU_3X];
+    return (guint32 *) & raw[PRESET_SIZE_ADDR_START_EMU_3X];
   else if (strcmp (EMULATOR_THREE_DEF, bank->format) == 0)
-    return (uint32_t *) & raw[PRESET_SIZE_ADDR_START_EMU_THREE];
+    return (guint32 *) & raw[PRESET_SIZE_ADDR_START_EMU_THREE];
   else
     return NULL;
 }
 
-static uint32_t
-emu3_get_preset_address (struct emu3_bank *bank, int preset)
+static guint32
+emu3_get_preset_address (struct emu3_bank *bank, gint preset)
 {
-  uint32_t offset = emu3_get_preset_addresses (bank)[preset];
+  guint32 offset = emu3_get_preset_addresses (bank)[preset];
 
   if (strcmp (EMULATOR_3X_DEF, bank->format) == 0 ||
       strcmp (ESI_32_V3_DEF, bank->format) == 0)
@@ -944,7 +945,7 @@ emu3_get_preset_address (struct emu3_bank *bank, int preset)
     return 0;
 }
 
-static int
+static gint
 emu3_get_max_presets (struct emu3_bank *bank)
 {
   if (strcmp (EMULATOR_3X_DEF, bank->format) == 0 ||
@@ -956,13 +957,13 @@ emu3_get_max_presets (struct emu3_bank *bank)
     return 0;
 }
 
-static uint32_t
+static guint32
 emu3_get_sample_start_address (struct emu3_bank *bank)
 {
-  int max_presets = emu3_get_max_presets (bank);
-  uint32_t *paddresses = emu3_get_preset_addresses (bank);
-  uint32_t offset = paddresses[max_presets];
-  uint32_t start_address;
+  gint max_presets = emu3_get_max_presets (bank);
+  guint32 *paddresses = emu3_get_preset_addresses (bank);
+  guint32 offset = paddresses[max_presets];
+  guint32 start_address;
 
   if (strcmp (EMULATOR_3X_DEF, bank->format) == 0 ||
       strcmp (ESI_32_V3_DEF, bank->format) == 0)
@@ -977,21 +978,21 @@ emu3_get_sample_start_address (struct emu3_bank *bank)
   return start_address + offset;
 }
 
-static uint32_t *
+static guint32 *
 emu3_get_sample_addresses (struct emu3_bank *bank)
 {
-  char *raw = (char *) bank;
+  gchar *raw = (gchar *) bank;
 
   if (strcmp (EMULATOR_3X_DEF, bank->format) == 0 ||
       strcmp (ESI_32_V3_DEF, bank->format) == 0)
-    return (uint32_t *) & (raw[SAMPLE_ADDR_START_EMU_3X]);
+    return (guint32 *) & (raw[SAMPLE_ADDR_START_EMU_3X]);
   else if (strcmp (EMULATOR_THREE_DEF, bank->format) == 0)
-    return (uint32_t *) & (raw[SAMPLE_ADDR_START_EMU_THREE]);
+    return (guint32 *) & (raw[SAMPLE_ADDR_START_EMU_THREE]);
   else
     return NULL;
 }
 
-static int
+static gint
 emu3_get_max_samples (struct emu3_bank *bank)
 {
   if (strcmp (EMULATOR_3X_DEF, bank->format) == 0 ||
@@ -1003,17 +1004,17 @@ emu3_get_max_samples (struct emu3_bank *bank)
     return 0;
 }
 
-static uint32_t
+static guint32
 emu3_get_next_sample_address (struct emu3_bank *bank)
 {
-  int max_samples = emu3_get_max_samples (bank);
-  uint32_t *saddresses = emu3_get_sample_addresses (bank);
-  uint32_t sample_start_addr = emu3_get_sample_start_address (bank);
+  gint max_samples = emu3_get_max_samples (bank);
+  guint32 *saddresses = emu3_get_sample_addresses (bank);
+  guint32 sample_start_addr = emu3_get_sample_start_address (bank);
 
   return sample_start_addr + saddresses[max_samples] - SAMPLE_OFFSET;
 }
 
-static int
+static gint
 emu3_check_bank_format (struct emu3_bank *bank)
 {
   if (strcmp (EMULATOR_3X_DEF, bank->format) == 0 ||
@@ -1025,23 +1026,23 @@ emu3_check_bank_format (struct emu3_bank *bank)
 }
 
 struct emu3_preset *
-emu3_get_preset (struct emu_file *file, int preset_num)
+emu3_get_preset (struct emu_file *file, gint preset_num)
 {
   struct emu3_bank *bank = EMU3_BANK (file);
-  uint32_t addr = emu3_get_preset_address (bank, preset_num);
+  guint32 addr = emu3_get_preset_address (bank, preset_num);
   return (struct emu3_preset *) &file->raw[addr];
 }
 
-static uint32_t
-emu3_get_preset_note_zone_addr (struct emu_file *file, int preset_num)
+static guint32
+emu3_get_preset_note_zone_addr (struct emu_file *file, gint preset_num)
 {
   struct emu3_bank *bank = EMU3_BANK (file);
-  uint32_t addr = emu3_get_preset_address (bank, preset_num);
+  guint32 addr = emu3_get_preset_address (bank, preset_num);
   return addr + sizeof (struct emu3_preset);
 }
 
-static uint32_t
-emu3_get_preset_zone_addr (struct emu_file *file, int preset_num)
+static guint32
+emu3_get_preset_zone_addr (struct emu_file *file, gint preset_num)
 {
   struct emu3_preset *preset = emu3_get_preset (file, preset_num);
   return emu3_get_preset_note_zone_addr (file, preset_num) +
@@ -1049,23 +1050,23 @@ emu3_get_preset_zone_addr (struct emu_file *file, int preset_num)
 }
 
 struct emu3_preset_note_zone *
-emu3_get_preset_note_zones (struct emu_file *file, int preset_num)
+emu3_get_preset_note_zones (struct emu_file *file, gint preset_num)
 {
-  uint32_t addr = emu3_get_preset_note_zone_addr (file, preset_num);
+  guint32 addr = emu3_get_preset_note_zone_addr (file, preset_num);
   return (struct emu3_preset_note_zone *) &file->raw[addr];
 }
 
 struct emu3_preset_zone *
-emu3_get_preset_zones (struct emu_file *file, int preset_num)
+emu3_get_preset_zones (struct emu_file *file, gint preset_num)
 {
-  uint32_t addr = emu3_get_preset_zone_addr (file, preset_num);
+  guint32 addr = emu3_get_preset_zone_addr (file, preset_num);
   return (struct emu3_preset_zone *) &file->raw[addr];
 }
 
-static int
-emu3_count_preset_zones (struct emu_file *file, int preset_num)
+static gint
+emu3_count_preset_zones (struct emu_file *file, gint preset_num)
 {
-  int i, max = -1;
+  gint i, max = -1;
   struct emu3_preset *preset = emu3_get_preset (file, preset_num);
   struct emu3_preset_note_zone *note_zone =
     emu3_get_preset_note_zones (file, preset_num);
@@ -1082,7 +1083,7 @@ emu3_count_preset_zones (struct emu_file *file, int preset_num)
 }
 
 struct emu_file *
-emu3_open_file (const char *name)
+emu3_open_file (const gchar *name)
 {
   struct emu3_bank *bank;
   struct emu_file *file = emu_open_file (name);
@@ -1124,7 +1125,7 @@ emu3_open_file (const char *name)
   emu_print (2, 1, "Total  blocks: %d\n", bank->total_blocks);
 
   emu_print (2, 1, "Parameters:\n");
-  for (int i = 0; i < BANK_PARAMETERS; i++)
+  for (gint i = 0; i < BANK_PARAMETERS; i++)
     emu_print (2, 1, "Parameter %d: 0x%08x (%d)\n", i,
 	       bank->parameters[i], bank->parameters[i]);
 
@@ -1136,7 +1137,7 @@ emu3_open_file (const char *name)
 
 static void
 emu3_process_zone (struct emu_file *file, struct emu3_preset_zone *zone,
-		   int level, int cutoff, int q, int filter)
+		   gint level, gint cutoff, gint q, gint filter)
 {
   if (level != -1)
     emu3_set_preset_zone_level (zone, level);
@@ -1151,8 +1152,8 @@ emu3_process_zone (struct emu_file *file, struct emu3_preset_zone *zone,
 static void
 emu3_process_note_zone (struct emu_file *file,
 			struct emu3_preset_zone *zones,
-			struct emu3_preset_note_zone *note_zone, int level,
-			int cutoff, int q, int filter)
+			struct emu3_preset_note_zone *note_zone, gint level,
+			gint cutoff, gint q, gint filter)
 {
   emu_print (1, 2, "options: %02x %02x\n", note_zone->options_lsb,
 	     note_zone->options_msb);
@@ -1175,9 +1176,9 @@ emu3_process_note_zone (struct emu_file *file,
 }
 
 static void
-emu3_process_preset (struct emu_file *file, int preset_num,
-		     char *rt_controls, int pbr, int level, int cutoff, int q,
-		     int filter)
+emu3_process_preset (struct emu_file *file, gint preset_num,
+		     gchar *rt_controls, gint pbr, gint level, gint cutoff,
+		     gint q, gint filter)
 {
   struct emu3_preset *preset = emu3_get_preset (file, preset_num);
   struct emu3_preset_zone *zones;
@@ -1188,7 +1189,7 @@ emu3_process_preset (struct emu_file *file, int preset_num,
 
   if (rt_controls)
     {
-      char *rtc = strdup (rt_controls);
+      gchar *rtc = strdup (rt_controls);
       emu3_set_preset_rt_controls (preset, rtc);
       free (rtc);
     }
@@ -1201,7 +1202,7 @@ emu3_process_preset (struct emu_file *file, int preset_num,
   emu3_print_preset_info (preset);
 
   emu_print (1, 1, "Note mappings:\n");
-  for (int j = 0; j < EMU3_NOTES; j++)
+  for (gint j = 0; j < EMU3_NOTES; j++)
     {
       if (preset->note_zone_mappings[j] != 0xff)
 	emu_print (1, 2, "%-4s: %2d\n", emu_get_note_name (j),
@@ -1212,7 +1213,7 @@ emu3_process_preset (struct emu_file *file, int preset_num,
   zones = emu3_get_preset_zones (file, preset_num);
 
   emu_print (1, 1, "Zones: %d\n", preset->note_zones);
-  for (int j = 0; j < preset->note_zones; j++)
+  for (gint j = 0; j < preset->note_zones; j++)
     {
       emu_print (1, 1, "Zone %d\n", j);
       emu3_process_note_zone (file, zones, note_zones, level, cutoff, q,
@@ -1221,13 +1222,13 @@ emu3_process_preset (struct emu_file *file, int preset_num,
     }
 }
 
-static int
-emu3_find_first_zone_for_sample (struct emu_file *file, int sample_num,
+static gint
+emu3_find_first_zone_for_sample (struct emu_file *file, gint sample_num,
 				 struct emu3_preset_zone **first_zone)
 {
-  unsigned int *addresses;
+  guint32 *addresses;
   struct emu3_bank *bank = EMU3_BANK (file);
-  int preset_num, max_presets = emu3_get_max_presets (bank);
+  gint preset_num, max_presets = emu3_get_max_presets (bank);
   struct emu3_preset *preset;
   struct emu3_preset_note_zone *note_zones;
   struct emu3_preset_zone *zones;
@@ -1242,7 +1243,7 @@ emu3_find_first_zone_for_sample (struct emu_file *file, int sample_num,
 	  preset = emu3_get_preset (file, preset_num);
 	  note_zones = emu3_get_preset_note_zones (file, preset_num);
 	  zones = emu3_get_preset_zones (file, preset_num);
-	  for (int i = 0; i < preset->note_zones; i++)
+	  for (gint i = 0; i < preset->note_zones; i++)
 	    {
 	      zone = NULL;
 	      if (note_zones->pri_zone != 0xff)
@@ -1270,20 +1271,20 @@ emu3_find_first_zone_for_sample (struct emu_file *file, int sample_num,
   return 0;
 }
 
-int
-emu3_process_bank (struct emu_file *file, int ext_mode, int edit_preset,
-		   char *rt_controls, int pbr, int level, int cutoff, int q,
-		   int filter)
+gint
+emu3_process_bank (struct emu_file *file, gint ext_mode, gint edit_preset,
+		   gchar *rt_controls, gint pbr, gint level, gint cutoff,
+		   gint q, gint filter)
 {
-  int i;
-  uint32_t *addresses;
-  uint32_t address;
-  uint32_t sample_start_addr;
-  uint32_t next_sample_addr;
+  gint i;
+  guint32 *addresses;
+  guint32 address;
+  guint32 sample_start_addr;
+  guint32 next_sample_addr;
   struct emu3_sample *sample;
-  int max_samples;
+  gint max_samples;
   struct emu3_bank *bank = EMU3_BANK (file);
-  int max_presets = emu3_get_max_presets (bank);
+  gint max_presets = emu3_get_max_presets (bank);
 
   i = 0;
   addresses = emu3_get_preset_addresses (bank);
@@ -1313,8 +1314,8 @@ emu3_process_bank (struct emu_file *file, int ext_mode, int edit_preset,
   while (addresses[i] != 0 && i < max_samples)
     {
       struct emu3_preset_zone *zone;
-      uint32_t original_key = 0;
-      float fraction = 0;
+      guint32 original_key = 0;
+      gfloat fraction = 0;
       address = sample_start_addr + addresses[i] - SAMPLE_OFFSET;
       sample = (struct emu3_sample *) &file->raw[address];
       if (ext_mode)
@@ -1332,12 +1333,12 @@ emu3_process_bank (struct emu_file *file, int ext_mode, int edit_preset,
   return EXIT_SUCCESS;
 }
 
-static int
+static gint
 emu3_get_bank_presets (struct emu3_bank *bank)
 {
-  uint32_t *paddresses = emu3_get_preset_addresses (bank);
-  int max_presets = emu3_get_max_presets (bank);
-  int total = 0;
+  guint32 *paddresses = emu3_get_preset_addresses (bank);
+  gint max_presets = emu3_get_max_presets (bank);
+  gint total = 0;
 
   while (paddresses[0] != paddresses[1] && total < max_presets)
     {
@@ -1348,12 +1349,12 @@ emu3_get_bank_presets (struct emu3_bank *bank)
   return total;
 }
 
-static int
+static gint
 emu3_get_bank_samples (struct emu3_bank *bank)
 {
-  uint32_t *saddresses = emu3_get_sample_addresses (bank);
-  int max_samples = emu3_get_max_samples (bank);
-  int total = 0;
+  guint32 *saddresses = emu3_get_sample_addresses (bank);
+  gint max_samples = emu3_get_max_samples (bank);
+  gint total = 0;
 
   while (saddresses[0] != 0 && total < max_samples)
     {
@@ -1364,16 +1365,16 @@ emu3_get_bank_samples (struct emu3_bank *bank)
   return total;
 }
 
-int
-emu3_add_sample (struct emu_file *file, char *sample_path, int *sample_num)
+gint
+emu3_add_sample (struct emu_file *file, gchar *sample_path, gint *sample_num)
 {
-  int next_sample, sample_offset;
+  gint next_sample, sample_offset;
   struct emu3_bank *bank = EMU3_BANK (file);
-  int max_samples = emu3_get_max_samples (bank);
-  int total_samples = emu3_get_bank_samples (bank);
-  uint32_t *saddresses = emu3_get_sample_addresses (bank);
-  uint32_t sample_start_addr = emu3_get_sample_start_address (bank);
-  uint32_t next_sample_addr = emu3_get_next_sample_address (bank);
+  gint max_samples = emu3_get_max_samples (bank);
+  gint total_samples = emu3_get_bank_samples (bank);
+  guint32 *saddresses = emu3_get_sample_addresses (bank);
+  guint32 sample_start_addr = emu3_get_sample_start_address (bank);
+  guint32 next_sample_addr = emu3_get_next_sample_address (bank);
   struct emu3_sample *sample =
     (struct emu3_sample *) &file->raw[next_sample_addr];
 
@@ -1391,7 +1392,7 @@ emu3_add_sample (struct emu_file *file, char *sample_path, int *sample_num)
 
   emu_debug (1, "Adding sample %d...", next_sample);
   sample_offset = next_sample_addr - sample_start_addr - total_samples * 2;
-  int size = emu3_append_sample (file, sample, sample_path, sample_offset);
+  gint size = emu3_append_sample (file, sample, sample_path, sample_offset);
 
   if (size < 0)
     {
@@ -1419,18 +1420,18 @@ emu3_reset_envelope (struct emu3_envelope *envelope)
   envelope->release = 0;
 }
 
-static int
-emu3_add_zones (struct emu_file *file, int preset_num, int zone_num,
+static gint
+emu3_add_zones (struct emu_file *file, gint preset_num, gint zone_num,
 		struct emu3_preset_zone **preset_zone)
 {
   void *src, *dst, *zone_src, *zone_dst;
-  uint32_t next_preset_addr, dst_addr;
-  uint32_t *paddresses;
-  size_t size, inc_size;
-  uint32_t next_sample_addr;
+  guint32 next_preset_addr, dst_addr;
+  guint32 *paddresses;
+  gsize size, inc_size;
+  guint32 next_sample_addr;
   struct emu3_preset *preset;
   struct emu3_preset_note_zone *note_zone;
-  int max_presets;
+  gint max_presets;
   struct emu3_bank *bank;
 
   inc_size = sizeof (struct emu3_preset_zone);
@@ -1446,7 +1447,7 @@ emu3_add_zones (struct emu_file *file, int preset_num, int zone_num,
 
   paddresses = emu3_get_preset_addresses (bank);
   max_presets = emu3_get_max_presets (bank);
-  for (int i = preset_num + 1; i < max_presets + 1; i++)
+  for (gint i = preset_num + 1; i < max_presets + 1; i++)
     paddresses[i] += inc_size;
 
   next_sample_addr = emu3_get_next_sample_address (bank);
@@ -1463,8 +1464,8 @@ emu3_add_zones (struct emu_file *file, int preset_num, int zone_num,
 
   if (zone_num == -1)
     {
-      uint32_t zone_addr = emu3_get_preset_zone_addr (file, preset_num);
-      uint32_t zone_addr_dst =
+      guint32 zone_addr = emu3_get_preset_zone_addr (file, preset_num);
+      guint32 zone_addr_dst =
 	zone_addr + sizeof (struct emu3_preset_note_zone);
 
       zone_src = &file->raw[zone_addr];
@@ -1486,7 +1487,7 @@ emu3_add_zones (struct emu_file *file, int preset_num, int zone_num,
       note_zone->pri_zone = preset->note_zones;
       note_zone->sec_zone = 0xff;
 
-      uint32_t next_zone_addr =
+      guint32 next_zone_addr =
 	next_preset_addr + sizeof (struct emu3_preset_note_zone);
 
       *preset_zone = (struct emu3_preset_zone *) &file->raw[next_zone_addr];
@@ -1504,15 +1505,15 @@ emu3_add_zones (struct emu_file *file, int preset_num, int zone_num,
   return inc_size;
 }
 
-int
-emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
+gint
+emu3_add_preset_zone (struct emu_file *file, gint preset_num, gint sample_num,
 		      struct emu_zone_range *zone_range,
 		      struct emu3_preset_zone **zone_)
 {
-  int sec_zone_id;
+  gint sec_zone_id;
   struct emu3_bank *bank = EMU3_BANK (file);
-  int total_presets = emu3_get_bank_presets (bank);
-  uint32_t inc_size = 0;
+  gint total_presets = emu3_get_bank_presets (bank);
+  guint32 inc_size = 0;
   struct emu3_preset *preset;
   struct emu3_preset_zone *zone;
 
@@ -1536,8 +1537,8 @@ emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
 
   if (zone_range->layer == 1)
     {
-      int assigned = 0;
-      for (int i = zone_range->lower_key; i <= zone_range->higher_key; i++)
+      gint assigned = 0;
+      for (gint i = zone_range->lower_key; i <= zone_range->higher_key; i++)
 	{
 	  if (preset->note_zone_mappings[i] != 0xff)
 	    {
@@ -1550,7 +1551,7 @@ emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
 	  return EXIT_FAILURE;
 	}
 
-      for (int i = zone_range->lower_key; i <= zone_range->higher_key; i++)
+      for (gint i = zone_range->lower_key; i <= zone_range->higher_key; i++)
 	{
 	  preset->note_zone_mappings[i] = preset->note_zones;
 	}
@@ -1565,8 +1566,8 @@ emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
   else if (zone_range->layer == 2)
     {
       sec_zone_id = preset->note_zone_mappings[zone_range->lower_key];
-      int several = 0;
-      for (int i = zone_range->lower_key + 1; i <= zone_range->higher_key;
+      gint several = 0;
+      for (gint i = zone_range->lower_key + 1; i <= zone_range->higher_key;
 	   i++)
 	{
 	  if (preset->note_zone_mappings[i] != sec_zone_id)
@@ -1636,12 +1637,12 @@ emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
   return EXIT_SUCCESS;
 }
 
-int
-emu3_del_preset_zone (struct emu_file *file, int preset_num, int zone_num)
+gint
+emu3_del_preset_zone (struct emu_file *file, gint preset_num, gint zone_num)
 {
   struct emu3_bank *bank = EMU3_BANK (file);
-  int zones, max_presets, total_presets = emu3_get_bank_presets (bank);
-  uint32_t *paddresses, src_addr, dst_addr, dec_size_note_zone,
+  gint zones, max_presets, total_presets = emu3_get_bank_presets (bank);
+  guint32 *paddresses, src_addr, dst_addr, dec_size_note_zone,
     dec_size_zone, size, addr;
   void *src, *dst;
   struct emu3_preset *preset;
@@ -1697,13 +1698,13 @@ emu3_del_preset_zone (struct emu_file *file, int preset_num, int zone_num)
   paddresses = emu3_get_preset_addresses (bank);
   max_presets = emu3_get_max_presets (bank);
 
-  for (int i = preset_num + 1; i < max_presets + 1; i++)
+  for (gint i = preset_num + 1; i < max_presets + 1; i++)
     paddresses[i] -= dec_size_note_zone + dec_size_zone;
 
   bank->next_preset -= dec_size_note_zone + dec_size_zone;
   file->size -= dec_size_note_zone + dec_size_zone;
 
-  for (int i = 0; i < EMU3_NOTES; i++)
+  for (gint i = 0; i < EMU3_NOTES; i++)
     {
       if (preset->note_zone_mappings[i] == zone_num)
 	preset->note_zone_mappings[i] = 0xff;
@@ -1715,15 +1716,15 @@ emu3_del_preset_zone (struct emu_file *file, int preset_num, int zone_num)
   return 0;
 }
 
-int
-emu3_add_preset (struct emu_file *file, char *preset_name, int *preset_num)
+gint
+emu3_add_preset (struct emu_file *file, gchar *preset_name, gint *preset_num)
 {
-  int i, objects;
-  uint32_t copy_start_addr;
+  gint i, objects;
+  guint32 copy_start_addr;
   struct emu3_bank *bank = EMU3_BANK (file);
-  int max_presets = emu3_get_max_presets (bank);
-  uint32_t *paddresses = emu3_get_preset_addresses (bank);
-  uint32_t next_sample_addr = emu3_get_next_sample_address (bank);
+  gint max_presets = emu3_get_max_presets (bank);
+  guint32 *paddresses = emu3_get_preset_addresses (bank);
+  guint32 next_sample_addr = emu3_get_next_sample_address (bank);
   void *src, *dst;
 
   objects = emu3_get_bank_samples (bank);
@@ -1763,7 +1764,7 @@ emu3_add_preset (struct emu_file *file, char *preset_name, int *preset_num)
       paddresses++;
     }
 
-  size_t size = next_sample_addr - copy_start_addr;
+  gsize size = next_sample_addr - copy_start_addr;
 
   if (file->size + size > EMU3_MEM_SIZE)
     {
@@ -1798,21 +1799,21 @@ emu3_add_preset (struct emu_file *file, char *preset_name, int *preset_num)
   return EXIT_SUCCESS;
 }
 
-int
-emu3_create_bank (const char *path, const char *type)
+gint
+emu3_create_bank (const gchar *path, const gchar *type)
 {
-  int rvalue;
+  gint rvalue;
   struct emu3_bank bank;
-  char *dirc = strdup (path);
-  char *basec = strdup (path);
-  char *bname = basename (basec);
+  gchar *dirc = strdup (path);
+  gchar *basec = strdup (path);
+  gchar *bname = basename (basec);
 
-  char *name = emu3_str_to_emu3name (bname);
-  char *src_path =
+  gchar *name = emu3_str_to_emu3name (bname);
+  gchar *src_path =
     malloc (strlen (DATADIR) + strlen (PACKAGE) +
 	    strlen (EMPTY_BANK_TEMPLATE) + strlen (type) + 3);
-  int ret = sprintf (src_path, "%s/%s/%s%s", DATADIR, PACKAGE,
-		     EMPTY_BANK_TEMPLATE, type);
+  gint ret = sprintf (src_path, "%s/%s/%s%s", DATADIR, PACKAGE,
+		      EMPTY_BANK_TEMPLATE, type);
 
   if (ret < 0)
     {
@@ -1837,8 +1838,8 @@ emu3_create_bank (const char *path, const char *type)
       goto out3;
     }
 
-  char buf[BUFSIZ];
-  size_t size;
+  gchar buf[BUFSIZ];
+  gsize size;
 
   while ((size = fread (buf, 1, BUFSIZ, src)))
     fwrite (buf, 1, size, dst);
@@ -1869,13 +1870,13 @@ out1:
   return rvalue;
 }
 
-int
+gint
 emu3_write_file (struct emu_file *file)
 {
   struct emu3_bank *bank = EMU3_BANK (file);
-  uint32_t sample_addr = emu3_get_sample_start_address (bank) - 1;
-  uint32_t preset = ceil (sample_addr / (double) EMU3_BLOCK_SIZE);
-  uint32_t total = ceil (file->size / (double) EMU3_BLOCK_SIZE);
+  guint32 sample_addr = emu3_get_sample_start_address (bank) - 1;
+  guint32 preset = ceil (sample_addr / (gdouble) EMU3_BLOCK_SIZE);
+  guint32 total = ceil (file->size / (gdouble) EMU3_BLOCK_SIZE);
 
   bank->total_blocks = htole32 (total);
   bank->preset_blocks = htole32 (preset);
@@ -2006,7 +2007,7 @@ emu3_sfz_set_velocity_range_on (struct emu_sfz_context *esctx)
 	    emu3_get_preset (esctx->file, vr->preset_num);
 	  struct emu3_preset_note_zone *note_zone =
 	    emu3_get_preset_note_zones (esctx->file, vr->preset_num);
-	  for (int j = 0; j < preset->note_zones; j++)
+	  for (gint j = 0; j < preset->note_zones; j++)
 	    {
 	      // These magic numbers activate the Velocity Ranges in the Crossfade/Switch preset menu.
 	      note_zone->options_lsb = 0xc6;
@@ -2113,7 +2114,7 @@ emu3_sfz_set_envelope (struct emu_sfz_context *esctx, struct emu3_envelope *e,
 		       const gchar *sustain_opcode,
 		       const gchar *release_opcode)
 {
-  float v;
+  gfloat v;
 
   v = emu3_get_opcode_float_val (esctx, attack_opcode, NULL, 0, 100, 0);
   e->attack = emu3_get_u8_from_time_163_69 (v);

@@ -29,57 +29,57 @@
 
 struct emu_zone_range
 {
-  unsigned char layer;
-  unsigned char original_key;
-  unsigned char lower_key;
-  unsigned char higher_key;
+  guint8 layer;
+  guint8 original_key;
+  guint8 lower_key;
+  guint8 higher_key;
 };
 
 struct emu3_envelope
 {
-  uint8_t attack;
-  uint8_t hold;
-  uint8_t decay;
-  uint8_t sustain;
-  uint8_t release;
+  guint8 attack;
+  guint8 hold;
+  guint8 decay;
+  guint8 sustain;
+  guint8 release;
 };
 
 struct emu3_preset_zone
 {
-  uint8_t original_key;
-  uint8_t sample_id_lsb;
-  uint8_t sample_id_msb;
-  int8_t parameter_a;
+  guint8 original_key;
+  guint8 sample_id_lsb;
+  guint8 sample_id_msb;
+  gint8 parameter_a;
   struct emu3_envelope vca_envelope;
-  uint8_t lfo_rate;
-  uint8_t lfo_delay;
-  uint8_t lfo_variation;
-  uint8_t vcf_cutoff;
-  uint8_t vcf_q;		// 10000000b/0x80 bit flags that rt-vcf-noteon-q is enabled
-  int8_t vcf_envelope_amount;
+  guint8 lfo_rate;
+  guint8 lfo_delay;
+  guint8 lfo_variation;
+  guint8 vcf_cutoff;
+  guint8 vcf_q;			// 10000000b/0x80 bit flags that rt-vcf-noteon-q is enabled
+  gint8 vcf_envelope_amount;
   struct emu3_envelope vcf_envelope;
   struct emu3_envelope aux_envelope;
-  int8_t aux_envelope_amount;
-  uint8_t aux_envelope_dest;
-  int8_t vel_to_aux_env;
-  int8_t vel_to_vca_level;
-  int8_t vel_to_vca_attack;
-  int8_t vel_to_pitch;
-  int8_t vel_to_pan;
-  int8_t vel_to_vcf_cutoff;
-  int8_t vel_to_vcf_q;
-  int8_t vel_to_vcf_attack;
-  int8_t vel_to_sample_start;
-  int8_t lfo_to_pitch;
-  int8_t lfo_to_vca;
-  int8_t lfo_to_cutoff;
-  int8_t lfo_to_pan;
-  int8_t vca_level;
-  int8_t note_tuning;		// -64 to 64 for -100cents to 100cents
-  int8_t vcf_tracking;
-  uint8_t note_on_delay;	// 0x00 to 0xFF for 0.00 to 1.53s
-  int8_t vca_pan;
-  uint8_t vcf_type_lfo_shape;
+  gint8 aux_envelope_amount;
+  guint8 aux_envelope_dest;
+  gint8 vel_to_aux_env;
+  gint8 vel_to_vca_level;
+  gint8 vel_to_vca_attack;
+  gint8 vel_to_pitch;
+  gint8 vel_to_pan;
+  gint8 vel_to_vcf_cutoff;
+  gint8 vel_to_vcf_q;
+  gint8 vel_to_vcf_attack;
+  gint8 vel_to_sample_start;
+  gint8 lfo_to_pitch;
+  gint8 lfo_to_vca;
+  gint8 lfo_to_cutoff;
+  gint8 lfo_to_pan;
+  gint8 vca_level;
+  gint8 note_tuning;		// -64 to 64 for -100cents to 100cents
+  gint8 vcf_tracking;
+  guint8 note_on_delay;		// 0x00 to 0xFF for 0.00 to 1.53s
+  gint8 vca_pan;
+  guint8 vcf_type_lfo_shape;
 
   // `rt_enable_flags`
   // The realtime controls can be disabled on the unit (via Dynamic
@@ -95,7 +95,7 @@ struct emu3_preset_zone
   // ||^lfo->vca          0x20
   // |^attack             0x40
   // ^pan                 0x80
-  uint8_t rt_enable_flags;	// 0xff
+  guint8 rt_enable_flags;	// 0xff
 
   // Various settings are encoded into this last byte of the structure. The
   // bits set the following settings:
@@ -118,7 +118,7 @@ struct emu3_preset_zone
   //  ||^disable loop on = 1
   //  |^disable left = 1
   //  ^disable right
-  uint8_t flags;
+  guint8 flags;
 };
 
 // 1 0110
@@ -127,27 +127,27 @@ struct emu3_preset_zone
 // 1 0010
 // env mode gate, solo on
 
-int emu3_add_sample (struct emu_file *file, char *path, int *sample_num);
+gint emu3_add_sample (struct emu_file *file, gchar * path, gint * sample_num);
 
-int emu3_add_preset (struct emu_file *file, char *preset_name,
-		     int *preset_num);
+gint emu3_add_preset (struct emu_file *file, gchar * preset_name,
+		      gint * preset_num);
 
-int
-emu3_add_preset_zone (struct emu_file *file, int preset_num, int sample_num,
+gint
+emu3_add_preset_zone (struct emu_file *file, gint preset_num, gint sample_num,
 		      struct emu_zone_range *zone_range,
 		      struct emu3_preset_zone **zone);
 
-int emu3_del_preset_zone (struct emu_file *, int, int);
+gint emu3_del_preset_zone (struct emu_file *, gint, gint);
 
-int emu3_process_bank (struct emu_file *, int, int, char *, int, int,
-		       int, int, int);
+gint emu3_process_bank (struct emu_file *, gint, gint, gchar *, gint, gint,
+			gint, gint, gint);
 
-int emu3_create_bank (const char *, const char *);
+gint emu3_create_bank (const gchar *, const gchar *);
 
-const char *emu3_get_err (int);
+const gchar *emu3_get_err (gint);
 
-struct emu_file *emu3_open_file (const char *filename);
+struct emu_file *emu3_open_file (const gchar * filename);
 
-int emu3_write_file (struct emu_file *file);
+gint emu3_write_file (struct emu_file *file);
 
-int emu3_add_sfz (struct emu_file *file, const char *sfz_path);
+gint emu3_add_sfz (struct emu_file *file, const gchar * sfz_path);

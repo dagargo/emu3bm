@@ -48,16 +48,16 @@ static const struct option options[] = {
   {NULL, 0, NULL, 0}
 };
 
-static int
-parse_zone_params (char *zone_params, int *sample_num,
-		   struct emu_zone_range *zone_range, int is_num)
+static gint
+parse_zone_params (gchar *zone_params, gint *sample_num,
+		   struct emu_zone_range *zone_range, gint is_num)
 {
-  char *sample_str = strsep (&zone_params, ",");
-  char *layer = strsep (&zone_params, ",");
-  char *original_key = strsep (&zone_params, ",");
-  char *lower_key = strsep (&zone_params, ",");
-  char *higher_key = strsep (&zone_params, ",");
-  char *endtoken;
+  gchar *sample_str = strsep (&zone_params, ",");
+  gchar *layer = strsep (&zone_params, ",");
+  gchar *original_key = strsep (&zone_params, ",");
+  gchar *lower_key = strsep (&zone_params, ",");
+  gchar *higher_key = strsep (&zone_params, ",");
+  gchar *endtoken;
 
   *sample_num = strtol (sample_str, &endtoken, 10);
   if (*endtoken != '\0' || sample_num <= 0)
@@ -66,7 +66,7 @@ parse_zone_params (char *zone_params, int *sample_num,
       return EXIT_FAILURE;
     }
 
-  int orig_key_int;
+  gint orig_key_int;
   if (is_num)
     orig_key_int = strtol (original_key, &endtoken, 10);
   else
@@ -78,7 +78,7 @@ parse_zone_params (char *zone_params, int *sample_num,
     }
   zone_range->original_key = orig_key_int;
 
-  int lower_key_int;
+  gint lower_key_int;
   if (is_num)
     lower_key_int = strtol (lower_key, &endtoken, 10);
   else
@@ -90,7 +90,7 @@ parse_zone_params (char *zone_params, int *sample_num,
     }
   zone_range->lower_key = lower_key_int;
 
-  int higher_key_int;
+  gint higher_key_int;
   if (is_num)
     higher_key_int = strtol (higher_key, &endtoken, 10);
   else
@@ -116,32 +116,33 @@ parse_zone_params (char *zone_params, int *sample_num,
   return 0;
 }
 
-int
-main (int argc, char *argv[])
+gint
+main (gint argc, gchar *argv[])
 {
-  int opt;
-  int long_index = 0;
-  int xflg = 0, dflg = 0, sflg = 0, nflg = 0, sfzflg = 0, errflg = 0, modflg =
-    0, pflg = 0, zflg = 0, yflg = 0, ext_mode = EMU3_EXT_MODE_NONE;
-  char *device = NULL;
-  char *bank_name = NULL;
-  char *sample_name;
-  char *sfz_filename;
-  char *preset_name;
-  char *rt_controls = NULL;
-  char *zone_params = NULL;
-  int level = -1;
-  int cutoff = -1;
-  int q = -1;
-  int filter = -1;
-  int pbr = -1;
-  int preset_num = -1;
-  extern char *optarg;
-  extern int optind, optopt;
-  int err = 0;
-  int sample_num;
+  gint opt;
+  gint long_index = 0;
+  gint xflg = 0, dflg = 0, sflg = 0, nflg = 0, sfzflg = 0, errflg =
+    0, modflg = 0, pflg = 0, zflg = 0, yflg = 0, ext_mode =
+    EMU3_EXT_MODE_NONE;
+  gchar *device = NULL;
+  gchar *bank_name = NULL;
+  gchar *sample_name;
+  gchar *sfz_filename;
+  gchar *preset_name;
+  gchar *rt_controls = NULL;
+  gchar *zone_params = NULL;
+  gint level = -1;
+  gint cutoff = -1;
+  gint q = -1;
+  gint filter = -1;
+  gint pbr = -1;
+  gint preset_num = -1;
+  extern gchar *optarg;
+  extern gint optind, optopt;
+  gint err = 0;
+  gint sample_num;
   struct emu_zone_range zone_range;
-  int zone_num;
+  gint zone_num;
 
   while ((opt = getopt_long (argc, argv,
 			     "b:B:c:d:e:f:hl:np:q:r:R:s:S:vxXy:z:Z:", options,
@@ -234,8 +235,8 @@ main (int argc, char *argv[])
 	case 'z':
 	case 'Z':
 	  zone_params = optarg;
-	  int err = parse_zone_params (zone_params, &sample_num, &zone_range,
-				       opt == 'Z');
+	  gint err = parse_zone_params (zone_params, &sample_num, &zone_range,
+					opt == 'Z');
 	  if (err)
 	    exit (err);
 	  zflg++;

@@ -6,13 +6,13 @@
   #include <string.h>
   #include "sfz.h"
 
-  extern int yylineno;
-  extern char *yytext;
-  int yyerror(const char *msg);
-  int yylex (void);
+  extern gint yylineno;
+  extern gchar *yytext;
+  gint yyerror(const gchar *msg);
+  gint yylex (void);
 
-  char *header;
-  char *opcode;
+  gchar *header;
+  gchar *opcode;
   gpointer value;
   GHashTable *header_opcodes;
 
@@ -98,7 +98,7 @@ opcode_val: SFZ_FLOAT   { value = g_malloc(sizeof(gfloat)); *(gfloat *)value = a
 
 %%
 
-int yyerror(const char *s)
+gint yyerror(const gchar *s)
 {
   return fprintf (stderr, "line %d: %s\n", yylineno, s);
 }

@@ -52,9 +52,9 @@
 
 struct emu4_chunk
 {
-  char name[CHUNK_NAME_LEN];
-  uint32_t size;
-  char data[];
+  gchar name[CHUNK_NAME_LEN];
+  guint32 size;
+  gchar data[];
 };
 
 static const struct option options[] = {
@@ -70,25 +70,25 @@ static const struct option options[] = {
 };
 
 static void
-emu4_chunk_set_name (struct emu4_chunk *chunk, const char *name)
+emu4_chunk_set_name (struct emu4_chunk *chunk, const gchar *name)
 {
   memcpy (chunk->name, name, CHUNK_NAME_LEN);
 }
 
 static void
-emu4_chunk_set_size (struct emu4_chunk *chunk, uint32_t size)
+emu4_chunk_set_size (struct emu4_chunk *chunk, guint32 size)
 {
   chunk->size = htobe32 (size);
 }
 
-static uint32_t
+static guint32
 emu4_chunk_get_size (struct emu4_chunk *chunk)
 {
   return be32toh (chunk->size);
 }
 
 static void
-emu4_chunk_print (struct emu4_chunk *chunk, char *content_name)
+emu4_chunk_print (struct emu4_chunk *chunk, gchar *content_name)
 {
   if (content_name)
     {
@@ -109,7 +109,7 @@ emu4_chunk_print_named (struct emu4_chunk *chunk)
 }
 
 static struct emu_file *
-emu4_new_file (const char *name)
+emu4_new_file (const gchar *name)
 {
   struct emu_file *file = emu_init_file (name);
   struct emu4_chunk *chunk = (struct emu4_chunk *) file->raw;
@@ -123,12 +123,12 @@ emu4_new_file (const char *name)
   return file;
 }
 
-static int
+static gint
 emu4_add_sample (struct emu_file *file, struct emu4_chunk *next_chunk,
-		 const char *sample_name)
+		 const gchar *sample_name)
 {
-  int size;
-  uint32_t chunk_size;
+  gint size;
+  guint32 chunk_size;
   struct emu4_chunk *form_chunk;
   struct emu3_sample *sample;
 
@@ -155,11 +155,11 @@ emu4_add_sample (struct emu_file *file, struct emu4_chunk *next_chunk,
   return 0;
 }
 
-static int
-emu4_process_file (struct emu_file *file, int ext_mode,
-		   struct emu4_chunk **next_chunk, int *sample_index)
+static gint
+emu4_process_file (struct emu_file *file, gint ext_mode,
+		   struct emu4_chunk **next_chunk, gint *sample_index)
 {
-  uint32_t size, total_size, chunk_size;
+  guint32 size, total_size, chunk_size;
   struct emu4_chunk *chunk;
   struct emu3_sample *sample;
 
@@ -249,23 +249,22 @@ emu4_process_file (struct emu_file *file, int ext_mode,
   return 0;
 }
 
-int
-main (int argc, char *argv[])
+gint
+main (gint argc, gchar *argv[])
 {
-  int opt;
-  int nflg = 0, sflg = 0, xflg = 0, errflg = 0, totalflg;
-  int ext_mode = 0;
-  char *sample_name = NULL;
-  int long_index = 0;
-  int sample_index;
-  int err = EXIT_SUCCESS;
+  gint opt;
+  gint nflg = 0, sflg = 0, xflg = 0, errflg = 0, totalflg;
+  gint ext_mode = 0;
+  gchar *sample_name = NULL;
+  gint long_index = 0;
+  gint sample_index;
+  gint err = EXIT_SUCCESS;
   struct emu4_chunk *next_chunk;
-  const char *bank_name = NULL;
+  const gchar *bank_name = NULL;
   struct emu_file *file;
 
-  while ((opt =
-	  getopt_long (argc, argv, "B:hnR:s:vxX", options,
-		       &long_index)) != -1)
+  while ((opt = getopt_long (argc, argv, "B:hnR:s:vxX", options,
+			     &long_index)) != -1)
     {
       switch (opt)
 	{

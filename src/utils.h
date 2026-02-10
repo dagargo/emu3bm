@@ -38,14 +38,14 @@
 
 struct emu_file
 {
-  const char *name;
-  char *raw;
-  size_t size;
+  const gchar *name;
+  gchar *raw;
+  gsize size;
 };
 
 #define emu_print(level, indent, ...) { \
 		if (level <= verbosity) { \
-			for (int i = 0; i < indent; i++) \
+			for (gint i = 0; i < indent; i++) \
 				fprintf(stdout, "  "); \
 			fprintf(stdout, __VA_ARGS__); \
 		} \
@@ -58,39 +58,40 @@ struct emu_file
         }
 
 #define emu_error(format, ...) { \
-                int tty = isatty(fileno(stderr)); \
-                const char * color_start = tty ? "\x1b[31m" : ""; \
-                const char * color_end = tty ? "\x1b[m" : ""; \
+                gint tty = isatty(fileno(stderr)); \
+                const gchar * color_start = tty ? "\x1b[31m" : ""; \
+                const gchar * color_end = tty ? "\x1b[m" : ""; \
                 fprintf(stderr, "%sERROR:" __FILE__ ":%d:(%s): " format "%s\n", color_start, __LINE__, __FUNCTION__, ## __VA_ARGS__, color_end); \
         }
 
-extern int verbosity;
+extern gint verbosity;
 
-const char *emu_get_err (int);
+const gchar *emu_get_err (gint);
 
-struct emu_file *emu_open_file (const char *);
+struct emu_file *emu_open_file (const gchar *);
 
 void emu_close_file (struct emu_file *);
 
-int emu_write_file (struct emu_file *);
+gint emu_write_file (struct emu_file *);
 
 struct emu_file *emu_init_file ();
 
-int emu_reverse_note_search (char *);
+gint emu_reverse_note_search (gchar *);
 
-const char *emu_get_note_name (uint8_t);
+const gchar *emu_get_note_name (uint8_t);
 
-void emu_print_help (char *executable_path, const char *name,
+void emu_print_help (gchar * executable_path, const gchar * name,
 		     const struct option options[]);
 
-char *emu3_str_to_emu3name (const char *src);
+gchar *emu3_str_to_emu3name (const gchar * src);
 
-void emu3_cpystr (char *dst, const char *src);
+void emu3_cpystr (gchar * dst, const gchar * src);
 
-char *emu_filename_to_filename_wo_ext (const char *file, const char **ext);
+gchar *emu_filename_to_filename_wo_ext (const gchar * file,
+					const gchar ** ext);
 
-int get_positive_int (char *str);
+gint get_positive_int (gchar * str);
 
-int get_positive_int_in_range (char *str, int min, int max);
+gint get_positive_int_in_range (gchar * str, gint min, gint max);
 
 #endif

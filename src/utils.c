@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include "utils.h"
 
-static const char *NOTE_NAMES[] = {
+static const gchar *NOTE_NAMES[] = {
   "A-1",			//Note 0
   "A#-1",
   "B-1",
@@ -155,10 +155,10 @@ static const char *NOTE_NAMES[] = {
   "E10"				// Note 127
 };
 
-int verbosity = 0;
+gint verbosity = 0;
 
 struct emu_file *
-emu_open_file (const char *name)
+emu_open_file (const gchar *name)
 {
   struct emu_file *file;
   FILE *fd = fopen (name, "r");
@@ -186,10 +186,10 @@ emu_close_file (struct emu_file *file)
   free (file);
 }
 
-int
+gint
 emu_write_file (struct emu_file *file)
 {
-  int err = 0;
+  gint err = 0;
   FILE *fd = fopen (file->name, "w");
   if (!fd)
     {
@@ -208,7 +208,7 @@ emu_write_file (struct emu_file *file)
 }
 
 struct emu_file *
-emu_init_file (const char *name)
+emu_init_file (const gchar *name)
 {
   struct emu_file *file = malloc (sizeof (struct emu_file));
   file->name = name;
@@ -217,35 +217,35 @@ emu_init_file (const char *name)
   return file;
 }
 
-int
-emu_reverse_note_search (char *note_name)
+gint
+emu_reverse_note_search (gchar *note_name)
 {
-  for (int i = 0; i < EMU3_NOTES; i++)
+  for (gint i = 0; i < EMU3_NOTES; i++)
     if (strcasecmp (NOTE_NAMES[i], note_name) == 0)
       return i;
 
   return -1;
 }
 
-const char *
-emu_get_note_name (unsigned char note_num)
+const gchar *
+emu_get_note_name (guint8 note_num)
 {
   if (note_num > 127)
     return "?";
   return NOTE_NAMES[note_num];
 }
 
-char *
-emu3_str_to_emu3name (const char *src)
+gchar *
+emu3_str_to_emu3name (const gchar *src)
 {
-  size_t len = strlen (src);
+  gsize len = strlen (src);
   if (len > EMU3_NAME_SIZE)
     len = EMU3_NAME_SIZE;
 
-  char *emu3name = strndup (src, len);
+  gchar *emu3name = strndup (src, len);
 
-  char *c = emu3name;
-  for (int i = 0; i < len; i++, c++)
+  gchar *c = emu3name;
+  for (gint i = 0; i < len; i++, c++)
     if (*c < 32 || *c >= 127)
       *c = '?';
 
@@ -253,9 +253,9 @@ emu3_str_to_emu3name (const char *src)
 }
 
 void
-emu3_cpystr (char *dst, const char *src)
+emu3_cpystr (gchar *dst, const gchar *src)
 {
-  size_t len = strlen (src);
+  gsize len = strlen (src);
   if (len > EMU3_NAME_SIZE)
     len = EMU3_NAME_SIZE;
 
@@ -264,10 +264,10 @@ emu3_cpystr (char *dst, const char *src)
 }
 
 void
-emu_print_help (char *executable_path, const char *name,
+emu_print_help (gchar *executable_path, const gchar *name,
 		const struct option options[])
 {
-  char *exec_name;
+  gchar *exec_name;
   const struct option *option;
 
   fprintf (stderr, "%s\n", name);
@@ -287,11 +287,11 @@ emu_print_help (char *executable_path, const char *name,
     }
 }
 
-char *
-emu_filename_to_filename_wo_ext (const char *filename_, const char **ext)
+gchar *
+emu_filename_to_filename_wo_ext (const gchar *filename_, const gchar **ext)
 {
-  char *filename = strdup (filename_);
-  char *e = strrchr (filename, '.');
+  gchar *filename = strdup (filename_);
+  gchar *e = strrchr (filename, '.');
   if (e)
     {
       *e = 0;
@@ -304,11 +304,11 @@ emu_filename_to_filename_wo_ext (const char *filename_, const char **ext)
   return filename;
 }
 
-int
-get_positive_int (char *str)
+gint
+get_positive_int (gchar *str)
 {
-  char *endstr;
-  int value = (int) strtol (str, &endstr, 10);
+  gchar *endstr;
+  gint value = (gint) strtol (str, &endstr, 10);
 
   if (errno || endstr == str || *endstr != '\0')
     {
@@ -326,10 +326,10 @@ get_positive_int (char *str)
   return value;
 }
 
-int
-get_positive_int_in_range (char *str, int min, int max)
+gint
+get_positive_int_in_range (gchar *str, gint min, gint max)
 {
-  int v = get_positive_int (str);
+  gint v = get_positive_int (str);
 
   if (v < 0)
     {

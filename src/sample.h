@@ -40,23 +40,23 @@
 
 struct emu3_sample
 {
-  char name[EMU3_NAME_SIZE];
-  uint32_t header;
-  uint32_t start_l;		//always equals sizeof (struct emu3_sample)
-  uint32_t start_r;
-  uint32_t end_l;
-  uint32_t end_r;
-  uint32_t loop_start_l;
-  uint32_t loop_start_r;
-  uint32_t loop_end_l;
-  uint32_t loop_end_r;
-  uint32_t sample_rate;
-  uint16_t playback_rate;
-  uint16_t options;
-  uint32_t sample_data_offset_l;
-  uint32_t sample_data_offset_r;
-  uint32_t parameters[SAMPLE_PARAMETERS];
-  int16_t frames[];
+  gchar name[EMU3_NAME_SIZE];
+  guint32 header;
+  guint32 start_l;		//always equals sizeof (struct emu3_sample)
+  guint32 start_r;
+  guint32 end_l;
+  guint32 end_r;
+  guint32 loop_start_l;
+  guint32 loop_start_r;
+  guint32 loop_end_l;
+  guint32 loop_end_r;
+  guint32 sample_rate;
+  guint16 playback_rate;
+  guint16 options;
+  guint32 sample_data_offset_l;
+  guint32 sample_data_offset_r;
+  guint32 parameters[SAMPLE_PARAMETERS];
+  gint16 frames[];
 };
 
 typedef enum emu3_ext_mode
@@ -68,38 +68,37 @@ typedef enum emu3_ext_mode
 
 struct smpl_chunk_data
 {
-  uint32_t manufacturer;
-  uint32_t product;
-  uint32_t sample_period;
-  uint32_t midi_unity_note;
-  uint32_t midi_pitch_fraction;
-  uint32_t smpte_format;
-  uint32_t smpte_offset;
-  uint32_t num_sample_loops;
-  uint32_t sample_data;
+  guint32 manufacturer;
+  guint32 product;
+  guint32 sample_period;
+  guint32 midi_unity_note;
+  guint32 midi_pitch_fraction;
+  guint32 smpte_format;
+  guint32 smpte_offset;
+  guint32 num_sample_loops;
+  guint32 sample_data;
   struct sample_loop
   {
-    uint32_t cue_point_id;
-    uint32_t type;
-    uint32_t start;
-    uint32_t end;
-    uint32_t fraction;
-    uint32_t play_count;
+    guint32 cue_point_id;
+    guint32 type;
+    guint32 start;
+    guint32 end;
+    guint32 fraction;
+    guint32 play_count;
   } sample_loop;
 };
 
-void emu3_process_sample (struct emu3_sample *sample, int num,
-			  emu3_ext_mode_t ext_mode, uint8_t note,
-			  float fraction);
+void emu3_process_sample (struct emu3_sample *sample, gint num,
+			  emu3_ext_mode_t ext_mode, guint8 note,
+			  gfloat fraction);
 
-int emu3_sample_get_smpl_chunk (SNDFILE * output,
-				struct smpl_chunk_data *smpl_chunk_data);
+gint emu3_sample_get_smpl_chunk (SNDFILE * output,
+				 struct smpl_chunk_data *smpl_chunk_data);
 
-int
-emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
-		    const char *path, int offset);
+gint emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
+			 const gchar * path, gint offset);
 
-extern int max_sample_rate;
-extern int bit_depth;
+extern gint max_sample_rate;
+extern gint bit_depth;
 
 #endif
