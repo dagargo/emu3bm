@@ -855,7 +855,7 @@ emu3_set_preset_zone_filter (struct emu3_preset_zone *zone, gint filter)
     }
   else
     {
-      emu_debug (1, "Setting filter to %s...", VCF_TYPE[filter]);
+      emu_debug (1, "Setting filter to '%s'...", VCF_TYPE[filter]);
       zone->vcf_type_lfo_shape =
 	(((guint8) filter) << 3) | (zone->vcf_type_lfo_shape & 0x3);
     }
@@ -2128,17 +2128,73 @@ emu3_sfz_set_envelope (struct emu_sfz_context *esctx, struct emu3_envelope *e,
   e->release = emu3_get_u8_from_time_163_69 (v);
 }
 
+struct emu3_sfz_fil_type_map
+{
+  const gchar *sfz_fil_type;
+  gint emu3_filter_id;		// -1 means not implemented
+};
+
+const struct emu3_sfz_fil_type_map EMU3_SFZ_FIL_TYPE_MAPS[] = {
+  {"bpf_1p", -1},
+  {"brf_1p", -1},
+  {"apf_1p", 11},		// Phaser 1
+  {"hpf_1p", -1},
+  {"lpf_1p", -1},
+  {"bpf_2p", 5},
+  {"brf_2p", 7},
+  {"hpf_2p", 3},
+  {"lpf_2p", 0},
+  {"pkf_2p", -1},
+  {"bpf_2p_sv", -1},
+  {"brf_2p_sv", -1},
+  {"hpf_2p_sv", -1},
+  {"lpf_2p_sv", -1},
+  {"hpf_4p", 4},
+  {"lpf_4p", 1},
+  {"hpf_6p", -1},
+  {"lpf_6p", 2},
+  {"comb", 14},			// Flanger Lite
+  {"pink", -1}
+};
+
+static const gint EMU3_SFZ_FIL_TYPE_MAPS_SIZE =
+  sizeof (EMU3_SFZ_FIL_TYPE_MAPS) / sizeof (struct emu3_sfz_fil_type_map);
+
+gint
+emu3_get_filter_id_from_sfz_fil_type (const gchar *sfz_fil_type)
+{
+  gint emu3_filter_id = -1;
+  const struct emu3_sfz_fil_type_map *map = EMU3_SFZ_FIL_TYPE_MAPS;
+  for (gint i = 0; i < EMU3_SFZ_FIL_TYPE_MAPS_SIZE; i++, map++)
+    {
+      if (!strcmp (map->sfz_fil_type, sfz_fil_type))
+	{
+	  emu3_filter_id = map->emu3_filter_id;
+	  break;
+	}
+    }
+  if (emu3_filter_id == -1)
+    {
+      emu_debug (1, "SFZ filter type '%s' has no EMU3 filter correspondence",
+		 sfz_fil_type);
+      emu3_filter_id = 0;
+    }
+  emu_debug (1, "Using filter '%s'...", VCF_TYPE[emu3_filter_id]);
+  return emu3_filter_id;
+}
+
 void
 emu3_sfz_add_region (struct emu_sfz_context *esctx)
 {
   gfloat f;
+  const gchar *s;
   gchar *sample_path;
   const gchar *sample;
   struct emu_file *file;
   struct emu3_bank *bank;
   struct emu3_preset_zone *zone;
   struct emu_zone_range zone_range;
-  gint err, sample_num, actual_preset;
+  gint err, sample_num, actual_preset, i;
   gint lokey, hikey, pitch_keycenter, lovel, hivel;
 
   sample = emu3_get_opcode_string_val (esctx, "sample", NULL, NULL);
@@ -2224,6 +2280,10 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
   zone->vel_to_pan = emu3_get_s8_from_percent (f);
 
   // VCF
+
+  s = emu3_get_opcode_string_val (esctx, "fil_type", NULL, "lpf_2p");
+  i = emu3_get_filter_id_from_sfz_fil_type (s);
+  emu3_set_preset_zone_filter (zone, i);
 
   f = emu3_get_opcode_float_val (esctx, "cutoff", NULL,
 				 TABLE_VCF_CUTOFF_FREQUENCY[0],

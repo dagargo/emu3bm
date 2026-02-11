@@ -14,6 +14,8 @@ guint8 emu3_get_u8_from_vcf_cutoff_frequency (const gint v);
 gint emu3_get_percent_signed_from_s8 (gint8 v);
 gint8 emu3_get_s8_from_percent_signed (gint v);
 
+gint emu3_get_filter_id_from_sfz_fil_type (const gchar * sfz_fil_type);
+
 static void
 test_time_163_69 ()
 {
@@ -77,6 +79,23 @@ test_percent_signed ()
   CU_ASSERT_EQUAL (emu3_get_s8_from_percent_signed (200), 127);
 }
 
+static void
+test_emu3_get_filter_id_from_sfz_fil_type ()
+{
+  printf ("\n");
+
+  CU_ASSERT_EQUAL (emu3_get_filter_id_from_sfz_fil_type ("apf_1p"), 11);
+  CU_ASSERT_EQUAL (emu3_get_filter_id_from_sfz_fil_type ("bpf_2p"), 5);
+  CU_ASSERT_EQUAL (emu3_get_filter_id_from_sfz_fil_type ("brf_2p"), 7);
+  CU_ASSERT_EQUAL (emu3_get_filter_id_from_sfz_fil_type ("hpf_2p"), 3);
+  CU_ASSERT_EQUAL (emu3_get_filter_id_from_sfz_fil_type ("lpf_2p"), 0);
+  CU_ASSERT_EQUAL (emu3_get_filter_id_from_sfz_fil_type ("hpf_4p"), 4);
+  CU_ASSERT_EQUAL (emu3_get_filter_id_from_sfz_fil_type ("lpf_4p"), 1);
+  CU_ASSERT_EQUAL (emu3_get_filter_id_from_sfz_fil_type ("lpf_6p"), 2);
+  CU_ASSERT_EQUAL (emu3_get_filter_id_from_sfz_fil_type ("comb"), 14);
+  CU_ASSERT_EQUAL (emu3_get_filter_id_from_sfz_fil_type ("foo"), 0);
+}
+
 gint
 main (gint argc, gchar *argv[])
 {
@@ -110,6 +129,13 @@ main (gint argc, gchar *argv[])
     }
 
   if (!CU_add_test (suite, "percent_signed", test_percent_signed))
+    {
+      goto cleanup;
+    }
+
+  if (!CU_add_test
+      (suite, "emu3_get_filter_id_from_sfz_fil_type",
+       test_emu3_get_filter_id_from_sfz_fil_type))
     {
       goto cleanup;
     }
