@@ -1271,6 +1271,30 @@ emu3_find_first_zone_for_sample (struct emu_file *file, gint sample_num,
   return 0;
 }
 
+static gint
+emu3_get_sample (struct emu_file *file, gint sample_num,
+		 struct emu3_sample **sample)
+{
+  struct emu3_bank *bank = EMU3_BANK (file);
+  gint max_samples = emu3_get_max_samples (bank);
+
+  if (sample_num - 1 < max_samples)
+    {
+      guint32 *addresses = emu3_get_sample_addresses (bank);
+      guint32 sample_start_addr = emu3_get_sample_start_address (bank);
+      guint32 address = sample_start_addr + addresses[sample_num - 1] -
+	SAMPLE_OFFSET;
+      *sample = (struct emu3_sample *) &file->raw[address];
+      return 0;
+    }
+  else
+    {
+      emu_error ("Sample %03d not available", sample_num);
+      *sample = NULL;
+      return -1;
+    }
+}
+
 gint
 emu3_process_bank (struct emu_file *file, gint ext_mode, gint edit_preset,
 		   gchar *rt_controls, gint pbr, gint level, gint cutoff,
@@ -2183,24 +2207,59 @@ emu3_get_filter_id_from_sfz_fil_type (const gchar *sfz_fil_type)
   return emu3_filter_id;
 }
 
+static void
+emu3_set_sample_options_from_sfz_loop_mode (struct emu3_sample *sample,
+					    const gchar *loop_mode)
+{
+  guint16 options_wo_loop = sample->options & ~EMU3_SAMPLE_OPT_LOOP_MASK;
+  if (!strcmp ("no_loop", loop_mode) || !strcmp ("one_shot", loop_mode))
+    {
+      sample->options = options_wo_loop;
+    }
+  else if (!strcmp ("loop_continuous", loop_mode))
+    {
+      sample->options = options_wo_loop | EMU3_SAMPLE_OPT_LOOP |
+	EMU3_SAMPLE_OPT_LOOP_RELEASE;
+    }
+  else if (!strcmp ("loop_sustain", loop_mode))
+    {
+      sample->options = options_wo_loop | EMU3_SAMPLE_OPT_LOOP;
+    }
+  else
+    {
+      if (sample->options & EMU3_SAMPLE_OPT_LOOP)
+	{
+	  emu_debug (1, "Setting loop mode to 'loop_continuous'...");
+	  sample->options = options_wo_loop | EMU3_SAMPLE_OPT_LOOP |
+	    EMU3_SAMPLE_OPT_LOOP_RELEASE;
+	}
+      else
+	{
+	  emu_debug (1, "Setting loop mode to 'no_loop'...");
+	  sample->options = options_wo_loop;
+	}
+    }
+}
+
 void
 emu3_sfz_add_region (struct emu_sfz_context *esctx)
 {
   gfloat f;
   const gchar *s;
   gchar *sample_path;
-  const gchar *sample;
   struct emu_file *file;
   struct emu3_bank *bank;
   struct emu3_preset_zone *zone;
+  struct emu3_sample *emu3_sample;
   struct emu_zone_range zone_range;
+  const gchar *sample, *fil_type_def;
   gint err, sample_num, actual_preset, i;
   gint lokey, hikey, pitch_keycenter, lovel, hivel;
 
   sample = emu3_get_opcode_string_val (esctx, "sample", NULL, NULL);
   if (!sample)
     {
-      emu_error ("No 'sample' found in region");
+      emu_error ("No 'sample' opcode found in region");
       return;
     }
 
@@ -2262,7 +2321,19 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
       return;
     }
 
-  // Here, use region opcodes that can be set in a zone.
+  // Region opcodes
+
+  // sample
+
+  err = emu3_get_sample (esctx->file, sample_num, &emu3_sample);
+  if (err)
+    {
+      return;
+    }
+  fil_type_def = emu3_sample->options & EMU3_SAMPLE_OPT_LOOP ?
+    "loop_continuous" : "no_loop";
+  s = emu3_get_opcode_string_val (esctx, "loop_mode", NULL, fil_type_def);
+  emu3_set_sample_options_from_sfz_loop_mode (emu3_sample, s);
 
   // VCA and pan
 
@@ -2389,6 +2460,8 @@ emu3_add_sfz (struct emu_file *file, const gchar *sfz_path)
   yyparse ();
 
   emu3_sfz_set_velocity_range_on (&esctx);
+
+  // Preset opcodes
 
   emu3_sfz_set_preset_opcodes (&esctx);
 

@@ -44,6 +44,12 @@ test
 logAndRun 'diff $TEST_BANK_NAME data/emu3_test_add_sfz_7'
 test
 
+logAndRun '$srcdir/../src/emu3bm -n $TEST_BANK_NAME'
+logAndRun '$srcdir/../src/emu3bm -S data/test8.sfz $TEST_BANK_NAME'
+test
+logAndRun 'diff $TEST_BANK_NAME data/emu3_test_add_sfz_8'
+test
+
 rm $TEST_BANK_NAME_PRISTINE
 
 cleanUp

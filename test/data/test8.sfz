@@ -1,0 +1,21 @@
+/////////////////////////////////
+// SFZ grammar test loop modes //
+/////////////////////////////////
+
+<region>
+sample=s1_loop.wav key=60 loop_mode=one_shot
+
+<region>
+sample=s1_loop.wav key=61 loop_mode=no_loop
+
+<region>
+sample=s1_loop.wav key=62 loop_mode=loop_sustain
+
+<region>
+sample=s1_loop.wav key=63 loop_mode=loop_continuos
+
+<region>
+sample=s1_loop.wav key=64 loop_mode=x
+
+<region>
+sample=s1.wav key=65 loop_mode=x

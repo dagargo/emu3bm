@@ -5,7 +5,7 @@
 <group>
  ampeg_sustain=0.001
  ampeg_release=0.4
- loop_mode=loop_continuous
+ loop_mode=loop_sustain
 
 <region>
 sample=s1.wav
