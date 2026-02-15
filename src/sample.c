@@ -340,7 +340,7 @@ emu3_sample_get_smpl_chunk (SNDFILE *input,
 }
 
 static void
-emu3_init_sample_descriptor (struct emu3_sample_descriptor *sd,
+emu3_sample_init_descriptor (struct emu3_sample_descriptor *sd,
 			     struct emu3_sample *sample, gint frames)
 {
   sd->sample = sample;
@@ -369,10 +369,53 @@ emu3_write_frame (struct emu3_sample_descriptor *sd, gint16 frame[])
     }
 }
 
+// These additional fixes are needed by the ESI.
+static void
+emu3_check_and_fix_loop_point (guint32 *loop_point, guint32 frames)
+{
+  if (*loop_point < 6)
+    {
+      *loop_point = 6;
+    }
+  if (*loop_point > frames - 7)
+    {
+      *loop_point = frames - 7;
+    }
+}
+
+void
+emu3_sample_set_loop_start (struct emu3_sample *sample, gboolean mono,
+			    guint32 frames, guint32 loop_start)
+{
+  emu3_check_and_fix_loop_point (&loop_start, frames);
+
+  gint loop_start_bytes = loop_start * sizeof (gint16);
+  sample->loop_start_l = loop_start_bytes + sizeof (struct emu3_sample);
+  sample->loop_start_r = mono ? 0 :
+    sample->loop_start_l + frames * sizeof (gint16);
+
+
+  emu_debug (1, "Setting loop start at %d...", loop_start);
+}
+
+void
+emu3_sample_set_loop_end (struct emu3_sample *sample, gboolean mono,
+			  guint32 frames, guint32 loop_end)
+{
+  emu3_check_and_fix_loop_point (&loop_end, frames);
+
+  emu_debug (1, "Setting loop end at %d...", loop_end);
+
+  gint loop_end_bytes = loop_end * sizeof (gint16);
+  sample->loop_end_l = loop_end_bytes + sizeof (struct emu3_sample);
+  sample->loop_end_r = mono ? 0 :
+    sample->loop_end_l + frames * sizeof (gint16);
+}
+
 static gint
-emu3_init_sample (struct emu3_sample *sample, gint offset, gint samplerate,
-		  gint frames, gint mono, gint loop_start, gint loop_end,
-		  gint loop)
+emu3_sample_init (struct emu3_sample *sample, gint offset, gint samplerate,
+		  gboolean mono, guint32 frames, guint32 loop_start,
+		  guint32 loop_end, gint loop)
 {
   gint mono_size, data_size, size;
 
@@ -386,15 +429,8 @@ emu3_init_sample (struct emu3_sample *sample, gint offset, gint samplerate,
   sample->end_l = mono_size - sizeof (gint16);
   sample->end_r = mono ? 0 : size - sizeof (gint16);
 
-  gint loop_start_bytes = loop_start * sizeof (gint16);
-  sample->loop_start_l = loop_start_bytes + sizeof (struct emu3_sample);
-  sample->loop_start_r = mono ? 0 :
-    sample->loop_start_l + frames * sizeof (gint16);
-
-  gint loop_end_bytes = loop_end * sizeof (gint16);
-  sample->loop_end_l = loop_end_bytes + sizeof (struct emu3_sample);
-  sample->loop_end_r = mono ? 0 :
-    sample->loop_end_l + frames * sizeof (gint16);
+  emu3_sample_set_loop_start (sample, mono, frames, loop_start);
+  emu3_sample_set_loop_end (sample, mono, frames, loop_end);
 
   sample->sample_rate = samplerate;
 
@@ -425,24 +461,11 @@ emu3_init_sample (struct emu3_sample *sample, gint offset, gint samplerate,
   return size;
 }
 
-// These additional fixes are needed by the ESI.
-static void
-emu3_check_and_fix_loop_point (gint *loop_point, gint frames)
-{
-  if (*loop_point < 6)
-    {
-      *loop_point = 6;
-    }
-  if (*loop_point > frames - 7)
-    {
-      *loop_point = frames - 7;
-    }
-}
-
 static gint16 *
 emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
-			     gint *samplerate, gint *frames, gint *loop_start,
-			     gint *loop_end, gint *loop)
+			     gint *samplerate, guint32 *frames,
+			     guint32 *loop_start, guint32 *loop_end,
+			     gint *loop)
 {
   gdouble ratio;
   gint direct_read;
@@ -577,9 +600,6 @@ emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
       *loop_end = *frames - 1;
     }
 
-  emu3_check_and_fix_loop_point (loop_start, *frames);
-  emu3_check_and_fix_loop_point (loop_end, *frames);
-
   //This fixes some "Mono End Loop!!!  0006" errors when editing the loop points in the sampler.
   if (*loop_end - *loop_start < MINIMUM_LOOP_LEN)
     {
@@ -595,14 +615,16 @@ emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
 //returns the sample size in bytes that the the sample takes in the bank
 gint
 emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
-		    const gchar *path, gint offset)
+		    const gchar *path, gint offset, gboolean *mono,
+		    guint32 *frames)
 {
   SF_INFO sfinfo;
   SNDFILE *sndfile;
-  gint loop, size, loop_start, loop_end, frames, samplerate;
   gint16 *f, *data = NULL;
   gint16 zero[2] = { 0, 0 };
   const gchar *filename;
+  gint loop, size, samplerate;
+  guint32 loop_start, loop_end;
   struct emu3_sample_descriptor sd;
 
   if (access (path, R_OK) != 0)
@@ -621,16 +643,16 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
       goto close;
     }
 
-  data = emu3_append_sample_get_data (sndfile, &sfinfo, &samplerate, &frames,
+  data = emu3_append_sample_get_data (sndfile, &sfinfo, &samplerate, frames,
 				      &loop_start, &loop_end, &loop);
   if (!data)
     {
       goto close;
     }
 
-  size = emu3_init_sample (sample, offset, samplerate, frames,
-			   sfinfo.channels == 1, loop_start, loop_end, loop);
-
+  *mono = sfinfo.channels == 1;
+  size = emu3_sample_init (sample, offset, samplerate, *mono, *frames,
+			   loop_start, loop_end, loop);
   if (file->size + size > EMU3_MEM_SIZE)
     {
       emu_error ("Bank is full");
@@ -641,7 +663,7 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
   gchar *basec = strdup (path);
   filename = basename (basec);
   emu_print (0, 0, "Appending sample '%s' (%d frames, %d channels)...\n",
-	     filename, frames, sfinfo.channels);
+	     filename, *frames, sfinfo.channels);
   //Sample header initialization
   gchar *name = emu_filename_to_filename_wo_ext (filename, NULL);
   gchar *emu3name = emu3_str_to_emu3name (name);
@@ -651,16 +673,16 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
   free (name);
   free (emu3name);
 
-  emu3_init_sample_descriptor (&sd, sample, frames);
+  emu3_sample_init_descriptor (&sd, sample, *frames);
 
   f = data;
-  for (gint i = 0; i < frames; i++, f += sfinfo.channels)
+  for (gint i = 0; i < *frames; i++, f += sfinfo.channels)
     {
       // First 2 and last 2 frames must be set to 0.
       // Without this, the sampler will complain with a "Mono Start Zero!!!001" error message.
       // As indicated in the manual, running the sample integrity in the digital tools menu would fix the error and it'll fix it by doing this.
       // In previous versions of emu3bm, the pairs of 0 samples were appended automatically but this broke SDS compatibility frame count.
-      if (i < 2 || i >= frames - 2)
+      if (i < 2 || i >= *frames - 2)
 	{
 	  emu3_write_frame (&sd, zero);
 	}

@@ -1,0 +1,12 @@
+//////////////////////////
+// SFZ test loop points //
+//////////////////////////
+
+<region>
+sample=s1_loop.wav key=60 loop_start=100 loop_end=200
+
+<region>
+sample=s1_loop.wav key=61 loop_start=100
+
+<region>
+sample=s1_loop.wav key=62 loop_end=200

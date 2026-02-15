@@ -102,7 +102,7 @@ Some notes on SFZ support
   - `fil_veltrack`
   - `hivel` and `lovel`
   - `key`, `lokey`, `hikey` and `pitch_keycenter`
-  - `loop_mode`
+  - `loop_mode`, `loop_start` and `loop_end`
   - `pan`
   - `pan_veltrack`
   - `sample`

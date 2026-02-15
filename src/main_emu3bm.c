@@ -304,7 +304,7 @@ main (gint argc, gchar *argv[])
 
   if (sflg)
     {
-      err = emu3_add_sample (file, sample_name, NULL);
+      err = emu3_add_sample (file, sample_name, NULL, NULL, NULL);
       goto end;
     }
 

@@ -97,7 +97,14 @@ gint emu3_sample_get_smpl_chunk (SNDFILE * output,
 				 struct smpl_chunk_data *smpl_chunk_data);
 
 gint emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
-			 const gchar * path, gint offset);
+			 const gchar * path, gint offset, gboolean * mono,
+			 guint32 * frames);
+
+void emu3_sample_set_loop_start (struct emu3_sample *sample, gboolean mono,
+				 guint32 frames, guint32 loop_start);
+
+void emu3_sample_set_loop_end (struct emu3_sample *sample, gboolean mono,
+			       guint32 frames, guint32 loop_end);
 
 extern gint max_sample_rate;
 extern gint bit_depth;

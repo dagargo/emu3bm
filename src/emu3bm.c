@@ -1390,9 +1390,12 @@ emu3_get_bank_samples (struct emu3_bank *bank)
 }
 
 gint
-emu3_add_sample (struct emu_file *file, gchar *sample_path, gint *sample_num)
+emu3_add_sample (struct emu_file *file, gchar *sample_path, gint *sample_num,
+		 gboolean *mono_out, guint32 *frames_out)
 {
-  gint next_sample, sample_offset;
+  gboolean mono;
+  guint32 frames;
+  gint size, next_sample, sample_offset;
   struct emu3_bank *bank = EMU3_BANK (file);
   gint max_samples = emu3_get_max_samples (bank);
   gint total_samples = emu3_get_bank_samples (bank);
@@ -1416,12 +1419,22 @@ emu3_add_sample (struct emu_file *file, gchar *sample_path, gint *sample_num)
 
   emu_debug (1, "Adding sample %d...", next_sample);
   sample_offset = next_sample_addr - sample_start_addr - total_samples * 2;
-  gint size = emu3_append_sample (file, sample, sample_path, sample_offset);
-
+  size = emu3_append_sample (file, sample, sample_path, sample_offset,
+			     &mono, &frames);
   if (size < 0)
     {
       emu_error ("Appending sample error");
       return -size;
+    }
+
+  if (mono_out)
+    {
+      *mono_out = mono;
+    }
+
+  if (frames_out)
+    {
+      *frames_out = frames;
     }
 
   file->size += size;
@@ -1925,7 +1938,7 @@ emu3_get_opcode_val (struct emu_sfz_context *esctx, const gchar *key)
   return g_hash_table_lookup (esctx->global_opcodes, key);
 }
 
-static gpointer
+static const gpointer
 emu3_get_opcode_val_with_alias (struct emu_sfz_context *esctx,
 				const gchar *key, const gchar *alias)
 {
@@ -1940,10 +1953,14 @@ emu3_get_opcode_val_with_alias (struct emu_sfz_context *esctx,
 static gdouble
 emu3_get_opcode_number_val (struct emu_sfz_context *esctx, const gchar *key,
 			    const gchar *alias, gdouble min, gdouble max,
-			    gdouble def, gint decimals)
+			    gdouble def, gboolean *defined, gint decimals)
 {
   gdouble v;
   const gdouble *val = emu3_get_opcode_val_with_alias (esctx, key, alias);
+  if (defined)
+    {
+      *defined = val != NULL;
+    }
   if (val)
     {
       v = *val;
@@ -1973,25 +1990,32 @@ emu3_get_opcode_number_val (struct emu_sfz_context *esctx, const gchar *key,
 static gint64
 emu3_get_opcode_integer_val (struct emu_sfz_context *esctx, const gchar *key,
 			     const gchar *alias, gint64 min, gint64 max,
-			     gint64 def)
+			     gint64 def, gboolean *defined)
 {
-  return emu3_get_opcode_number_val (esctx, key, alias, min, max, def, 0);
+  return emu3_get_opcode_number_val (esctx, key, alias, min, max, def,
+				     defined, 0);
 }
 
 static gdouble
 emu3_get_opcode_float_val (struct emu_sfz_context *esctx, const gchar *key,
 			   const gchar *alias, gdouble min, gdouble max,
-			   gdouble def)
+			   gdouble def, gboolean *defined)
 {
-  return emu3_get_opcode_number_val (esctx, key, alias, min, max, def, 2);
+  return emu3_get_opcode_number_val (esctx, key, alias, min, max, def,
+				     defined, 2);
 }
 
 static const gchar *
 emu3_get_opcode_string_val (struct emu_sfz_context *esctx, const gchar *key,
-			    const gchar *alias, const gchar *def)
+			    const gchar *alias, const gchar *def,
+			    gboolean *defined)
 {
   const gchar *v;
   const gchar *val = emu3_get_opcode_val_with_alias (esctx, key, alias);
+  if (defined)
+    {
+      *defined = val != NULL;
+    }
   if (val)
     {
       v = val;
@@ -2141,15 +2165,17 @@ emu3_sfz_set_envelope (struct emu_sfz_context *esctx, struct emu3_envelope *e,
 {
   gdouble v;
 
-  v = emu3_get_opcode_float_val (esctx, attack_opcode, NULL, 0, 100, 0);
+  v = emu3_get_opcode_float_val (esctx, attack_opcode, NULL, 0, 100, 0, NULL);
   e->attack = emu3_get_u8_from_time_163_69 (v);
-  v = emu3_get_opcode_float_val (esctx, hold_opcode, NULL, 0, 100, 0);
+  v = emu3_get_opcode_float_val (esctx, hold_opcode, NULL, 0, 100, 0, NULL);
   e->hold = emu3_get_u8_from_time_163_69 (v);
-  v = emu3_get_opcode_float_val (esctx, decay_opcode, NULL, 0, 100, 0);
+  v = emu3_get_opcode_float_val (esctx, decay_opcode, NULL, 0, 100, 0, NULL);
   e->decay = emu3_get_u8_from_time_163_69 (v);
-  v = emu3_get_opcode_float_val (esctx, sustain_opcode, NULL, 0, 100, 100);
+  v = emu3_get_opcode_float_val (esctx, sustain_opcode, NULL, 0, 100, 100,
+				 NULL);
   e->sustain = emu3_get_s8_from_percent (v);
-  v = emu3_get_opcode_float_val (esctx, release_opcode, NULL, 0, 100, 0.001);
+  v = emu3_get_opcode_float_val (esctx, release_opcode, NULL, 0, 100, 0.001,
+				 NULL);
   e->release = emu3_get_u8_from_time_163_69 (v);
 }
 
@@ -2254,10 +2280,12 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
   struct emu3_sample *emu3_sample;
   struct emu_zone_range zone_range;
   const gchar *sample, *fil_type_def;
+  guint32 frames, loop_start, loop_end;
   gint err, sample_num, actual_preset, i;
   gint lokey, hikey, pitch_keycenter, lovel, hivel;
+  gboolean mono, loop_start_defined, loop_end_defined;
 
-  sample = emu3_get_opcode_string_val (esctx, "sample", NULL, NULL);
+  sample = emu3_get_opcode_string_val (esctx, "sample", NULL, NULL, NULL);
   if (!sample)
     {
       emu_error ("No 'sample' opcode found in region");
@@ -2270,16 +2298,18 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
   lokey = emu3_get_opcode_integer_val (esctx, "lokey", "key",
 				       EMU3_LOWEST_MIDI_NOTE,
 				       EMU3_HIGHEST_MIDI_NOTE,
-				       EMU3_LOWEST_MIDI_NOTE);
+				       EMU3_LOWEST_MIDI_NOTE, NULL);
   hikey = emu3_get_opcode_integer_val (esctx, "hikey", "key",
 				       EMU3_LOWEST_MIDI_NOTE,
 				       EMU3_HIGHEST_MIDI_NOTE,
-				       EMU3_HIGHEST_MIDI_NOTE);
+				       EMU3_HIGHEST_MIDI_NOTE, NULL);
   pitch_keycenter = emu3_get_opcode_integer_val (esctx, "pitch_keycenter",
 						 "key", EMU3_LOWEST_MIDI_NOTE,
-						 EMU3_HIGHEST_MIDI_NOTE, 60);
-  lovel = emu3_get_opcode_integer_val (esctx, "lovel", NULL, 1, 127, 1);
-  hivel = emu3_get_opcode_integer_val (esctx, "hivel", NULL, 1, 127, 127);
+						 EMU3_HIGHEST_MIDI_NOTE, 60,
+						 NULL);
+  lovel = emu3_get_opcode_integer_val (esctx, "lovel", NULL, 1, 127, 1, NULL);
+  hivel = emu3_get_opcode_integer_val (esctx, "hivel", NULL, 1, 127, 127,
+				       NULL);
 
   emu_debug (1,
 	     "Processing region %02d for '%s' (pitch_keycenter: %d; lokey: %d; hikey: %d; lovel: %d, hivel: %d)...",
@@ -2309,7 +2339,8 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
 
   sample_path = g_strdup_printf ("%s/%s", esctx->sfz_dir, sample);
   emu_replace_backslashes_in_path (sample_path);
-  err = emu3_add_sample (esctx->file, sample_path, &sample_num);
+  err = emu3_add_sample (esctx->file, sample_path, &sample_num, &mono,
+			 &frames);
   g_free (sample_path);
   if (err)
     {
@@ -2333,27 +2364,44 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
     }
   fil_type_def = emu3_sample->options & EMU3_SAMPLE_OPT_LOOP ?
     "loop_continuous" : "no_loop";
-  s = emu3_get_opcode_string_val (esctx, "loop_mode", NULL, fil_type_def);
+  s = emu3_get_opcode_string_val (esctx, "loop_mode", NULL, fil_type_def,
+				  NULL);
   emu3_set_sample_options_from_sfz_loop_mode (emu3_sample, s);
+
+  loop_start = emu3_get_opcode_integer_val (esctx, "loop_start", NULL, 0,
+					    G_MAXUINT32, 0,
+					    &loop_start_defined);
+  if (loop_start_defined)
+    {
+      emu3_sample_set_loop_start (emu3_sample, mono, frames, loop_start);
+    }
+  loop_end = emu3_get_opcode_integer_val (esctx, "loop_end", NULL, 0,
+					  G_MAXUINT32, 0, &loop_end_defined);
+  if (loop_end_defined)
+    {
+      emu3_sample_set_loop_end (emu3_sample, mono, frames, loop_end);
+    }
 
   // VCA and pan
 
-  f = emu3_get_opcode_float_val (esctx, "amp_veltrack", NULL, -100, 100, 100);
+  f = emu3_get_opcode_float_val (esctx, "amp_veltrack", NULL, -100, 100,
+				 100, NULL);
   zone->vel_to_vca_level = emu3_get_s8_from_percent (f);
 
   emu3_sfz_set_envelope (esctx, &zone->vca_envelope, "ampeg_attack",
 			 "ampeg_hold", "ampeg_decay", "ampeg_sustain",
 			 "ampeg_release");
 
-  f = emu3_get_opcode_float_val (esctx, "pan", NULL, -100, 100, 0);
+  f = emu3_get_opcode_float_val (esctx, "pan", NULL, -100, 100, 0, NULL);
   zone->vca_pan = emu3_get_s8_from_percent_signed (f);
 
-  f = emu3_get_opcode_float_val (esctx, "pan_veltrack", NULL, -100, 100, 0);
+  f = emu3_get_opcode_float_val (esctx, "pan_veltrack", NULL, -100, 100, 0,
+				 NULL);
   zone->vel_to_pan = emu3_get_s8_from_percent (f);
 
   // VCF
 
-  s = emu3_get_opcode_string_val (esctx, "fil_type", NULL, "lpf_2p");
+  s = emu3_get_opcode_string_val (esctx, "fil_type", NULL, "lpf_2p", NULL);
   i = emu3_get_filter_id_from_sfz_fil_type (s);
   emu3_set_preset_zone_filter (zone, i);
 
@@ -2361,12 +2409,12 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
 				 TABLE_VCF_CUTOFF_FREQUENCY[0],
 				 TABLE_VCF_CUTOFF_FREQUENCY[255],
 				 emu3_get_vcf_cutoff_frequency_from_u8
-				 (DEFAULT_CUTOFF_U8));
+				 (DEFAULT_CUTOFF_U8), NULL);
   zone->vcf_cutoff = emu3_get_u8_from_vcf_cutoff_frequency (f);
 
   // Probably, the value mapping is not right as the whole SFZ range, which is
   // [ 0, 40 ] dB, is mapped to the whole output range, which is a percentage.
-  f = emu3_get_opcode_float_val (esctx, "resonance", NULL, 0, 40, 0);
+  f = emu3_get_opcode_float_val (esctx, "resonance", NULL, 0, 40, 0, NULL);
   zone->vcf_q = emu3_get_s8_from_percent (f * 2.5) |
     (strcmp (ESI_32_V3_DEF, bank->format) == 0 ? 0x80 : 0);
 
@@ -2375,7 +2423,8 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
 			 "fileg_release");
 
   // The value mapping is just an approximation as the device uses a percentage.
-  f = emu3_get_opcode_float_val (esctx, "fil_veltrack", NULL, -9600, 9600, 0);
+  f = emu3_get_opcode_float_val (esctx, "fil_veltrack", NULL, -9600, 9600, 0,
+				 NULL);
   zone->vel_to_vcf_cutoff = emu3_get_s8_from_percent (f / 96.0);
 
   esctx->region_num++;
@@ -2394,7 +2443,7 @@ emu3_sfz_set_preset_opcodes (struct emu_sfz_context *esctx)
   g_hash_table_remove_all (esctx->region_opcodes);
 
   bend_up = emu3_get_opcode_integer_val (esctx, "bend_up", "bendup",
-					 -9600, 9600, 200);
+					 -9600, 9600, 200, NULL);
   v = bend_up / 100;
 
   for (gint i = 0; i < EMU3_NOTES; i++)
