@@ -1909,7 +1909,7 @@ emu3_write_file (struct emu_file *file)
   return emu_write_file (file);
 }
 
-static gpointer
+static const gpointer
 emu3_get_opcode_val (struct emu_sfz_context *esctx, const gchar *key)
 {
   gchar *v = g_hash_table_lookup (esctx->region_opcodes, key);
@@ -1937,13 +1937,13 @@ emu3_get_opcode_val_with_alias (struct emu_sfz_context *esctx,
   return v;
 }
 
-static gfloat
+static gdouble
 emu3_get_opcode_number_val (struct emu_sfz_context *esctx, const gchar *key,
-			    const gchar *alias, gfloat min, gfloat max,
-			    gfloat def, gint decimals)
+			    const gchar *alias, gdouble min, gdouble max,
+			    gdouble def, gint decimals)
 {
-  gfloat v;
-  gfloat *val = emu3_get_opcode_val_with_alias (esctx, key, alias);
+  gdouble v;
+  const gdouble *val = emu3_get_opcode_val_with_alias (esctx, key, alias);
   if (val)
     {
       v = *val;
@@ -1970,17 +1970,18 @@ emu3_get_opcode_number_val (struct emu_sfz_context *esctx, const gchar *key,
   return v;
 }
 
-static gint
+static gint64
 emu3_get_opcode_integer_val (struct emu_sfz_context *esctx, const gchar *key,
-			     const gchar *alias, gint min, gint max, gint def)
+			     const gchar *alias, gint64 min, gint64 max,
+			     gint64 def)
 {
   return emu3_get_opcode_number_val (esctx, key, alias, min, max, def, 0);
 }
 
-static gfloat
+static gdouble
 emu3_get_opcode_float_val (struct emu_sfz_context *esctx, const gchar *key,
-			   const gchar *alias, gfloat min, gfloat max,
-			   gfloat def)
+			   const gchar *alias, gdouble min, gdouble max,
+			   gdouble def)
 {
   return emu3_get_opcode_number_val (esctx, key, alias, min, max, def, 2);
 }
@@ -1990,7 +1991,7 @@ emu3_get_opcode_string_val (struct emu_sfz_context *esctx, const gchar *key,
 			    const gchar *alias, const gchar *def)
 {
   const gchar *v;
-  gchar *val = emu3_get_opcode_val_with_alias (esctx, key, alias);
+  const gchar *val = emu3_get_opcode_val_with_alias (esctx, key, alias);
   if (val)
     {
       v = val;
@@ -2138,7 +2139,7 @@ emu3_sfz_set_envelope (struct emu_sfz_context *esctx, struct emu3_envelope *e,
 		       const gchar *sustain_opcode,
 		       const gchar *release_opcode)
 {
-  gfloat v;
+  gdouble v;
 
   v = emu3_get_opcode_float_val (esctx, attack_opcode, NULL, 0, 100, 0);
   e->attack = emu3_get_u8_from_time_163_69 (v);
@@ -2244,7 +2245,7 @@ emu3_set_sample_options_from_sfz_loop_mode (struct emu3_sample *sample,
 void
 emu3_sfz_add_region (struct emu_sfz_context *esctx)
 {
-  gfloat f;
+  gdouble f;
   const gchar *s;
   gchar *sample_path;
   struct emu_file *file;
