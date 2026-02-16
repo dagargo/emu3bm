@@ -5,7 +5,7 @@
 gfloat emu3_get_time_163_69_from_u8 (guint8 v);
 guint8 emu3_get_u8_from_time_163_69 (gfloat v);
 
-gint emu3_get_percent_s8 (const gint8 v);
+gint emu3_get_percent_from_s8 (const gint8 v);
 gint8 emu3_get_s8_from_percent (gint v);
 
 gint emu3_get_vcf_cutoff_frequency_from_u8 (const guint8 v);
@@ -39,9 +39,9 @@ test_percent ()
 {
   printf ("\n");
 
-  CU_ASSERT_EQUAL (emu3_get_percent_s8 (-127), -100);
-  CU_ASSERT_EQUAL (emu3_get_percent_s8 (0), 0);
-  CU_ASSERT_EQUAL (emu3_get_percent_s8 (127), 100);
+  CU_ASSERT_EQUAL (emu3_get_percent_from_s8 (-127), -100);
+  CU_ASSERT_EQUAL (emu3_get_percent_from_s8 (0), 0);
+  CU_ASSERT_EQUAL (emu3_get_percent_from_s8 (127), 100);
 
   CU_ASSERT_EQUAL (emu3_get_s8_from_percent (-100), -127);
   CU_ASSERT_EQUAL (emu3_get_s8_from_percent (0), 0);

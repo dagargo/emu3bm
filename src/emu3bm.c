@@ -499,7 +499,7 @@ emu3_get_is_side_disabled (const guint8 value)
 
 //Level: [-127, 127] -> [-100, 100]
 gint
-emu3_get_percent_s8 (const gint8 v)
+emu3_get_percent_from_s8 (const gint8 v)
 {
   const gdouble percentage = (v * 100 / 127.0);
   if (percentage < 0.0)
@@ -555,6 +555,8 @@ emu3_get_vcf_tracking (const gint8 value)
   return (gfloat) as_int / 100.0f;
 }
 
+
+
 static void
 emu3_print_envelope (struct emu3_envelope *envelope)
 {
@@ -566,7 +568,7 @@ emu3_print_envelope (struct emu3_envelope *envelope)
   emu_print (1, 5, "Decay:   %.02f s\n",
 	     emu3_get_time_163_69_from_u8 (envelope->decay));
   emu_print (1, 5, "Sustain:  %3d %%\n",
-	     emu3_get_percent_s8 (envelope->sustain));
+	     emu3_get_percent_from_s8 (envelope->sustain));
   emu_print (1, 5, "Release: %.02f s\n",
 	     emu3_get_time_163_69_from_u8 (envelope->release));
 }
@@ -597,7 +599,8 @@ emu3_print_preset_zone_info (struct emu_file *file,
 	     SIDES_DISABLED[1 + emu3_get_is_side_disabled (zone->flags)]);
 
   emu_print (1, 3, "VCA\n");
-  emu_print (1, 4, "Level: %d %%\n", emu3_get_percent_s8 (zone->vca_level));
+  emu_print (1, 4, "Level: %d %%\n",
+	     emu3_get_percent_from_s8 (zone->vca_level));
   emu_print (1, 4, "Pan:   %d %%\n",
 	     emu3_get_percent_signed_from_s8 (zone->vca_pan));
   emu3_print_envelope (&zone->vca_envelope);
@@ -618,11 +621,11 @@ emu3_print_preset_zone_info (struct emu_file *file,
   // The most significat bit is a flag to enable real time control VCof F NoteOn Q.
   // It can be disabled on the unit via Dynamic Processing / Realtime Enable.
   emu_print (1, 4, "Q:               % 3d %%\n",
-	     emu3_get_percent_s8 (zone->vcf_q & 0x7f));
+	     emu3_get_percent_from_s8 (zone->vcf_q & 0x7f));
   emu_print (1, 4, "Tracking:         %.2f\n",
 	     emu3_get_vcf_tracking (zone->vcf_tracking));
   emu_print (1, 4, "Envelope Amount: % 3d %%\n",
-	     emu3_get_percent_s8 (zone->vcf_envelope_amount));
+	     emu3_get_percent_from_s8 (zone->vcf_envelope_amount));
   emu3_print_envelope (&zone->vcf_envelope);
 
   emu_print (1, 3, "LFO\n");
@@ -633,42 +636,42 @@ emu3_print_preset_zone_info (struct emu_file *file,
   emu_print (1, 4, "Delay:      %.2f s\n",
 	     emu3_get_time_21_69 (zone->lfo_delay));
   emu_print (1, 4, "Variation:   % 3d %%\n",
-	     emu3_get_percent_s8 (zone->lfo_variation));
+	     emu3_get_percent_from_s8 (zone->lfo_variation));
   emu_print (1, 4, "LFO->Pitch:  % 3d %%\n",
-	     emu3_get_percent_s8 (zone->lfo_to_pitch));
+	     emu3_get_percent_from_s8 (zone->lfo_to_pitch));
   emu_print (1, 4, "LFO->Cutoff: % 3d %%\n",
-	     emu3_get_percent_s8 (zone->lfo_to_cutoff));
+	     emu3_get_percent_from_s8 (zone->lfo_to_cutoff));
   emu_print (1, 4, "LFO->VCA:    % 3d %%\n",
-	     emu3_get_percent_s8 (zone->lfo_to_vca));
+	     emu3_get_percent_from_s8 (zone->lfo_to_vca));
   emu_print (1, 4, "LFO->Pan:    % 3d %%\n",
-	     emu3_get_percent_s8 (zone->lfo_to_pan));
+	     emu3_get_percent_from_s8 (zone->lfo_to_pan));
 
   emu_print (1, 3, "Auxiliary envelope\n");
   emu_print (1, 4, "Destination:        %-3s\n",
 	     AUX_ENV_DST[zone->aux_envelope_dest]);
   emu_print (1, 4, "Envelope amount: % 4d %%\n",
-	     emu3_get_percent_s8 (zone->aux_envelope_amount));
+	     emu3_get_percent_from_s8 (zone->aux_envelope_amount));
   emu3_print_envelope (&zone->aux_envelope);
 
   emu_print (1, 3, "Velocity to\n");
   emu_print (1, 4, "Pitch:              % 4d %%\n",
-	     emu3_get_percent_s8 (zone->vel_to_pitch));
+	     emu3_get_percent_from_s8 (zone->vel_to_pitch));
   emu_print (1, 4, "VCA Level:          % 4d %%\n",
-	     emu3_get_percent_s8 (zone->vel_to_vca_level));
+	     emu3_get_percent_from_s8 (zone->vel_to_vca_level));
   emu_print (1, 4, "VCA Attack:         % 4d %%\n",
-	     emu3_get_percent_s8 (zone->vel_to_vca_attack));
+	     emu3_get_percent_from_s8 (zone->vel_to_vca_attack));
   emu_print (1, 4, "VCF Cutoff:         % 4d %%\n",
-	     emu3_get_percent_s8 (zone->vel_to_vcf_cutoff));
+	     emu3_get_percent_from_s8 (zone->vel_to_vcf_cutoff));
   emu_print (1, 4, "VCF Q:              % 4d %%\n",
-	     emu3_get_percent_s8 (zone->vel_to_vcf_q));
+	     emu3_get_percent_from_s8 (zone->vel_to_vcf_q));
   emu_print (1, 4, "VCF Attack:         % 4d %%\n",
-	     emu3_get_percent_s8 (zone->vel_to_vcf_attack));
+	     emu3_get_percent_from_s8 (zone->vel_to_vcf_attack));
   emu_print (1, 4, "Pan:                % 4d %%\n",
-	     emu3_get_percent_s8 (zone->vel_to_pan));
+	     emu3_get_percent_from_s8 (zone->vel_to_pan));
   emu_print (1, 4, "Sample Start:       % 4d %%\n",
-	     emu3_get_percent_s8 (zone->vel_to_sample_start));
+	     emu3_get_percent_from_s8 (zone->vel_to_sample_start));
   emu_print (1, 4, "Auxiliary Envelope: % 4d %%\n",
-	     emu3_get_percent_s8 (zone->vel_to_aux_env));
+	     emu3_get_percent_from_s8 (zone->vel_to_aux_env));
 
   emu_print (1, 3, "Keyboard Mode\n");
   emu_print (1, 4, "Keyboard Envelope mode: %s\n",
