@@ -90,7 +90,7 @@ Add a new preset from a SFZ file.
 $ emu3bm -S marimba.sfz bank
 ```
 
-Some notes on SFZ support
+Some notes on SFZ support.
 
 * Implemented opcodes:
   - `ampeg_attack`, `ampeg_decay`, `ampeg_hold`, `ampeg_release` and `ampeg_sustain`
@@ -106,7 +106,7 @@ Some notes on SFZ support
   - `pan`
   - `pan_veltrack`
   - `sample`
-* The basic unit of an SFZ instrument is the region, which is equivalent to a zone in the EIII bank terminology. However, not all opcodes are available as zone parameters, such as the pitch bend. To overcome this, these opcodes will be processed only if they are set in a higher level such in `<global>` or `<group>`.
+* The basic unit of an SFZ instrument is the region, which is equivalent to a zone in the EIII bank terminology. However, not all opcodes are available as zone parameters, such as the pitch bend, and are available at the preset level instead. To overcome this, these opcodes will be processed only if they are set in a higher level such in `<global>` or `<group>`.
 * As a zone can only have 2 layers, velocity ranges are limited to 2 samples. Instead of using this approach, it has been opted for using linked presets, as this allows as many velocity ranges as MIDI notes. Notice, that the preset to be used should be the one ending with `L0`.
 
 When adding samples with any of these methods, it is possible to limit the sample rate with `-R` and to limit the bit depth with `B`.
