@@ -16,6 +16,9 @@ gint8 emu3_get_s8_from_percent_signed (gint v);
 
 gint emu3_get_filter_id_from_sfz_fil_type (const gchar * sfz_fil_type);
 
+gfloat emu3_get_vcf_tracking_from_s8 (const gint8 v);
+gint8 emu3_get_s8_from_vcf_tracking (const gfloat v);
+
 static void
 test_time_163_69 ()
 {
@@ -96,6 +99,24 @@ test_emu3_get_filter_id_from_sfz_fil_type ()
   CU_ASSERT_EQUAL (emu3_get_filter_id_from_sfz_fil_type ("foo"), 0);
 }
 
+static void
+test_vcf_tracking ()
+{
+  printf ("\n");
+
+  CU_ASSERT_EQUAL (emu3_get_vcf_tracking_from_s8 (-127), -2);
+  CU_ASSERT_EQUAL (emu3_get_vcf_tracking_from_s8 (127), 2);
+  CU_ASSERT_EQUAL (emu3_get_vcf_tracking_from_s8 (64), 1);
+  CU_ASSERT_EQUAL (emu3_get_vcf_tracking_from_s8 (-64), -1);
+  CU_ASSERT_EQUAL (emu3_get_vcf_tracking_from_s8 (0), 0);
+
+  CU_ASSERT_EQUAL (emu3_get_s8_from_vcf_tracking (-2), -127);
+  CU_ASSERT_EQUAL (emu3_get_s8_from_vcf_tracking (2), 127);
+  CU_ASSERT_EQUAL (emu3_get_s8_from_vcf_tracking (1), 64);
+  CU_ASSERT_EQUAL (emu3_get_s8_from_vcf_tracking (-1), -64);
+  CU_ASSERT_EQUAL (emu3_get_s8_from_vcf_tracking (0), 0);
+}
+
 gint
 main (gint argc, gchar *argv[])
 {
@@ -133,9 +154,13 @@ main (gint argc, gchar *argv[])
       goto cleanup;
     }
 
-  if (!CU_add_test
-      (suite, "emu3_get_filter_id_from_sfz_fil_type",
-       test_emu3_get_filter_id_from_sfz_fil_type))
+  if (!CU_add_test (suite, "emu3_get_filter_id_from_sfz_fil_type",
+		    test_emu3_get_filter_id_from_sfz_fil_type))
+    {
+      goto cleanup;
+    }
+
+  if (!CU_add_test (suite, "vcf_tracking", test_vcf_tracking))
     {
       goto cleanup;
     }

@@ -543,19 +543,23 @@ emu3_get_s8_from_percent_signed (gint v)
 }
 
 // [-127, 0, 127] to [-2.0, 0, 2.0]
-static gfloat
-emu3_get_vcf_tracking (const gint8 value)
+gfloat
+emu3_get_vcf_tracking_from_s8 (const gint8 v)
 {
   static const gfloat range = 4.0f / 254.0f;
   static const gfloat out_min = -2.0f;
   static const gfloat in_min = -127.0f;
-  const gdouble as_double =
-    100 * (out_min + ((gfloat) value - in_min) * range);
+  const gdouble as_double = 100 * (out_min + ((gfloat) v - in_min) * range);
   const gint as_int = (gint) as_double;
   return (gfloat) as_int / 100.0f;
 }
 
-
+gint8
+emu3_get_s8_from_vcf_tracking (const gfloat v)
+{
+  double aux = (v * 127) / 2.0;
+  return v > 0 ? ceill (aux) : floorl (aux);
+}
 
 static void
 emu3_print_envelope (struct emu3_envelope *envelope)
@@ -623,7 +627,7 @@ emu3_print_preset_zone_info (struct emu_file *file,
   emu_print (1, 4, "Q:               % 3d %%\n",
 	     emu3_get_percent_from_s8 (zone->vcf_q & 0x7f));
   emu_print (1, 4, "Tracking:         %.2f\n",
-	     emu3_get_vcf_tracking (zone->vcf_tracking));
+	     emu3_get_vcf_tracking_from_s8 (zone->vcf_tracking));
   emu_print (1, 4, "Envelope Amount: % 3d %%\n",
 	     emu3_get_percent_from_s8 (zone->vcf_envelope_amount));
   emu3_print_envelope (&zone->vcf_envelope);
@@ -2429,6 +2433,12 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
   f = emu3_get_opcode_float_val (esctx, "fil_veltrack", NULL, -9600, 9600, 0,
 				 NULL);
   zone->vel_to_vcf_cutoff = emu3_get_s8_from_percent (f / 96.0);
+
+  // The range in the specification is smaller than the one one in the device,
+  // which is [ -2.0, 2.0 ] or [ -2400, 2400 ].
+  f = emu3_get_opcode_float_val (esctx, "fil_keytrack", NULL, 0, 1200,
+				 0, NULL);
+  zone->vcf_tracking = emu3_get_s8_from_vcf_tracking (f / 1200.0);
 
   esctx->region_num++;
 }

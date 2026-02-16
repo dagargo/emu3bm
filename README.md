@@ -100,6 +100,7 @@ Some notes on SFZ support.
   - `fileg_attack`, `fileg_decay`, `fileg_hold`, `fileg_release` and `fileg_sustain`
   - `fil_type`
   - `fil_veltrack`
+  - `fil_keytrack`
   - `hivel` and `lovel`
   - `key`, `lokey`, `hikey` and `pitch_keycenter`
   - `loop_mode`, `loop_start` and `loop_end`
