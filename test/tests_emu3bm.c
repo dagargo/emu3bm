@@ -19,6 +19,9 @@ gint emu3_get_filter_id_from_sfz_fil_type (const gchar * sfz_fil_type);
 gfloat emu3_get_vcf_tracking_from_s8 (const gint8 v);
 gint8 emu3_get_s8_from_vcf_tracking (const gfloat v);
 
+gfloat emu3_get_note_tuning_from_s8 (const gint8 v);
+gint8 emu3_s8_from_get_note_tuning (const gfloat v);
+
 static void
 test_time_163_69 ()
 {
@@ -117,6 +120,20 @@ test_vcf_tracking ()
   CU_ASSERT_EQUAL (emu3_get_s8_from_vcf_tracking (0), 0);
 }
 
+static void
+test_note_tuning ()
+{
+  printf ("\n");
+
+  CU_ASSERT_EQUAL (emu3_get_note_tuning_from_s8 (-64), -100);
+  CU_ASSERT_EQUAL (emu3_get_note_tuning_from_s8 (0), 0);
+  CU_ASSERT_EQUAL (emu3_get_note_tuning_from_s8 (64), 100);
+
+  CU_ASSERT_EQUAL (emu3_s8_from_get_note_tuning (-100), -64);
+  CU_ASSERT_EQUAL (emu3_s8_from_get_note_tuning (0), 0);
+  CU_ASSERT_EQUAL (emu3_s8_from_get_note_tuning (100), 64);
+}
+
 gint
 main (gint argc, gchar *argv[])
 {
@@ -161,6 +178,11 @@ main (gint argc, gchar *argv[])
     }
 
   if (!CU_add_test (suite, "vcf_tracking", test_vcf_tracking))
+    {
+      goto cleanup;
+    }
+
+  if (!CU_add_test (suite, "note_tuning", test_note_tuning))
     {
       goto cleanup;
     }

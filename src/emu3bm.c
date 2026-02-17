@@ -387,10 +387,16 @@ emu3_get_note_on_delay (const guint8 value)
 }
 
 // [-64, 0, +64] to -100, 0, 100
-static inline gfloat
-emu3_get_note_tuning (const gint8 value)
+gfloat
+emu3_get_note_tuning_from_s8 (const gint8 v)
 {
-  return (gfloat) value *1.5625f;
+  return (gfloat) v *1.5625f;
+}
+
+gint8
+emu3_s8_from_get_note_tuning (const gfloat v)
+{
+  return v / 1.5625f;
 }
 
 // `rt_enable_flags`
@@ -589,7 +595,7 @@ emu3_print_preset_zone_info (struct emu_file *file,
 {
   emu_print (1, 3, "Dynamic Setup\n");
   emu_print (1, 4, "Tuning: %.1f cents\n",
-	     emu3_get_note_tuning (zone->note_tuning));
+	     emu3_get_note_tuning_from_s8 (zone->note_tuning));
   emu_print (1, 4, "Delay:    %.3f s\n",
 	     emu3_get_note_on_delay (zone->note_on_delay));
   emu_print (1, 4, "Chorus:       %s\n",
@@ -1354,7 +1360,7 @@ emu3_process_bank (struct emu_file *file, gint ext_mode, gint edit_preset,
 	  if (emu3_find_first_zone_for_sample (file, i + 1, &zone))
 	    {
 	      original_key = zone->original_key;
-	      fraction = emu3_get_note_tuning (zone->note_tuning);
+	      fraction = emu3_get_note_tuning_from_s8 (zone->note_tuning);
 	    }
 	}
       emu3_process_sample (sample, i + 1, ext_mode, original_key, fraction);
@@ -2387,6 +2393,10 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
     {
       emu3_sample_set_loop_end (emu3_sample, mono, frames, loop_end);
     }
+
+  f = emu3_get_opcode_integer_val (esctx, "tune", "pitch", -100, 100, 0,
+				   NULL);
+  zone->note_tuning = emu3_s8_from_get_note_tuning (f);
 
   // VCA and pan
 
