@@ -95,12 +95,13 @@ Some notes on SFZ support.
 * Implemented opcodes:
   - `ampeg_attack`, `ampeg_decay`, `ampeg_hold`, `ampeg_release` and `ampeg_sustain`
   - `amp_veltrack`
-  - `cutoff` and `resonance`
+  - `cutoff`
+  - `resonance` (map of the full `[ 0, 40 ]` dB range into a percentage)
   - `bend_up` and `bendup` (alias)
   - `fileg_attack`, `fileg_decay`, `fileg_hold`, `fileg_release` and `fileg_sustain`
-  - `fileg_depth`
+  - `fileg_depth` (map of the full `[ -12000, 12000 ]` cents range into a percentage)
   - `fil_type`
-  - `fil_veltrack`
+  - `fil_veltrack` (map of the full `[ -9600, 9600 ]` cents range into a percentage)
   - `fil_keytrack`
   - `hivel` and `lovel`
   - `key`, `lokey`, `hikey` and `pitch_keycenter`
@@ -108,7 +109,7 @@ Some notes on SFZ support.
   - `pan`
   - `pan_veltrack`
   - `pitcheg_attack`, `pitcheg_decay`, `pitcheg_hold`, `pitcheg_release` and `pitcheg_sustain`
-  - `pitcheg_depth`
+  - `pitcheg_depth` (map of truncated `[ -3100, 3100 ]` cents range into a percentage)
   - `sample`
   - `tune`
 * The basic unit of an SFZ instrument is the region, which is equivalent to a zone in the EIII bank terminology. However, not all opcodes are available as zone parameters, such as the pitch bend, and are available at the preset level instead. To overcome this, these opcodes will be processed only if they are set in a higher level such in `<global>` or `<group>`.
