@@ -2439,6 +2439,11 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
 			 "fileg_release");
 
   // The value mapping is just an approximation as the device uses a percentage.
+  f = emu3_get_opcode_float_val (esctx, "fileg_depth", NULL, -12000, 12000, 0,
+				 NULL);
+  zone->vcf_envelope_amount = emu3_get_s8_from_percent (f / 120);
+
+  // The value mapping is just an approximation as the device uses a percentage.
   f = emu3_get_opcode_float_val (esctx, "fil_veltrack", NULL, -9600, 9600, 0,
 				 NULL);
   zone->vel_to_vcf_cutoff = emu3_get_s8_from_percent (f / 96.0);

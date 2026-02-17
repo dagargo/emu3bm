@@ -98,6 +98,7 @@ Some notes on SFZ support.
   - `cutoff` and `resonance`
   - `bend_up` and `bendup` (alias)
   - `fileg_attack`, `fileg_decay`, `fileg_hold`, `fileg_release` and `fileg_sustain`
+  - `fileg_depth`
   - `fil_type`
   - `fil_veltrack`
   - `fil_keytrack`
