@@ -2283,6 +2283,7 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
   gchar *sample_path;
   struct emu_file *file;
   struct emu3_bank *bank;
+  gboolean mono, defined;
   struct emu3_preset_zone *zone;
   struct emu3_sample *emu3_sample;
   struct emu_zone_range zone_range;
@@ -2290,7 +2291,6 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
   guint32 frames, loop_start, loop_end;
   gint err, sample_num, actual_preset, i;
   gint lokey, hikey, pitch_keycenter, lovel, hivel;
-  gboolean mono, loop_start_defined, loop_end_defined;
 
   sample = emu3_get_opcode_string_val (esctx, "sample", NULL, NULL, NULL);
   if (!sample)
@@ -2376,15 +2376,14 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
   emu3_set_sample_options_from_sfz_loop_mode (emu3_sample, s);
 
   loop_start = emu3_get_opcode_integer_val (esctx, "loop_start", NULL, 0,
-					    G_MAXUINT32, 0,
-					    &loop_start_defined);
-  if (loop_start_defined)
+					    G_MAXUINT32, 0, &defined);
+  if (defined)
     {
       emu3_sample_set_loop_start (emu3_sample, mono, frames, loop_start);
     }
   loop_end = emu3_get_opcode_integer_val (esctx, "loop_end", NULL, 0,
-					  G_MAXUINT32, 0, &loop_end_defined);
-  if (loop_end_defined)
+					  G_MAXUINT32, 0, &defined);
+  if (defined)
     {
       emu3_sample_set_loop_end (emu3_sample, mono, frames, loop_end);
     }
