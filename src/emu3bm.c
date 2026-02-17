@@ -2454,6 +2454,24 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
 				 0, NULL);
   zone->vcf_tracking = emu3_get_s8_from_vcf_tracking (f / 1200.0);
 
+  // Pitch
+  // This makes use of the pitcheg envelope to set the auxiliary envelope.
+  // As there is no auxiliary envelope in the SFZ, using this is compatible.
+
+  emu3_sfz_set_envelope (esctx, &zone->aux_envelope, "pitcheg_attack",
+			 "pitcheg_hold", "pitcheg_decay", "pitcheg_sustain",
+			 "pitcheg_release");
+
+  // The SFZ range is [ -12000, 12000] (10 octaves) but this is truncated 31 semitores
+  // to better match the device range.
+  f = emu3_get_opcode_float_val (esctx, "pitcheg_depth", NULL, -3100, 3100,
+				 0, &defined);
+  if (defined)
+    {
+      zone->aux_envelope_amount = emu3_get_s8_from_percent (f / 120);
+      zone->aux_envelope_dest = 1;	// Pitch
+    }
+
   esctx->region_num++;
 }
 

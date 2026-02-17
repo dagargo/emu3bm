@@ -107,6 +107,8 @@ Some notes on SFZ support.
   - `loop_mode`, `loop_start` and `loop_end`
   - `pan`
   - `pan_veltrack`
+  - `pitcheg_attack`, `pitcheg_decay`, `pitcheg_hold`, `pitcheg_release` and `pitcheg_sustain`
+  - `pitcheg_depth`
   - `sample`
   - `tune`
 * The basic unit of an SFZ instrument is the region, which is equivalent to a zone in the EIII bank terminology. However, not all opcodes are available as zone parameters, such as the pitch bend, and are available at the preset level instead. To overcome this, these opcodes will be processed only if they are set in a higher level such in `<global>` or `<group>`.
