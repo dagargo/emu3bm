@@ -2316,9 +2316,7 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
 				       EMU3_HIGHEST_MIDI_NOTE,
 				       EMU3_HIGHEST_MIDI_NOTE, NULL);
   pitch_keycenter = emu3_get_opcode_integer_val (esctx, "pitch_keycenter",
-						 "key", EMU3_LOWEST_MIDI_NOTE,
-						 EMU3_HIGHEST_MIDI_NOTE, 60,
-						 NULL);
+						 "key", 0, 127, 60, NULL);
   lovel = emu3_get_opcode_integer_val (esctx, "lovel", NULL, 1, 127, 1, NULL);
   hivel = emu3_get_opcode_integer_val (esctx, "hivel", NULL, 1, 127, 127,
 				       NULL);
