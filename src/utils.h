@@ -64,6 +64,13 @@ struct emu_file
                 fprintf(stderr, "%sERROR:" __FILE__ ":%d:(%s): " format "%s\n", color_start, __LINE__, __FUNCTION__, ## __VA_ARGS__, color_end); \
         }
 
+#define emu_warn(format, ...) { \
+                gint tty = isatty(fileno(stderr)); \
+                const gchar * color_start = tty ? "\x1b[33m" : ""; \
+                const gchar * color_end = tty ? "\x1b[m" : ""; \
+                fprintf(stderr, "%sWARN :" __FILE__ ":%d:(%s): " format "%s\n", color_start, __LINE__, __FUNCTION__, ## __VA_ARGS__, color_end); \
+        }
+
 extern gint verbosity;
 
 const gchar *emu_get_err (gint);
