@@ -1597,8 +1597,7 @@ emu3_add_preset_zone (struct emu_file *file, gint preset_num, gint sample_num,
 	}
       if (assigned == 1)
 	{
-	  emu_error ("Zone already assigned to notes");
-	  return EXIT_FAILURE;
+	  emu_warn ("Zone already assigned to notes. Reassigning...");
 	}
 
       for (gint i = zone_range->lower_key; i <= zone_range->higher_key; i++)
