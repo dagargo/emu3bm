@@ -662,7 +662,7 @@ emu3_append_sample (struct emu_file *file, struct emu3_sample *sample,
 
   gchar *basec = strdup (path);
   filename = basename (basec);
-  emu_print (0, 0, "Appending sample '%s' (%d frames, %d channels)...\n",
+  emu_debug (1, "Appending sample '%s' (%d frames, %d channels)...",
 	     filename, *frames, sfinfo.channels);
   //Sample header initialization
   gchar *name = emu_filename_to_filename_wo_ext (filename, NULL);
