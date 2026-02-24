@@ -2340,7 +2340,15 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
 
   // Notice that SFZ states that MIDI EMU3_NOTES go from C-1 to G9. See https://sfzformat.com/opcodes/sw_hikey/.
   // Therefore the lowest A on a piano is A0 in the SFZ format while it is A-1 in the E-mu.
-  // 0 is A-1
+  // 0 is A-1.
+
+  if (pitch_keycenter < EMU3_LOWEST_MIDI_NOTE ||
+      pitch_keycenter > EMU3_HIGHEST_MIDI_NOTE)
+    {
+      emu_error ("'pitch_keycenter' %d outside the allowed E-mu III range",
+		 pitch_keycenter);
+      return;
+    }
 
   zone_range.layer = 1;		//Always using pri layer
   zone_range.original_key = pitch_keycenter - EMU3_MIDI_NOTE_OFFSET;
