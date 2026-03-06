@@ -2345,8 +2345,9 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
   if (pitch_keycenter < EMU3_LOWEST_MIDI_NOTE ||
       pitch_keycenter > EMU3_HIGHEST_MIDI_NOTE)
     {
-      emu_error ("'pitch_keycenter' %d outside the allowed E-mu III range",
-		 pitch_keycenter);
+      emu_error
+	("'pitch_keycenter' %d outside the allowed E-mu III range. Skipping region...",
+	 pitch_keycenter);
       return;
     }
 
