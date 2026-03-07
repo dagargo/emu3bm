@@ -394,7 +394,7 @@ emu3_get_note_tuning_from_s8 (const gint8 v)
 }
 
 gint8
-emu3_s8_from_get_note_tuning (const gfloat v)
+emu3_get_s8_from_note_tuning (const gfloat v)
 {
   return v / 1.5625f;
 }
@@ -2402,7 +2402,7 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
 
   f = emu3_get_opcode_integer_val (esctx, "tune", "pitch", -100, 100, 0,
 				   NULL);
-  zone->note_tuning = emu3_s8_from_get_note_tuning (f);
+  zone->note_tuning = emu3_get_s8_from_note_tuning (f);
 
   // VCA and pan
 
