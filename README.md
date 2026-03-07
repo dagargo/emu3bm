@@ -97,7 +97,7 @@ Some notes on SFZ support.
   - `amp_veltrack`
   - `cutoff`
   - `resonance` (map of the full `[ 0, 40 ]` dB range into a percentage)
-  - `bend_up` and `bendup` (alias)
+  - `bend_up` (`bendup` alias)
   - `fileg_attack`, `fileg_decay`, `fileg_hold`, `fileg_release` and `fileg_sustain`
   - `fileg_depth` (map of the full `[ -12000, 12000 ]` cents range into a percentage)
   - `fil_type`
@@ -105,6 +105,7 @@ Some notes on SFZ support.
   - `fil_keytrack`
   - `hivel` and `lovel`
   - `key`, `lokey`, `hikey` and `pitch_keycenter`
+  - `lfo1_rate` (`lfo01_rate` alias), `lfo1_wave` (`lfo01_wave` alias), `lfo1_pitch` (`lfo01_pitch` alias), `lfo1_volume` (`lfo01_volume` alias), `lfo1_cutoff` (`lfo01_cutoff` alias), `lfo1_pan` (`lfo01_pan` alias), `lfo1_delay` (`lfo01_delay` alias)
   - `loop_mode`, `loop_start` and `loop_end`
   - `pan`
   - `pan_veltrack`

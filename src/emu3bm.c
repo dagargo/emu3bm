@@ -244,7 +244,7 @@ static const gfloat TABLE_LFO_RATE_FLOAT[] = {
 };
 
 // VCF cutoff frequency table.
-static const gint TABLE_VCF_CUTOFF_FREQUENCY[] = {
+static const gfloat TABLE_VCF_CUTOFF_FREQUENCY[] = {
   26, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
   36, 37, 39, 40, 41, 42, 44, 45, 47, 48, 50,
   51, 53, 55, 56, 58, 60, 62, 64, 66, 68, 70,
@@ -272,7 +272,7 @@ static const gint TABLE_VCF_CUTOFF_FREQUENCY[] = {
 };
 
 // 0..21.69
-static gfloat TABLE_TIME_21_69_FLOAT[] = {
+static const gfloat TABLE_TIME_21_69_FLOAT[] = {
   0.00f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.06f, 0.07f, 0.08f,
   0.09f, 0.10f, 0.11f, 0.12f, 0.13f, 0.14f, 0.15f, 0.16f, 0.17f,
   0.18f, 0.19f, 0.20f, 0.21f, 0.22f, 0.23f, 0.24f, 0.25f, 0.26f,
@@ -291,7 +291,7 @@ static gfloat TABLE_TIME_21_69_FLOAT[] = {
 };
 
 // 0..163.69
-static gfloat TABLE_TIME_163_69_FLOAT[] = {
+static const gfloat TABLE_TIME_163_69_FLOAT[] = {
   0.00f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.06f, 0.07f, 0.08f,
   0.09f, 0.10f, 0.11f, 0.12f, 0.13f, 0.14f, 0.15f, 0.16f, 0.17f,
   0.18f, 0.19f, 0.20f, 0.21f, 0.22f, 0.23f, 0.25f, 0.26f, 0.28f,
@@ -309,75 +309,79 @@ static gfloat TABLE_TIME_163_69_FLOAT[] = {
   142.36f, 163.69f
 };
 
-gint
-emu3_get_vcf_cutoff_frequency_from_u8 (const guint8 v)
+gfloat
+emu3_get_array_value_from_u8 (const gfloat *array, guint size, guint8 value)
 {
-  return TABLE_VCF_CUTOFF_FREQUENCY[v];
+  if (value > size - 1)
+    {
+      value = size - 1;
+    }
+  return array[value];
 }
 
 guint8
-emu3_get_u8_from_vcf_cutoff_frequency (const gint v)
+emu3_get_u8_from_array_value (const gfloat *array, guint size, gfloat value)
 {
-  if (v < TABLE_VCF_CUTOFF_FREQUENCY[0])
+  if (value < array[0])
     {
       return 0;
     }
-  for (guint8 i = 0; i < 254; i++)
+  for (guint8 i = 0; i < size - 1; i++)
     {
-      if (TABLE_VCF_CUTOFF_FREQUENCY[i] <= v &&
-	  v < TABLE_VCF_CUTOFF_FREQUENCY[i + 1])
+      if (array[i] <= value && value < array[i + 1])
 	{
 	  return i;
 	}
     }
-  return 255;
+  return size - 1;
 }
 
-
-static inline gfloat
-emu3_get_lfo_rate (const gint8 value)
+gint
+emu3_get_vcf_cutoff_frequency_from_u8 (guint8 v)
 {
-  if (value >= 0 && value <= 127)
-    return TABLE_LFO_RATE_FLOAT[value];
+  return emu3_get_array_value_from_u8 (TABLE_VCF_CUTOFF_FREQUENCY, 256, v);
+}
 
-  return TABLE_LFO_RATE_FLOAT[0];
+guint8
+emu3_get_u8_from_vcf_cutoff_frequency (gint v)
+{
+  return emu3_get_u8_from_array_value (TABLE_VCF_CUTOFF_FREQUENCY, 256, v);
+}
+
+gfloat
+emu3_get_lfo_rate_from_u8 (guint8 v)
+{
+  return emu3_get_array_value_from_u8 (TABLE_LFO_RATE_FLOAT, 128, v);
+}
+
+guint8
+emu3_get_u8_from_lfo_rate (gfloat v)
+{
+  return emu3_get_u8_from_array_value (TABLE_LFO_RATE_FLOAT, 128, v);
 }
 
 gfloat
 emu3_get_time_163_69_from_u8 (guint8 v)
 {
-  if (v > 127)
-    {
-      v = 127;
-    }
-  return TABLE_TIME_163_69_FLOAT[v];
+  return emu3_get_array_value_from_u8 (TABLE_TIME_163_69_FLOAT, 128, v);
 }
 
 guint8
 emu3_get_u8_from_time_163_69 (gfloat v)
 {
-  if (v < TABLE_TIME_163_69_FLOAT[0])
-    {
-      return 0;
-    }
-  for (guint8 i = 0; i < 127; i++)
-    {
-      if (TABLE_TIME_163_69_FLOAT[i] <= v &&
-	  v < TABLE_TIME_163_69_FLOAT[i + 1])
-	{
-	  return i;
-	}
-    }
-  return 127;
+  return emu3_get_u8_from_array_value (TABLE_TIME_163_69_FLOAT, 128, v);
 }
 
-static inline gfloat
-emu3_get_time_21_69 (const guint8 index)
+gfloat
+emu3_get_time_21_69_from_u8 (guint8 v)
 {
-  if (index <= 127)
-    return TABLE_TIME_21_69_FLOAT[index];
+  return emu3_get_array_value_from_u8 (TABLE_TIME_21_69_FLOAT, 128, v);
+}
 
-  return 0.0f;
+guint8
+emu3_get_u8_from_time_21_69 (gfloat v)
+{
+  return emu3_get_u8_from_array_value (TABLE_TIME_21_69_FLOAT, 128, v);
 }
 
 static inline gfloat
@@ -388,13 +392,13 @@ emu3_get_note_on_delay (const guint8 value)
 
 // [-64, 0, +64] to -100, 0, 100
 gfloat
-emu3_get_note_tuning_from_s8 (const gint8 v)
+emu3_get_note_tuning_from_s8 (gint8 v)
 {
   return (gfloat) v *1.5625f;
 }
 
 gint8
-emu3_get_s8_from_note_tuning (const gfloat v)
+emu3_get_s8_from_note_tuning (gfloat v)
 {
   return v / 1.5625f;
 }
@@ -550,7 +554,7 @@ emu3_get_s8_from_percent_signed (gint v)
 
 // [-127, 0, 127] to [-2.0, 0, 2.0]
 gfloat
-emu3_get_vcf_tracking_from_s8 (const gint8 v)
+emu3_get_vcf_tracking_from_s8 (gint8 v)
 {
   static const gfloat range = 4.0f / 254.0f;
   static const gfloat out_min = -2.0f;
@@ -561,7 +565,7 @@ emu3_get_vcf_tracking_from_s8 (const gint8 v)
 }
 
 gint8
-emu3_get_s8_from_vcf_tracking (const gfloat v)
+emu3_get_s8_from_vcf_tracking (gfloat v)
 {
   double aux = (v * 127) / 2.0;
   return v > 0 ? ceill (aux) : floorl (aux);
@@ -640,11 +644,11 @@ emu3_print_preset_zone_info (struct emu_file *file,
 
   emu_print (1, 3, "LFO\n");
   emu_print (1, 4, "Rate:      %.2f Hz\n",
-	     emu3_get_lfo_rate (zone->lfo_rate));
+	     emu3_get_lfo_rate_from_u8 (zone->lfo_rate));
   emu_print (1, 4, "Shape:    %s\n",
 	     LFO_SHAPE[zone->vcf_type_lfo_shape & 0x3]);
   emu_print (1, 4, "Delay:      %.2f s\n",
-	     emu3_get_time_21_69 (zone->lfo_delay));
+	     emu3_get_time_21_69_from_u8 (zone->lfo_delay));
   emu_print (1, 4, "Variation:   % 3d %%\n",
 	     emu3_get_percent_from_s8 (zone->lfo_variation));
   emu_print (1, 4, "LFO->Pitch:  % 3d %%\n",
@@ -2246,6 +2250,27 @@ emu3_get_filter_id_from_sfz_fil_type (const gchar *sfz_fil_type)
   return emu3_filter_id;
 }
 
+guint8
+emu3_get_lfo_shape_id_from_sfz_lfo_wave (gint wave)
+{
+  if (wave >= 0 && wave <= 1)
+    {
+      return wave;
+    }
+  else if (wave >= 2 && wave <= 5)
+    {
+      return 3;
+    }
+  else if (wave >= 6 && wave <= 7)
+    {
+      return 2;
+    }
+  else
+    {
+      return 0;
+    }
+}
+
 static void
 emu3_set_sample_options_from_sfz_loop_mode (struct emu3_sample *sample,
 					    const gchar *loop_mode)
@@ -2477,6 +2502,37 @@ emu3_sfz_add_region (struct emu_sfz_context *esctx)
       zone->aux_envelope_amount = emu3_get_s8_from_percent (f / 120);
       zone->aux_envelope_dest = 1;	// Pitch
     }
+
+  // LFO
+
+  f = emu3_get_opcode_float_val (esctx, "lfo1_rate", "lfo01_rate", 0.08,
+				 18.14, 4.25, NULL);
+  zone->lfo_rate = emu3_get_u8_from_lfo_rate (f);
+
+  i = emu3_get_opcode_integer_val (esctx, "lfo1_wave", "lfo01_wave", 0, 7,
+				   0, NULL);
+  zone->vcf_type_lfo_shape = (zone->vcf_type_lfo_shape & 0xf8) |
+    emu3_get_lfo_shape_id_from_sfz_lfo_wave (i);
+
+  f = emu3_get_opcode_float_val (esctx, "lfo1_pitch", "lfo01_pitch", 0, 100,
+				 0, NULL);
+  zone->lfo_to_pitch = emu3_get_s8_from_percent (f);
+
+  f = emu3_get_opcode_float_val (esctx, "lfo1_volume", "lfo01_volume", 0, 100,
+				 0, NULL);
+  zone->lfo_to_vca = emu3_get_s8_from_percent (f);
+
+  f = emu3_get_opcode_float_val (esctx, "lfo1_cutoff", "lfo01_cutoff", 0, 100,
+				 0, NULL);
+  zone->lfo_to_cutoff = emu3_get_s8_from_percent (f);
+
+  f = emu3_get_opcode_float_val (esctx, "lfo1_pan", "lfo01_pan", 0, 100,
+				 0, NULL);
+  zone->lfo_to_pan = emu3_get_s8_from_percent (f);
+
+  f = emu3_get_opcode_float_val (esctx, "lfo1_delay", "lfo01_delay", 0,
+				 21.69, 0, NULL);
+  zone->lfo_delay = emu3_get_u8_from_time_21_69 (f);
 
   esctx->region_num++;
 }

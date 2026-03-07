@@ -5,22 +5,28 @@
 gfloat emu3_get_time_163_69_from_u8 (guint8 v);
 guint8 emu3_get_u8_from_time_163_69 (gfloat v);
 
-gint emu3_get_percent_from_s8 (const gint8 v);
+gint emu3_get_percent_from_s8 (gint8 v);
 gint8 emu3_get_s8_from_percent (gint v);
 
-gint emu3_get_vcf_cutoff_frequency_from_u8 (const guint8 v);
-guint8 emu3_get_u8_from_vcf_cutoff_frequency (const gint v);
+gint emu3_get_vcf_cutoff_frequency_from_u8 (guint8 v);
+guint8 emu3_get_u8_from_vcf_cutoff_frequency (gint v);
 
 gint emu3_get_percent_signed_from_s8 (gint8 v);
 gint8 emu3_get_s8_from_percent_signed (gint v);
 
 gint emu3_get_filter_id_from_sfz_fil_type (const gchar * sfz_fil_type);
 
-gfloat emu3_get_vcf_tracking_from_s8 (const gint8 v);
-gint8 emu3_get_s8_from_vcf_tracking (const gfloat v);
+gfloat emu3_get_vcf_tracking_from_s8 (gint8 v);
+gint8 emu3_get_s8_from_vcf_tracking (gfloat v);
 
-gfloat emu3_get_note_tuning_from_s8 (const gint8 v);
-gint8 emu3_get_s8_from_note_tuning (const gfloat v);
+gfloat emu3_get_note_tuning_from_s8 (gint8 v);
+gint8 emu3_get_s8_from_note_tuning (gfloat v);
+
+gfloat emu3_get_lfo_rate_from_u8 (guint8 value);
+guint8 emu3_get_u8_from_lfo_rate (gfloat v);
+
+gfloat emu3_get_time_21_69_from_u8 (guint8 v);
+guint8 emu3_get_u8_from_time_21_69 (gfloat v);
 
 static void
 test_time_163_69 ()
@@ -134,6 +140,38 @@ test_note_tuning ()
   CU_ASSERT_EQUAL (emu3_get_s8_from_note_tuning (100), 64);
 }
 
+static void
+test_lfo_rate ()
+{
+  printf ("\n");
+
+  CU_ASSERT_EQUAL (emu3_get_lfo_rate_from_u8 (0), 0.08f);
+  CU_ASSERT_EQUAL (emu3_get_lfo_rate_from_u8 (64), 4.13f);
+  CU_ASSERT_EQUAL (emu3_get_lfo_rate_from_u8 (200), 18.14f);
+
+  CU_ASSERT_EQUAL (emu3_get_u8_from_lfo_rate (-100), 0);
+  CU_ASSERT_EQUAL (emu3_get_u8_from_lfo_rate (4.13f), 64);
+  CU_ASSERT_EQUAL (emu3_get_u8_from_lfo_rate (100), 127);
+}
+
+static void
+test_time_21_69 ()
+{
+  guint8 i;
+  gfloat f;
+
+  printf ("\n");
+
+  f = emu3_get_time_21_69_from_u8 (100);
+  i = emu3_get_u8_from_time_21_69 (f);
+  CU_ASSERT_EQUAL (i, 100);
+
+  CU_ASSERT_EQUAL (emu3_get_u8_from_time_21_69 (10), 107);
+  CU_ASSERT_EQUAL (emu3_get_u8_from_time_21_69 (-1.0f), 0);
+
+  CU_ASSERT_EQUAL (emu3_get_time_21_69_from_u8 (128), 21.69f);
+}
+
 gint
 main (gint argc, gchar *argv[])
 {
@@ -183,6 +221,16 @@ main (gint argc, gchar *argv[])
     }
 
   if (!CU_add_test (suite, "note_tuning", test_note_tuning))
+    {
+      goto cleanup;
+    }
+
+  if (!CU_add_test (suite, "lfo_rate", test_lfo_rate))
+    {
+      goto cleanup;
+    }
+
+  if (!CU_add_test (suite, "time_21_69", test_time_21_69))
     {
       goto cleanup;
     }
