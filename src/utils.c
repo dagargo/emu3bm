@@ -308,7 +308,10 @@ gint
 get_positive_int (gchar *str)
 {
   gchar *endstr;
-  gint value = (gint) strtol (str, &endstr, 10);
+  gint value;
+
+  errno = 0;
+  value = (gint) strtol (str, &endstr, 10);
 
   if (errno || endstr == str || *endstr != '\0')
     {
