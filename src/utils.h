@@ -81,7 +81,7 @@ void emu_close_file (struct emu_file *);
 
 gint emu_write_file (struct emu_file *);
 
-struct emu_file *emu_init_file ();
+struct emu_file *emu_init_file (const gchar *);
 
 gint emu_reverse_note_search (gchar *);
 
