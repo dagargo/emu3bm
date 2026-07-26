@@ -38,6 +38,21 @@ You can easily install them by running this.
 sudo apt install automake libtool build-essential libsndfile1-dev libsamplerate0-dev flex bison`
 ```
 
+On macOS, the dependencies can be installed with [Homebrew](https://brew.sh).
+
+```
+brew install automake libtool pkg-config glib libsndfile libsamplerate flex bison
+```
+
+Notice that the bison shipped with macOS is too old, so the one from Homebrew
+needs to come first in the `PATH`, and that `libtoolize` is called `glibtoolize`
+there.
+
+```
+export PATH="$(brew --prefix bison)/bin:$PATH"
+LIBTOOLIZE=glibtoolize autoreconf --install
+```
+
 ## Examples
 
 Use `-v` for additional information and use it more than once for even more information.
