@@ -60,6 +60,10 @@
 
 #define DEFAULT_CUTOFF_U8 0xef
 
+//The ESI samplers use the 2 upper bits of the zone sample number as flags of
+//an unknown meaning, so only the lower 14 bits hold the number itself.
+#define SAMPLE_NUM_MASK 0x3fff
+
 #define EMU3_BANK(f) ((struct emu3_bank *) ((f)->raw))
 
 extern void yyset_in (FILE * _in_str);
@@ -590,7 +594,7 @@ emu3_print_envelope (struct emu3_envelope *envelope)
 static gint
 emu3_get_sample_num (struct emu3_preset_zone *zone)
 {
-  return (zone->sample_id_msb << 8) + zone->sample_id_lsb;
+  return ((zone->sample_id_msb << 8) + zone->sample_id_lsb) & SAMPLE_NUM_MASK;
 }
 
 static void
