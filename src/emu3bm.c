@@ -1351,12 +1351,20 @@ emu3_process_bank (struct emu_file *file, gint ext_mode, gint edit_preset,
   emu_print (1, 0, "Next sample: 0x%08x (equals bank size)\n",
 	     next_sample_addr);
 
-  i = 0;
-  while (addresses[i] != 0 && i < max_samples)
+  //Deleting a sample leaves its slot empty but keeps the following ones, so
+  //the whole table needs to be walked instead of stopping at the first empty
+  //slot. Notice that the slot number is the sample number the presets use.
+  for (i = 0; i < max_samples; i++)
     {
       struct emu3_preset_zone *zone;
       guint32 original_key = 0;
       gfloat fraction = 0;
+
+      if (addresses[i] == 0)
+	{
+	  continue;
+	}
+
       address = sample_start_addr + addresses[i] - SAMPLE_OFFSET;
       sample = (struct emu3_sample *) &file->raw[address];
       if (ext_mode)
@@ -1368,7 +1376,6 @@ emu3_process_bank (struct emu_file *file, gint ext_mode, gint edit_preset,
 	    }
 	}
       emu3_process_sample (sample, i + 1, ext_mode, original_key, fraction);
-      i++;
     }
 
   return EXIT_SUCCESS;
