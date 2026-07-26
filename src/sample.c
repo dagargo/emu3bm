@@ -24,6 +24,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include "byteorder.h"
 #include "sample.h"
 
 #define MINIMUM_LOOP_LEN 10

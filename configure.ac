@@ -27,6 +27,7 @@ AC_SUBST(SAMPLERATE_LIBS)
 
 # Checks for header files.
 AC_CHECK_HEADERS([stdlib.h string.h unistd.h inttypes.h stdint.h math.h])
+AC_CHECK_HEADERS([endian.h sys/endian.h libkern/OSByteOrder.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 

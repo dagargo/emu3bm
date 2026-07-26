@@ -10,8 +10,8 @@ emu3bm_LDFLAGS = `$(PKG_CONFIG) --libs $(DEP_LIBS)` $(SNDFILE_LIBS) $(SAMPLERATE
 emu4bm_LDFLAGS = `$(PKG_CONFIG) --libs $(DEP_LIBS)` $(SNDFILE_LIBS) $(SAMPLERATE_LIBS) -lm
 
 bin_PROGRAMS = emu3bm emu4bm
-emu3bm_SOURCES = main_emu3bm.c sfz.tab.c sfz.tab.h sfz.yy.c sfz.h emu3bm.c emu3bm.h sample.c sample.h utils.c utils.h
-emu4bm_SOURCES = main_emu4bm.c sample.c sample.h utils.c utils.h
+emu3bm_SOURCES = main_emu3bm.c sfz.tab.c sfz.tab.h sfz.yy.c sfz.h emu3bm.c emu3bm.h sample.c sample.h utils.c utils.h byteorder.h
+emu4bm_SOURCES = main_emu4bm.c sample.c sample.h utils.c utils.h byteorder.h
 
 sfz.tab.c sfz.tab.h: sfz.y
 	bison -Wcounterexamples -d sfz.y

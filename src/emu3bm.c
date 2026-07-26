@@ -23,6 +23,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
+#include "byteorder.h"
 #include "emu3bm.h"
 #include "sfz.h"
 #include "sfz.tab.h"
