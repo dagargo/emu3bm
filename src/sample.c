@@ -257,19 +257,19 @@ emu3_process_sample (struct emu3_sample *sample, gint num,
 
   smpl_chunk_data.manufacturer = 0;
   smpl_chunk_data.product = 0;
-  smpl_chunk_data.sample_period = htole32 (1e9 / sample->sample_rate);
-  smpl_chunk_data.midi_unity_note = htole32 (original_key + 21);	//Samplers use A-1 as note 0 but it's really an A0 when MIDI note 0 is C-1.
+  smpl_chunk_data.sample_period = GUINT32_TO_LE (1e9 / sample->sample_rate);
+  smpl_chunk_data.midi_unity_note = GUINT32_TO_LE (original_key + 21);	//Samplers use A-1 as note 0 but it's really an A0 when MIDI note 0 is C-1.
   smpl_chunk_data.midi_pitch_fraction =
-    htole32 ((uint32_t) round (tuning * 256 / 100.0));
+    GUINT32_TO_LE ((uint32_t) round (tuning * 256 / 100.0));
   smpl_chunk_data.smpte_format = 0;
   smpl_chunk_data.smpte_offset = 0;
-  smpl_chunk_data.num_sample_loops = htole32 (1);
+  smpl_chunk_data.num_sample_loops = GUINT32_TO_LE (1);
   smpl_chunk_data.sample_data = 0;
 
   smpl_chunk_data.sample_loop.cue_point_id = 0;
-  smpl_chunk_data.sample_loop.type = htole32 (sample->options & EMU3_SAMPLE_OPT_LOOP ? 0 : 0x7f);	// as in midi sds, 0x00 = forward loop, 0x7F = no loop
-  smpl_chunk_data.sample_loop.start = htole32 (loop_start);
-  smpl_chunk_data.sample_loop.end = htole32 (loop_end);
+  smpl_chunk_data.sample_loop.type = GUINT32_TO_LE (sample->options & EMU3_SAMPLE_OPT_LOOP ? 0 : 0x7f);	// as in midi sds, 0x00 = forward loop, 0x7F = no loop
+  smpl_chunk_data.sample_loop.start = GUINT32_TO_LE (loop_start);
+  smpl_chunk_data.sample_loop.end = GUINT32_TO_LE (loop_end);
   smpl_chunk_data.sample_loop.fraction = 0;
   smpl_chunk_data.sample_loop.play_count = 0;
 
@@ -566,7 +566,8 @@ emu3_append_sample_get_data (SNDFILE *sndfile, SF_INFO *sfinfo,
   smpl_chunk = emu3_sample_get_smpl_chunk (sndfile, &smpl_chunk_data);
   if (smpl_chunk)
     {
-      *loop = smpl_chunk_data.sample_loop.type == htole32 (0x7f) ? 0 : 1;
+      *loop = smpl_chunk_data.sample_loop.type == GUINT32_TO_LE (0x7f) ?
+	0 : 1;
 
       *loop_start = smpl_chunk_data.sample_loop.start * ratio;
       if (*loop_start >= *frames)

@@ -18,7 +18,6 @@
  *   along with emu3bm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <endian.h>
 #include <sys/types.h>
 #define _GNU_SOURCE
 #include <stdlib.h>

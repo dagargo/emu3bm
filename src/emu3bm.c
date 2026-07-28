@@ -1942,9 +1942,9 @@ emu3_write_file (struct emu_file *file)
   guint32 preset = ceil (sample_addr / (gdouble) EMU3_BLOCK_SIZE);
   guint32 total = ceil (file->size / (gdouble) EMU3_BLOCK_SIZE);
 
-  bank->total_blocks = htole32 (total);
-  bank->preset_blocks = htole32 (preset);
-  bank->sample_blocks = htole32 (total - preset);
+  bank->total_blocks = GUINT32_TO_LE (total);
+  bank->preset_blocks = GUINT32_TO_LE (preset);
+  bank->sample_blocks = GUINT32_TO_LE (total - preset);
 
   return emu_write_file (file);
 }
