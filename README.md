@@ -27,6 +27,7 @@ The package dependencies for Debian-based distributions are:
 - automake
 - libtool
 - build-essential
+- libglib2.0-dev
 - libsndfile1-dev
 - libsamplerate0-dev
 - flex
@@ -35,7 +36,7 @@ The package dependencies for Debian-based distributions are:
 You can easily install them by running this.
 
 ```
-sudo apt install automake libtool build-essential libsndfile1-dev libsamplerate0-dev flex bison`
+sudo apt install automake libtool build-essential libglib2.0-dev libsndfile1-dev libsamplerate0-dev flex bison`
 ```
 
 On macOS, the dependencies can be installed with [Homebrew](https://brew.sh).
