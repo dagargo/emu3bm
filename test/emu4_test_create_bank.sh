@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
 
-. $srcdir/test_common.sh
+. $SRCDIR/test_common.sh
 
-TEST_BANK_NAME=$srcdir/emu4_test_create_bank
+TEST_BANK_NAME=$(mktemp -d)/emu4_test_create_bank
 
-cleanUp
-
-logAndRun '$srcdir/../src/emu4bm -n $TEST_BANK_NAME'
+logAndRun '$BINDIR/emu4bm -n $TEST_BANK_NAME'
 test
-logAndRun 'diff $TEST_BANK_NAME data/emu4_test_create_bank'
+logAndRun 'diff $TEST_BANK_NAME $SRCDIR/data/emu4_test_create_bank'
 test
 
 cleanUp

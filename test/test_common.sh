@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 
+ok=0
+total=0
+
 function cleanUp() {
+  [ $ok -eq $total ] && err=0 || err=1
   echo "Cleaning up..."
   rm -f $TEST_BANK_NAME
+  rmdir $(dirname $TEST_BANK_NAME)
+  exit $err
 }
 
 function logAndRun() {

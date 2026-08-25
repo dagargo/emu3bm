@@ -3,6 +3,10 @@
 
 AC_PREREQ([2.71])
 AC_INIT([emu3bm],[1.0],[dagargo@gmail.com])
+
+# Needed to override the default value of CFLAGS, which is `-g -O2`
+: ${CFLAGS="-g"}
+
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADERS([config.h])
 LT_INIT

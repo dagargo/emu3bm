@@ -52,7 +52,7 @@
 #define EMULATOR_3X_DEF    "EMULATOR 3X    "
 #define EMULATOR_THREE_DEF "EMULATOR THREE "
 
-#define EMPTY_BANK_TEMPLATE "res/empty_bank_"
+#define EMPTY_BANK_TEMPLATE "empty_bank_"
 
 #define WRITE_BUFLEN 4096
 
@@ -1866,18 +1866,19 @@ emu3_add_preset (struct emu_file *file, gchar *preset_name, gint *preset_num)
 gint
 emu3_create_bank (const gchar *path, const gchar *type)
 {
+  gsize size;
   gint rvalue;
+  gchar buf[BUFSIZ];
   struct emu3_bank bank;
   gchar *dirc = strdup (path);
   gchar *basec = strdup (path);
   gchar *bname = basename (basec);
 
   gchar *name = emu3_str_to_emu3name (bname);
-  gchar *src_path =
-    malloc (strlen (DATADIR) + strlen (PACKAGE) +
-	    strlen (EMPTY_BANK_TEMPLATE) + strlen (type) + 3);
-  gint ret = sprintf (src_path, "%s/%s/%s%s", DATADIR, PACKAGE,
-		      EMPTY_BANK_TEMPLATE, type);
+  size = strlen (DATADIR) + strlen (EMPTY_BANK_TEMPLATE) + strlen (type) + 2;
+  gchar *src_path = malloc (size);
+  gint ret = snprintf (src_path, size, "%s/%s%s", DATADIR, EMPTY_BANK_TEMPLATE,
+		      type);
 
   if (ret < 0)
     {
@@ -1901,9 +1902,6 @@ emu3_create_bank (const gchar *path, const gchar *type)
       rvalue = EXIT_FAILURE;
       goto out3;
     }
-
-  gchar buf[BUFSIZ];
-  gsize size;
 
   while ((size = fread (buf, 1, BUFSIZ, src)))
     fwrite (buf, 1, size, dst);

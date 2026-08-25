@@ -23,6 +23,8 @@ make
 sudo make install
 ```
 
+Additionally, you can run run `make installcheck` to run the integrations tests.
+
 The package dependencies for Debian-based distributions are:
 - automake
 - libtool

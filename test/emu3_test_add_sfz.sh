@@ -1,61 +1,57 @@
 #!/usr/bin/env bash
 
-. $srcdir/test_common.sh
+. $SRCDIR/test_common.sh
 
-TEST_BANK_NAME=$srcdir/emu3_test_add_sfz
+TEST_BANK_NAME=$(mktemp -d)/emu3_test_add_sfz
 
-cleanUp
-
-logAndRun '$srcdir/../src/emu3bm -n $TEST_BANK_NAME'
-logAndRun '$srcdir/../src/emu3bm -S data/test1.sfz $TEST_BANK_NAME'
+logAndRun '$BINDIR/emu3bm -n $TEST_BANK_NAME'
+logAndRun '$BINDIR/emu3bm -S $SRCDIR/data/test1.sfz $TEST_BANK_NAME'
 test
-logAndRun 'diff $TEST_BANK_NAME data/emu3_test_add_sfz_1'
+logAndRun 'diff $TEST_BANK_NAME $SRCDIR/data/emu3_test_add_sfz_1'
 test
 
-logAndRun '$srcdir/../src/emu3bm -n $TEST_BANK_NAME'
-logAndRun '$srcdir/../src/emu3bm -S data/test2.sfz $TEST_BANK_NAME'
+logAndRun '$BINDIR/emu3bm -n $TEST_BANK_NAME'
+logAndRun '$BINDIR/emu3bm -S $SRCDIR/data/test2.sfz $TEST_BANK_NAME'
 test
-logAndRun 'diff $TEST_BANK_NAME data/emu3_test_add_sfz_2'
-test
-
-logAndRun '$srcdir/../src/emu3bm -n $TEST_BANK_NAME'
-logAndRun '$srcdir/../src/emu3bm -S data/test3.sfz $TEST_BANK_NAME'
-test
-logAndRun 'diff $TEST_BANK_NAME data/emu3_test_add_sfz_3'
+logAndRun 'diff $TEST_BANK_NAME $SRCDIR/data/emu3_test_add_sfz_2'
 test
 
-logAndRun '$srcdir/../src/emu3bm -n $TEST_BANK_NAME'
-logAndRun '$srcdir/../src/emu3bm -S data/test4.sfz $TEST_BANK_NAME'
+logAndRun '$BINDIR/emu3bm -n $TEST_BANK_NAME'
+logAndRun '$BINDIR/emu3bm -S $SRCDIR/data/test3.sfz $TEST_BANK_NAME'
+test
+logAndRun 'diff $TEST_BANK_NAME $SRCDIR/data/emu3_test_add_sfz_3'
+test
+
+logAndRun '$BINDIR/emu3bm -n $TEST_BANK_NAME'
+logAndRun '$BINDIR/emu3bm -S $SRCDIR/data/test4.sfz $TEST_BANK_NAME'
 testError
 
-logAndRun '$srcdir/../src/emu3bm -n $TEST_BANK_NAME'
-logAndRun '$srcdir/../src/emu3bm -S data/test5.sfz $TEST_BANK_NAME'
+logAndRun '$BINDIR/emu3bm -n $TEST_BANK_NAME'
+logAndRun '$BINDIR/emu3bm -S $SRCDIR/data/test5.sfz $TEST_BANK_NAME'
 testError
 
-logAndRun '$srcdir/../src/emu3bm -n $TEST_BANK_NAME'
-logAndRun '$srcdir/../src/emu3bm -S data/test6.sfz $TEST_BANK_NAME'
+logAndRun '$BINDIR/emu3bm -n $TEST_BANK_NAME'
+logAndRun '$BINDIR/emu3bm -S $SRCDIR/data/test6.sfz $TEST_BANK_NAME'
 test
-logAndRun 'diff $TEST_BANK_NAME data/emu3_test_add_sfz_6'
-test
-
-logAndRun '$srcdir/../src/emu3bm -n $TEST_BANK_NAME'
-logAndRun '$srcdir/../src/emu3bm -S data/test7.sfz $TEST_BANK_NAME'
-test
-logAndRun 'diff $TEST_BANK_NAME data/emu3_test_add_sfz_7'
+logAndRun 'diff $TEST_BANK_NAME $SRCDIR/data/emu3_test_add_sfz_6'
 test
 
-logAndRun '$srcdir/../src/emu3bm -n $TEST_BANK_NAME'
-logAndRun '$srcdir/../src/emu3bm -S data/test8.sfz $TEST_BANK_NAME'
+logAndRun '$BINDIR/emu3bm -n $TEST_BANK_NAME'
+logAndRun '$BINDIR/emu3bm -S $SRCDIR/data/test7.sfz $TEST_BANK_NAME'
 test
-logAndRun 'diff $TEST_BANK_NAME data/emu3_test_add_sfz_8'
-test
-
-logAndRun '$srcdir/../src/emu3bm -n $TEST_BANK_NAME'
-logAndRun '$srcdir/../src/emu3bm -S data/test9.sfz $TEST_BANK_NAME'
-test
-logAndRun 'diff $TEST_BANK_NAME data/emu3_test_add_sfz_9'
+logAndRun 'diff $TEST_BANK_NAME $SRCDIR/data/emu3_test_add_sfz_7'
 test
 
-rm $TEST_BANK_NAME_PRISTINE
+logAndRun '$BINDIR/emu3bm -n $TEST_BANK_NAME'
+logAndRun '$BINDIR/emu3bm -S $SRCDIR/data/test8.sfz $TEST_BANK_NAME'
+test
+logAndRun 'diff $TEST_BANK_NAME $SRCDIR/data/emu3_test_add_sfz_8'
+test
+
+logAndRun '$BINDIR/emu3bm -n $TEST_BANK_NAME'
+logAndRun '$BINDIR/emu3bm -S $SRCDIR/data/test9.sfz $TEST_BANK_NAME'
+test
+logAndRun 'diff $TEST_BANK_NAME $SRCDIR/data/emu3_test_add_sfz_9'
+test
 
 cleanUp

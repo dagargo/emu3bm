@@ -1,8 +1,10 @@
+PKG_CONFIG ?= pkg-config
+
 .NOTPARALLEL:
 
-check_PROGRAMS = tests_emu3bm
+AM_CPPFLAGS = -DDATADIR='"$(top_srcdir)/res"'
 
-AM_CPPFLAGS = -DDATADIR='"$(datadir)"'
+check_PROGRAMS = tests_emu3bm
 
 tests_LIBS = glib-2.0 cunit
 
@@ -22,8 +24,9 @@ tests_emu3bm_SOURCES = \
 	../src/utils.c \
 	../src/utils.h
 
-TESTS = $(check_PROGRAMS) \
-	emu3_test_add_preset.sh \
+TESTS = $(check_PROGRAMS)
+
+INTEGRATION_TESTS = emu3_test_add_preset.sh \
 	emu3_test_add_sample.sh \
 	emu3_test_add_sfz.sh \
 	emu3_test_add_zone.sh \
@@ -33,3 +36,11 @@ TESTS = $(check_PROGRAMS) \
 	emu4_test_add_sample.sh \
 	emu4_test_create_bank.sh \
 	emu4_test_extract_samples.sh
+
+installcheck-local:
+	for t in $(INTEGRATION_TESTS); do \
+		echo "Running test '$$t'..."; \
+		SRCDIR='$(srcdir)' BINDIR=$(bindir) $(srcdir)/$$t || exit 1; \
+	done
+
+EXTRA_DIST = data test_common.sh $(INTEGRATION_TESTS)
