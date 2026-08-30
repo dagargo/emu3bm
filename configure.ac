@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.71])
-AC_INIT([emu3bm],[1.0],[dagargo@gmail.com])
+AC_INIT([emu3bm],[1.0.1],[dagargo@gmail.com])
 
 # Needed to override the default value of CFLAGS, which is `-g -O2`
 : ${CFLAGS="-g"}
